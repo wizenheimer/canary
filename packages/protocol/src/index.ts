@@ -118,7 +118,7 @@ export type ResultMessage = z.infer<typeof ResultMessageSchema>;
 
 export interface BrowserSummary {
   name: string;
-  type: string;
+  type: "launched" | "connected";
   status: "running" | "connected" | "disconnected";
   pages: string[];
 }
