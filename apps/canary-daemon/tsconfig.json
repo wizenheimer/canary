@@ -1,0 +1,12 @@
+{
+  "extends": "@canary/typescript-config/node-app.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "exactOptionalPropertyTypes": false,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"]
+  },
+  "include": ["src", "scripts"],
+  "exclude": ["node_modules", "dist", "test-fixtures"]
+}
