@@ -1,0 +1,42 @@
+{
+  "name": "@canary/browser",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Browser-automation CLI. Supervises the embedded canary-daemon and exposes a scriptable API over named-page persistent browsers.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "canary-browser": "./dist/cli.js"
+  },
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "prebuild": "node scripts/embed-assets.mjs",
+    "build": "pnpm prebuild && node scripts/build.mjs",
+    "dev": "pnpm prebuild && tsx src/cli.ts",
+    "compile": "pnpm prebuild && tsc --noEmit",
+    "test": "pnpm build && vitest run",
+    "test:watch": "pnpm build && vitest",
+    "lint": "echo \"(no eslint configured yet for @canary/browser)\"",
+    "clean": "rm -rf dist coverage .turbo src/assets/embedded.generated.ts"
+  },
+  "dependencies": {
+    "@canary/protocol": "workspace:*",
+    "@inquirer/checkbox": "^5.1.5",
+    "@inquirer/prompts": "^7.2.1",
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "@canary/daemon": "workspace:*",
+    "@canary/typescript-config": "workspace:*",
+    "@types/node": "^20.17.10",
+    "esbuild": "^0.27.4",
+    "tsx": "^4.19.2",
+    "typescript": "^5.8.0",
+    "vitest": "^4.1.0"
+  }
+}

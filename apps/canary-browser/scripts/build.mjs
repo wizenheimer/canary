@@ -1,0 +1,54 @@
+#!/usr/bin/env node
+// Build entry: bundles src/cli.ts into dist/cli.js with esbuild.
+// Daemon bundles and SKILL.md are embedded as strings via the `text` loader
+// (parity with Rust `include_str!`).
+import { build } from "esbuild";
+import { chmod, mkdir } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const root = resolve(__dirname, "..");
+const dist = resolve(root, "dist");
+
+await mkdir(dist, { recursive: true });
+
+const common = {
+  entryPoints: [resolve(root, "src/cli.ts")],
+  bundle: true,
+  platform: "node",
+  target: "node20",
+  legalComments: "none",
+  loader: {},
+  external: [],
+  logLevel: "info",
+};
+
+// ESM bundle — npm-published artifact. Banner gives the bundled module a
+// real CJS-aware `require`, used by commander (CJS) when it loads node:*
+// builtins via dynamic require.
+const esm = build({
+  ...common,
+  outfile: resolve(dist, "cli.js"),
+  format: "esm",
+  banner: {
+    js: [
+      "#!/usr/bin/env node",
+      "import { createRequire as __createRequire } from 'node:module';",
+      "const require = __createRequire(import.meta.url);",
+    ].join("\n"),
+  },
+  sourcemap: true,
+});
+
+// CJS variant for Node SEA — `--experimental-sea-config` only accepts CJS.
+const cjs = build({
+  ...common,
+  outfile: resolve(dist, "cli.cjs"),
+  format: "cjs",
+  sourcemap: false,
+});
+
+await Promise.all([esm, cjs]);
+await chmod(resolve(dist, "cli.js"), 0o755);
+console.log("Built dist/cli.js and dist/cli.cjs (SEA)");
