@@ -1,0 +1,40 @@
+{
+  "name": "canary",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "AI-agent QA toolkit: drive browsers, record sessions, render self-contained verification artifacts.",
+  "license": "MIT",
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "compile": "turbo run compile",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "turbo run compile lint test",
+    "clean": "turbo run clean && rm -rf node_modules/.cache .turbo",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.6.0",
+    "@commitlint/config-conventional": "^19.6.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.2.10",
+    "prettier": "^3.4.2",
+    "turbo": "^2.3.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,mjs,cjs}": [
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml,css}": [
+      "prettier --write"
+    ]
+  }
+}
