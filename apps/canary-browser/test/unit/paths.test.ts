@@ -1,19 +1,19 @@
-import { describe, expect, it } from "vitest";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { describe, expect, it } from "vitest";
 import {
-  devBrowserDir,
-  daemonSocketPath,
-  daemonPidPath,
   daemonBundlePath,
-  sandboxClientPath,
-  packageJsonPath,
-  tmpDir,
   daemonEndpoint,
+  daemonPidPath,
+  daemonSocketPath,
+  devBrowserDir,
+  packageJsonPath,
   SKILL_TARGETS,
-  skillRootDir,
+  sandboxClientPath,
   skillDir,
   skillFile,
+  skillRootDir,
+  tmpDir,
 } from "../../src/paths.js";
 
 describe("paths", () => {
@@ -33,7 +33,9 @@ describe("paths", () => {
   it("daemonEndpoint picks platform-specific transport", () => {
     const endpoint = daemonEndpoint();
     if (process.platform === "win32") {
-      expect(endpoint.startsWith("\\\\.\\pipe\\dev-browser-daemon-")).toBe(true);
+      expect(endpoint.startsWith("\\\\.\\pipe\\dev-browser-daemon-")).toBe(
+        true
+      );
     } else {
       expect(endpoint).toBe(daemonSocketPath());
     }
@@ -46,7 +48,9 @@ describe("paths", () => {
     for (const t of SKILL_TARGETS) {
       expect(skillRootDir(home, t)).toBe(join(home, t.rootRelative));
       expect(skillDir(home, t)).toBe(join(home, t.rootRelative, "dev-browser"));
-      expect(skillFile(home, t)).toBe(join(home, t.rootRelative, "dev-browser", "SKILL.md"));
+      expect(skillFile(home, t)).toBe(
+        join(home, t.rootRelative, "dev-browser", "SKILL.md")
+      );
     }
   });
 });

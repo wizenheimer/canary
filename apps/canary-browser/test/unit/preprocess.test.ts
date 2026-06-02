@@ -21,34 +21,38 @@ describe("preprocessArgs (--connect parity)", () => {
   });
 
   it("splices --connect URL into --connect=URL", () => {
-    expect(preprocessArgs(["node", "dev-browser", "--connect", "http://localhost:9222"])).toEqual([
-      "node",
-      "dev-browser",
-      "--connect=http://localhost:9222",
-    ]);
+    expect(
+      preprocessArgs([
+        "node",
+        "dev-browser",
+        "--connect",
+        "http://localhost:9222",
+      ])
+    ).toEqual(["node", "dev-browser", "--connect=http://localhost:9222"]);
   });
 
   it("leaves bare --connect alone when next arg starts with -", () => {
-    expect(preprocessArgs(["node", "dev-browser", "--connect", "--headless"])).toEqual([
-      "node",
-      "dev-browser",
-      "--connect",
-      "--headless",
-    ]);
+    expect(
+      preprocessArgs(["node", "dev-browser", "--connect", "--headless"])
+    ).toEqual(["node", "dev-browser", "--connect", "--headless"]);
   });
 
   it("consumes subcommand name as value (lexical-only rule matches clap)", () => {
-    expect(preprocessArgs(["node", "dev-browser", "--connect", "run", "x.js"])).toEqual([
-      "node",
-      "dev-browser",
-      "--connect=run",
-      "x.js",
-    ]);
+    expect(
+      preprocessArgs(["node", "dev-browser", "--connect", "run", "x.js"])
+    ).toEqual(["node", "dev-browser", "--connect=run", "x.js"]);
   });
 
   it("only splices the first --connect", () => {
     expect(
-      preprocessArgs(["node", "dev-browser", "--connect", "first", "--connect", "second"])
+      preprocessArgs([
+        "node",
+        "dev-browser",
+        "--connect",
+        "first",
+        "--connect",
+        "second",
+      ])
     ).toEqual(["node", "dev-browser", "--connect=first", "--connect=second"]);
   });
 

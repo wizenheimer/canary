@@ -1,11 +1,9 @@
-import { createServer } from "node:http";
 import { EventEmitter } from "node:events";
+import { createServer } from "node:http";
 import path from "node:path";
-
-import { afterEach, describe, expect, it, vi } from "vitest";
-
-import { BrowserManager } from "../../browser-manager.js";
 import { parseRequest } from "@canary/protocol";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { BrowserManager } from "../../browser-manager.js";
 
 class MockCDPSession {
   private readonly targetId: string;
@@ -32,7 +30,9 @@ class MockPage extends EventEmitter {
   readonly pageTitle: string;
   readonly pageUrl: string;
 
-  constructor(options: { targetId?: string; title?: string; url?: string } = {}) {
+  constructor(
+    options: { targetId?: string; title?: string; url?: string } = {}
+  ) {
     super();
     this.targetId = options.targetId ?? "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
     this.pageTitle = options.title ?? "";
@@ -135,11 +135,11 @@ class MockBrowser extends EventEmitter {
   }
 }
 
-type BrowserManagerInternals = {
-  readDevToolsActivePort(expectedPort?: number): Promise<string | null>;
+interface BrowserManagerInternals {
   discoverChrome(): Promise<string | null>;
   probePort(port: number): Promise<string | null>;
-};
+  readDevToolsActivePort(expectedPort?: number): Promise<string | null>;
+}
 
 function createEnoentError(filePath: string): NodeJS.ErrnoException {
   const error = new Error(
@@ -173,15 +173,18 @@ function createManager(
   const launchPersistentContext =
     options.launchPersistentContext ?? (vi.fn() as ReturnType<typeof vi.fn>);
 
-  const manager = new BrowserManager(path.join("/tmp", "dev-browser-auto-connect-tests"), {
-    connectOverCDP: connectOverCDP as never,
-    fetch,
-    homedir: options.homedir ?? (() => "/Users/tester"),
-    launchPersistentContext: launchPersistentContext as never,
-    mkdir: vi.fn(async () => undefined) as never,
-    platform: options.platform ?? "darwin",
-    readFile: readFile as never,
-  });
+  const manager = new BrowserManager(
+    path.join("/tmp", "dev-browser-auto-connect-tests"),
+    {
+      connectOverCDP: connectOverCDP as never,
+      fetch,
+      homedir: options.homedir ?? (() => "/Users/tester"),
+      launchPersistentContext: launchPersistentContext as never,
+      mkdir: vi.fn(async () => undefined) as never,
+      platform: options.platform ?? "darwin",
+      readFile: readFile as never,
+    }
+  );
 
   return {
     manager,
@@ -220,7 +223,11 @@ describe("BrowserManager auto-connect", () => {
     expect(launchPersistentContext).toHaveBeenCalledTimes(1);
     expect(launchPersistentContext).toHaveBeenNthCalledWith(
       1,
-      path.join("/tmp/dev-browser-auto-connect-tests", "launched", "chromium-profile"),
+      path.join(
+        "/tmp/dev-browser-auto-connect-tests",
+        "launched",
+        "chromium-profile"
+      ),
       expect.objectContaining({
         headless: false,
         ignoreHTTPSErrors: true,
@@ -236,7 +243,11 @@ describe("BrowserManager auto-connect", () => {
     expect(launchPersistentContext).toHaveBeenCalledTimes(2);
     expect(launchPersistentContext).toHaveBeenNthCalledWith(
       2,
-      path.join("/tmp/dev-browser-auto-connect-tests", "launched", "chromium-profile"),
+      path.join(
+        "/tmp/dev-browser-auto-connect-tests",
+        "launched",
+        "chromium-profile"
+      ),
       expect.objectContaining({
         headless: false,
         ignoreHTTPSErrors: false,
@@ -267,7 +278,11 @@ describe("BrowserManager auto-connect", () => {
     expect(launchPersistentContext).toHaveBeenCalledTimes(2);
     expect(launchPersistentContext).toHaveBeenNthCalledWith(
       2,
-      path.join("/tmp/dev-browser-auto-connect-tests", "launched", "chromium-profile"),
+      path.join(
+        "/tmp/dev-browser-auto-connect-tests",
+        "launched",
+        "chromium-profile"
+      ),
       expect.objectContaining({
         headless: true,
         ignoreHTTPSErrors: true,
@@ -301,7 +316,9 @@ describe("BrowserManager auto-connect", () => {
       readFile,
     });
 
-    await expect(getInternals(manager).readDevToolsActivePort()).resolves.toBe(websocketUrl);
+    await expect(getInternals(manager).readDevToolsActivePort()).resolves.toBe(
+      websocketUrl
+    );
   });
 
   it("checks Windows Chrome-family DevToolsActivePort locations", async () => {
@@ -336,7 +353,9 @@ describe("BrowserManager auto-connect", () => {
   it("returns null when DevToolsActivePort is missing", async () => {
     const { manager } = createManager();
 
-    await expect(getInternals(manager).readDevToolsActivePort()).resolves.toBeNull();
+    await expect(
+      getInternals(manager).readDevToolsActivePort()
+    ).resolves.toBeNull();
   });
 
   it("ignores malformed DevToolsActivePort files", async () => {
@@ -361,7 +380,9 @@ describe("BrowserManager auto-connect", () => {
       readFile,
     });
 
-    await expect(getInternals(manager).readDevToolsActivePort()).resolves.toBeNull();
+    await expect(
+      getInternals(manager).readDevToolsActivePort()
+    ).resolves.toBeNull();
   });
 
   it("discovers Chrome by trying DevToolsActivePort before common ports", async () => {
@@ -384,9 +405,15 @@ describe("BrowserManager auto-connect", () => {
       throw createEnoentError(filePath);
     });
     const fetch = vi.fn() as typeof globalThis.fetch;
-    const { manager } = createManager({ fetch, homedir: () => homeDir, readFile });
+    const { manager } = createManager({
+      fetch,
+      homedir: () => homeDir,
+      readFile,
+    });
 
-    await expect(getInternals(manager).discoverChrome()).resolves.toBe(websocketUrl);
+    await expect(getInternals(manager).discoverChrome()).resolves.toBe(
+      websocketUrl
+    );
     expect(requests).toEqual([]);
     expect(fetch).not.toHaveBeenCalled();
   });
@@ -422,7 +449,9 @@ describe("BrowserManager auto-connect", () => {
         fetch: globalThis.fetch,
       });
 
-      await expect(getInternals(manager).probePort(address.port)).resolves.toBe(websocketUrl);
+      await expect(getInternals(manager).probePort(address.port)).resolves.toBe(
+        websocketUrl
+      );
     } finally {
       await new Promise<void>((resolve, reject) => {
         server.close((error) => {
@@ -450,7 +479,8 @@ describe("BrowserManager auto-connect", () => {
       expect(String(input)).toBe("http://127.0.0.1:9222/json/version");
       return new Response(
         JSON.stringify({
-          webSocketDebuggerUrl: "ws://127.0.0.1:9222/devtools/browser/connected-browser",
+          webSocketDebuggerUrl:
+            "ws://127.0.0.1:9222/devtools/browser/connected-browser",
         }),
         {
           status: 200,
@@ -620,7 +650,8 @@ describe("BrowserManager auto-connect", () => {
       if (url === "http://127.0.0.1:9223/json/version") {
         return new Response(
           JSON.stringify({
-            webSocketDebuggerUrl: "ws://127.0.0.1:9223/devtools/browser/discovered",
+            webSocketDebuggerUrl:
+              "ws://127.0.0.1:9223/devtools/browser/discovered",
           }),
           {
             status: 200,
@@ -648,7 +679,9 @@ describe("BrowserManager auto-connect", () => {
       "http://127.0.0.1:9222/json/version",
       "http://127.0.0.1:9223/json/version",
     ]);
-    expect(connectOverCDP).toHaveBeenCalledWith("ws://127.0.0.1:9223/devtools/browser/discovered");
+    expect(connectOverCDP).toHaveBeenCalledWith(
+      "ws://127.0.0.1:9223/devtools/browser/discovered"
+    );
     expect(manager.listBrowsers()).toEqual([
       {
         name: "auto-browser",
@@ -669,8 +702,10 @@ describe("BrowserManager auto-connect", () => {
       "Chrome",
       "DevToolsActivePort"
     );
-    const staleEndpoint = "ws://127.0.0.1:9222/devtools/browser/from-active-port";
-    const discoveredEndpoint = "ws://127.0.0.1:9223/devtools/browser/discovered";
+    const staleEndpoint =
+      "ws://127.0.0.1:9222/devtools/browser/from-active-port";
+    const discoveredEndpoint =
+      "ws://127.0.0.1:9223/devtools/browser/discovered";
     const browser = new MockBrowser([new MockContext()]);
     const requests: string[] = [];
     const connectOverCDP = vi.fn(async (endpoint: string) => {
@@ -741,7 +776,9 @@ describe("BrowserManager auto-connect", () => {
       readFile,
     });
 
-    await expect(manager.autoConnect("missing")).rejects.toThrowError(/remote-debugging-port=9222/);
+    await expect(manager.autoConnect("missing")).rejects.toThrowError(
+      /remote-debugging-port=9222/
+    );
   });
 
   it("reports a Windows-specific launch hint when auto-discovery fails on Windows", async () => {

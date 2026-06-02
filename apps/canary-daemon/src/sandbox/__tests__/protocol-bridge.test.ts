@@ -1,7 +1,10 @@
 import type { Browser, Page } from "playwright";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { createProtocolBridge, type ProtocolBridge } from "../protocol-bridge.js";
 import type { PlaywrightClientLike } from "../playwright-internals.js";
+import {
+  createProtocolBridge,
+  type ProtocolBridge,
+} from "../protocol-bridge.js";
 
 describe.sequential("protocol bridge", () => {
   let bridge: ProtocolBridge;
@@ -37,8 +40,12 @@ describe.sequential("protocol bridge", () => {
     await page.goto("https://example.com");
 
     await expect(page.title()).resolves.toBe("Example Domain");
-    await expect(page.locator("h1").textContent()).resolves.toBe("Example Domain");
-    await expect(page.evaluate(() => document.title)).resolves.toBe("Example Domain");
+    await expect(page.locator("h1").textContent()).resolves.toBe(
+      "Example Domain"
+    );
+    await expect(page.evaluate(() => document.title)).resolves.toBe(
+      "Example Domain"
+    );
   }, 120_000);
 
   it("cleans up page, browser, and bridge connection", async () => {

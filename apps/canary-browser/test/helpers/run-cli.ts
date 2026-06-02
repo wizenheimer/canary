@@ -1,18 +1,18 @@
 import { spawn } from "node:child_process";
-import { mkdtemp, rm, mkdir } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import net from "node:net";
-import { createInterface } from "node:readline";
+import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
+import { createInterface } from "node:readline";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 export const CLI_PATH = resolve(__dirname, "../../dist/cli.js");
 
 export interface CliResult {
-  stdout: string;
-  stderr: string;
   code: number;
+  stderr: string;
+  stdout: string;
 }
 
 // Async spawn that does NOT block the event loop, so an in-process fake
@@ -24,10 +24,14 @@ export async function runCli(
   binary: string = CLI_PATH
 ): Promise<CliResult> {
   const isJs = binary.endsWith(".js");
-  const child = spawn(isJs ? process.execPath : binary, isJs ? [binary, ...args] : args, {
-    env: { ...env, FORCE_COLOR: "0", NO_COLOR: "1" },
-    stdio: ["ignore", "pipe", "pipe"],
-  });
+  const child = spawn(
+    isJs ? process.execPath : binary,
+    isJs ? [binary, ...args] : args,
+    {
+      env: { ...env, FORCE_COLOR: "0", NO_COLOR: "1" },
+      stdio: ["ignore", "pipe", "pipe"],
+    }
+  );
   const out: Buffer[] = [];
   const err: Buffer[] = [];
   child.stdout.on("data", (c) => out.push(c));
@@ -48,10 +52,10 @@ export type DaemonHandler = (
 ) => Iterable<object> | AsyncIterable<object>;
 
 export interface FakeEnv {
+  close(): Promise<void>;
   env: NodeJS.ProcessEnv;
   home: string;
   socketPath: string;
-  close(): Promise<void>;
 }
 
 export interface CapturingFakeEnv extends FakeEnv {
@@ -64,15 +68,22 @@ export interface CapturingFakeEnv extends FakeEnv {
 // Start a fake daemon listening at <tempHome>/.dev-browser/daemon.sock and
 // return an env object pointing the CLI at it. On Windows we skip — CLI's
 // pipe name is process-scoped and can't be redirected this way.
-export async function startFakeDaemon(handler: DaemonHandler): Promise<FakeEnv | null> {
-  if (process.platform === "win32") return null;
+export async function startFakeDaemon(
+  handler: DaemonHandler
+): Promise<FakeEnv | null> {
+  if (process.platform === "win32") {
+    return null;
+  }
   const home = await mkdtemp(join(tmpdir(), "cli-ts-fakedaemon-"));
   const dev = join(home, ".dev-browser");
   await mkdir(dev, { recursive: true });
   const socketPath = join(dev, "daemon.sock");
 
   const server = net.createServer((socket) => {
-    const rl = createInterface({ input: socket, crlfDelay: Infinity });
+    const rl = createInterface({
+      input: socket,
+      crlfDelay: Number.POSITIVE_INFINITY,
+    });
     rl.once("line", async (line) => {
       let req: Record<string, unknown> = {};
       try {
@@ -114,20 +125,26 @@ export async function startFakeDaemon(handler: DaemonHandler): Promise<FakeEnv |
 export async function startFakeDaemonCapturing(
   handler: DaemonHandler
 ): Promise<CapturingFakeEnv | null> {
-  if (process.platform === "win32") return null;
+  if (process.platform === "win32") {
+    return null;
+  }
   const home = await mkdtemp(join(tmpdir(), "cli-ts-fakedaemon-cap-"));
   const dev = join(home, ".dev-browser");
   await mkdir(dev, { recursive: true });
   const socketPath = join(dev, "daemon.sock");
 
   let capturedRequest: Record<string, unknown> | null = null;
-  let resolveCaptured: (value: Record<string, unknown> | null) => void = () => {};
+  let resolveCaptured: (value: Record<string, unknown> | null) => void =
+    () => {};
   const capturedPromise = new Promise<Record<string, unknown> | null>((r) => {
     resolveCaptured = r;
   });
 
   const server = net.createServer((socket) => {
-    const rl = createInterface({ input: socket, crlfDelay: Infinity });
+    const rl = createInterface({
+      input: socket,
+      crlfDelay: Number.POSITIVE_INFINITY,
+    });
     rl.once("line", async (line) => {
       let req: Record<string, unknown> = {};
       try {

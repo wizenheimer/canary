@@ -40,7 +40,12 @@ describe("createKeyedLock", () => {
     await secondGate.promise;
     await second;
 
-    expect(events).toEqual(["first:start", "first:end", "second:start", "second:end"]);
+    expect(events).toEqual([
+      "first:start",
+      "first:end",
+      "second:start",
+      "second:end",
+    ]);
   });
 });
 
@@ -73,6 +78,11 @@ describe("createMutex", () => {
     await secondStarted.promise;
     await second;
 
-    expect(events).toEqual(["first:start", "first:end", "second:start", "second:end"]);
+    expect(events).toEqual([
+      "first:start",
+      "first:end",
+      "second:start",
+      "second:end",
+    ]);
   });
 });

@@ -11,8 +11,8 @@ import { runScript } from "../script-runner-quickjs.js";
 const browserName = "sandbox-security";
 
 interface CapturedOutput {
-  stdout: string[];
   stderr: string[];
+  stdout: string[];
 }
 
 function createOutput(): CapturedOutput & {
@@ -43,7 +43,9 @@ describe.sequential("QuickJS sandbox security", () => {
   let manager: BrowserManager;
 
   beforeAll(async () => {
-    browserRootDir = await mkdtemp(path.join(os.tmpdir(), "dev-browser-quickjs-security-"));
+    browserRootDir = await mkdtemp(
+      path.join(os.tmpdir(), "dev-browser-quickjs-security-")
+    );
     manager = new BrowserManager(path.join(browserRootDir, "browsers"));
     await manager.ensureBrowser(browserName, {
       headless: true,
@@ -70,9 +72,9 @@ describe.sequential("QuickJS sandbox security", () => {
     options: { timeout?: number; memoryLimitBytes?: number } = {}
   ): Promise<void> {
     const output = createOutput();
-    return expect(runScript(script, manager, browserName, output.sink, options)).rejects.toThrow(
-      matcher
-    );
+    return expect(
+      runScript(script, manager, browserName, output.sink, options)
+    ).rejects.toThrow(matcher);
   }
 
   it("does not expose require", async () => {
@@ -80,11 +82,14 @@ describe.sequential("QuickJS sandbox security", () => {
   });
 
   it("does not expose process", async () => {
-    await expectSandboxScriptToThrow(`process.exit();`, /process|not defined/i);
+    await expectSandboxScriptToThrow("process.exit();", /process|not defined/i);
   });
 
   it("does not expose fetch", async () => {
-    await expectSandboxScriptToThrow(`fetch("https://evil.com");`, /fetch|not defined/i);
+    await expectSandboxScriptToThrow(
+      `fetch("https://evil.com");`,
+      /fetch|not defined/i
+    );
   });
 
   it("does not expose WebSocket", async () => {
@@ -102,7 +107,10 @@ describe.sequential("QuickJS sandbox security", () => {
   });
 
   it("does not allow dynamic imports", async () => {
-    await expectSandboxScriptToThrow(`await import("node:fs");`, /import|module|load/i);
+    await expectSandboxScriptToThrow(
+      `await import("node:fs");`,
+      /import|module|load/i
+    );
   });
 
   it("enforces memory limits", async () => {
@@ -121,9 +129,13 @@ describe.sequential("QuickJS sandbox security", () => {
   }, 120_000);
 
   it("enforces CPU time limits", async () => {
-    await expectSandboxScriptToThrow(`while (true) {}`, /timed out|interrupted/i, {
-      timeout: 25,
-    });
+    await expectSandboxScriptToThrow(
+      "while (true) {}",
+      /timed out|interrupted/i,
+      {
+        timeout: 25,
+      }
+    );
   }, 120_000);
 
   it("only exposes the expected globals and browser API", async () => {
@@ -166,7 +178,12 @@ describe.sequential("QuickJS sandbox security", () => {
     expect(payload.globals).toContain("readFile");
     expect(payload.globals).toContain("saveScreenshot");
     expect(payload.globals).toContain("writeFile");
-    expect(payload.browserKeys).toEqual(["closePage", "getPage", "listPages", "newPage"]);
+    expect(payload.browserKeys).toEqual([
+      "closePage",
+      "getPage",
+      "listPages",
+      "newPage",
+    ]);
     expect(payload.browserHasNullPrototype).toBe(true);
   }, 120_000);
 
@@ -176,7 +193,12 @@ describe.sequential("QuickJS sandbox security", () => {
     let leakedToHostStdout = false;
 
     try {
-      await runScript(`console.log("secret");`, manager, browserName, output.sink);
+      await runScript(
+        `console.log("secret");`,
+        manager,
+        browserName,
+        output.sink
+      );
       leakedToHostStdout = stdoutSpy.mock.calls.some((args) =>
         args.some((value) => String(value).includes("secret"))
       );

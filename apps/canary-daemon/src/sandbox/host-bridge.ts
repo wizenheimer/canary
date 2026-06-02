@@ -1,19 +1,19 @@
 import {
+  createPlaywright,
   DispatcherConnection,
   type DispatcherConnectionLike,
   PlaywrightDispatcher,
   type PlaywrightDispatcherLike,
   RootDispatcher,
   type RootDispatcherLike,
-  createPlaywright,
 } from "./playwright-internals.js";
 
 export interface HostBridgeOptions {
-  sendToSandbox: (json: string) => void;
-  preLaunchedBrowser?: unknown;
-  sharedBrowser?: boolean;
   denyLaunch?: boolean;
+  preLaunchedBrowser?: unknown;
   sdkLanguage?: string;
+  sendToSandbox: (json: string) => void;
+  sharedBrowser?: boolean;
 }
 
 export class HostBridge {
@@ -41,18 +41,27 @@ export class HostBridge {
     this.dispatcherConnection.onmessage = (message) => {
       this.sendToSandbox(JSON.stringify(message));
     };
-    this.rootDispatcher = new RootDispatcher(this.dispatcherConnection, async (rootScope) => {
-      this.playwrightDispatcher = new PlaywrightDispatcher(rootScope, this.playwright, {
-        preLaunchedBrowser: this.options.preLaunchedBrowser,
-        sharedBrowser: this.options.sharedBrowser,
-        denyLaunch: this.options.denyLaunch,
-      });
-      return this.playwrightDispatcher;
-    });
+    this.rootDispatcher = new RootDispatcher(
+      this.dispatcherConnection,
+      async (rootScope) => {
+        this.playwrightDispatcher = new PlaywrightDispatcher(
+          rootScope,
+          this.playwright,
+          {
+            preLaunchedBrowser: this.options.preLaunchedBrowser,
+            sharedBrowser: this.options.sharedBrowser,
+            denyLaunch: this.options.denyLaunch,
+          }
+        );
+        return this.playwrightDispatcher;
+      }
+    );
   }
 
   async receiveFromSandbox(json: string): Promise<void> {
-    await this.dispatcherConnection.dispatch(JSON.parse(json) as Record<string, unknown>);
+    await this.dispatcherConnection.dispatch(
+      JSON.parse(json) as Record<string, unknown>
+    );
   }
 
   async dispose(): Promise<void> {

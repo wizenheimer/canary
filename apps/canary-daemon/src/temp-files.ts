@@ -1,5 +1,5 @@
 import { constants } from "node:fs";
-import { lstat, mkdir, open, type FileHandle } from "node:fs/promises";
+import { type FileHandle, lstat, mkdir, open } from "node:fs/promises";
 import path from "node:path";
 import { getDevBrowserBaseDir } from "./local-endpoint.js";
 
@@ -22,7 +22,9 @@ function isWithinDirectory(rootDir: string, candidatePath: string): boolean {
     return true;
   }
 
-  const rootWithSeparator = rootDir.endsWith(path.sep) ? rootDir : `${rootDir}${path.sep}`;
+  const rootWithSeparator = rootDir.endsWith(path.sep)
+    ? rootDir
+    : `${rootDir}${path.sep}`;
   return candidatePath.startsWith(rootWithSeparator);
 }
 
@@ -59,7 +61,10 @@ function sanitizeRelativePath(fileName: unknown): string[] {
   return normalized.split("/").map(sanitizePathSegment);
 }
 
-async function assertControlledDirectory(directoryPath: string, label: string): Promise<void> {
+async function assertControlledDirectory(
+  directoryPath: string,
+  label: string
+): Promise<void> {
   const stats = await lstat(directoryPath);
   if (stats.isSymbolicLink()) {
     throw new Error(`${label} must not be a symlink`);
@@ -79,7 +84,9 @@ async function assertSafeParentDirectories(
     return;
   }
 
-  const segments = relativeParent.split(path.sep).filter((segment) => segment.length > 0);
+  const segments = relativeParent
+    .split(path.sep)
+    .filter((segment) => segment.length > 0);
   let currentPath = rootDir;
 
   for (const segment of segments) {
@@ -93,13 +100,18 @@ async function assertSafeParentDirectories(
     try {
       const stats = await lstat(currentPath);
       if (stats.isSymbolicLink()) {
-        throw new Error(`Temp path parent must not be a symlink: ${currentPath}`);
+        throw new Error(
+          `Temp path parent must not be a symlink: ${currentPath}`
+        );
       }
       if (!stats.isDirectory()) {
         throw new Error(`Temp path parent must be a directory: ${currentPath}`);
       }
     } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === "ENOENT" && !createParents) {
+      if (
+        (error as NodeJS.ErrnoException).code === "ENOENT" &&
+        !createParents
+      ) {
         return;
       }
       throw error;
@@ -109,17 +121,23 @@ async function assertSafeParentDirectories(
 
 function normalizeSymlinkError(error: unknown, destinationPath: string): Error {
   if ((error as NodeJS.ErrnoException).code === "ELOOP") {
-    return new Error(`Refusing to follow symlinked temp file: ${destinationPath}`);
+    return new Error(
+      `Refusing to follow symlinked temp file: ${destinationPath}`
+    );
   }
 
   return error instanceof Error ? error : new Error(String(error));
 }
 
-async function assertDestinationIsNotSymlink(destinationPath: string): Promise<void> {
+async function assertDestinationIsNotSymlink(
+  destinationPath: string
+): Promise<void> {
   try {
     const stats = await lstat(destinationPath);
     if (stats.isSymbolicLink()) {
-      throw new Error(`Refusing to follow symlinked temp file: ${destinationPath}`);
+      throw new Error(
+        `Refusing to follow symlinked temp file: ${destinationPath}`
+      );
     }
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") {
@@ -134,12 +152,18 @@ export async function ensureDevBrowserTempDir(): Promise<string> {
   await mkdir(DEV_BROWSER_BASE_DIR, {
     recursive: true,
   });
-  await assertControlledDirectory(DEV_BROWSER_BASE_DIR, "Dev Browser base directory");
+  await assertControlledDirectory(
+    DEV_BROWSER_BASE_DIR,
+    "Dev Browser base directory"
+  );
 
   await mkdir(DEV_BROWSER_TMP_DIR, {
     recursive: true,
   });
-  await assertControlledDirectory(DEV_BROWSER_TMP_DIR, "Dev Browser temp directory");
+  await assertControlledDirectory(
+    DEV_BROWSER_TMP_DIR,
+    "Dev Browser temp directory"
+  );
 
   return path.resolve(DEV_BROWSER_TMP_DIR);
 }
@@ -155,10 +179,16 @@ export async function resolveDevBrowserTempPath(
   const destinationPath = path.resolve(rootDir, ...segments);
 
   if (!isWithinDirectory(rootDir, destinationPath)) {
-    throw new Error("Resolved temp file path escapes the controlled temp directory");
+    throw new Error(
+      "Resolved temp file path escapes the controlled temp directory"
+    );
   }
 
-  await assertSafeParentDirectories(rootDir, destinationPath, options.createParents ?? false);
+  await assertSafeParentDirectories(
+    rootDir,
+    destinationPath,
+    options.createParents ?? false
+  );
   return destinationPath;
 }
 
@@ -175,7 +205,10 @@ export async function writeDevBrowserTempFile(
   try {
     handle = await open(
       destinationPath,
-      constants.O_WRONLY | constants.O_CREAT | constants.O_TRUNC | NOFOLLOW_FLAG,
+      constants.O_WRONLY |
+        constants.O_CREAT |
+        constants.O_TRUNC |
+        NOFOLLOW_FLAG,
       0o600
     );
     await handle.writeFile(data);
@@ -188,7 +221,9 @@ export async function writeDevBrowserTempFile(
   return destinationPath;
 }
 
-export async function readDevBrowserTempFile(fileName: unknown): Promise<string> {
+export async function readDevBrowserTempFile(
+  fileName: unknown
+): Promise<string> {
   const destinationPath = await resolveDevBrowserTempPath(fileName);
   await assertDestinationIsNotSymlink(destinationPath);
 

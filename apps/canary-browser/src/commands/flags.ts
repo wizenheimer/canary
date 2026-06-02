@@ -7,11 +7,11 @@ export interface GlobalFlags {
   connect: string | undefined;
   headless: boolean;
   ignoreHttpsErrors: boolean;
-  timeout: number;
   // Paths to JS files that the daemon should pre-load into every page on the
   // managed browser context. Env entries first, then flag occurrences in argv
   // order. Files are read in runScript() before the execute request is sent.
   injectScriptPaths: string[];
+  timeout: number;
 }
 
 export const CONNECT_AUTO_SENTINEL = "auto";

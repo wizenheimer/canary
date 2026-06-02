@@ -14,14 +14,20 @@ export function sanitizePipeSegment(value: string): string {
 
 export function currentUserSegment(): string {
   const username = (process.env.USERNAME ?? "").trim();
-  if (username !== "") return username;
+  if (username !== "") {
+    return username;
+  }
   const user = (process.env.USER ?? "").trim();
-  if (user !== "") return user;
+  if (user !== "") {
+    return user;
+  }
   try {
     const home = homedir();
     if (home) {
       const base = basename(home);
-      if (base !== "." && base !== sep) return base;
+      if (base !== "." && base !== sep) {
+        return base;
+      }
     }
   } catch {
     // fall through

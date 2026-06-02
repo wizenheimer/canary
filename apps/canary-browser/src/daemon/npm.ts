@@ -15,7 +15,9 @@ export function npmCommand(): string {
 function findInPath(name: string): string | null {
   const pathEnv = process.env.PATH ?? "";
   for (const entry of pathEnv.split(delimiter)) {
-    if (!entry) continue;
+    if (!entry) {
+      continue;
+    }
     const candidate = join(entry, name);
     try {
       accessSync(candidate, constants.F_OK | constants.X_OK);

@@ -9,8 +9,8 @@ describe("formatDurationMs", () => {
   });
 
   it("renders sub-minute values with one decimal", () => {
-    expect(formatDurationMs(1_000)).toBe("1.0s");
-    expect(formatDurationMs(1_500)).toBe("1.5s");
+    expect(formatDurationMs(1000)).toBe("1.0s");
+    expect(formatDurationMs(1500)).toBe("1.5s");
     expect(formatDurationMs(59_999)).toBe("60.0s");
   });
 

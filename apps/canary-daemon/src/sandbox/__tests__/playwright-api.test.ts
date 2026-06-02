@@ -1,6 +1,10 @@
 import { once } from "node:events";
 import { mkdtemp } from "node:fs/promises";
-import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
+import {
+  createServer,
+  type IncomingMessage,
+  type ServerResponse,
+} from "node:http";
 import type { AddressInfo } from "node:net";
 import os from "node:os";
 import path from "node:path";
@@ -149,8 +153,8 @@ const TEST_PAGE_HTML = String.raw`<!DOCTYPE html>
 </html>`;
 
 interface CapturedOutput {
-  stdout: string[];
   stderr: string[];
+  stdout: string[];
 }
 
 interface JsonSandboxHarness {
@@ -192,7 +196,9 @@ function clearOutput(output: CapturedOutput): void {
 }
 
 function outputLines(output: CapturedOutput): string[] {
-  return output.stdout.map((line) => line.trim()).filter((line) => line.length > 0);
+  return output.stdout
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
 }
 
 function parseLastJsonLine<T>(output: CapturedOutput): T {
@@ -241,7 +247,11 @@ async function createSandboxHarness(
   };
 }
 
-function navigationPageHtml(title: string, route: string, nextPath?: string): string {
+function navigationPageHtml(
+  title: string,
+  route: string,
+  nextPath?: string
+): string {
   const nextLink = nextPath
     ? `<a id="next-link" href="${nextPath}">Next</a>`
     : '<span id="next-link">No next link</span>';
@@ -259,7 +269,10 @@ function navigationPageHtml(title: string, route: string, nextPath?: string): st
 </html>`;
 }
 
-function handleNavigationRequest(request: IncomingMessage, response: ServerResponse): void {
+function handleNavigationRequest(
+  request: IncomingMessage,
+  response: ServerResponse
+): void {
   const url = new URL(request.url ?? "/", "http://127.0.0.1");
   let html = "";
 
@@ -323,7 +336,9 @@ describe.sequential("QuickJS Playwright Page API coverage", () => {
   beforeAll(async () => {
     await ensureSandboxClientBundle();
 
-    browserRootDir = await mkdtemp(path.join(os.tmpdir(), "dev-browser-playwright-api-"));
+    browserRootDir = await mkdtemp(
+      path.join(os.tmpdir(), "dev-browser-playwright-api-")
+    );
     manager = new BrowserManager(path.join(browserRootDir, "browsers"));
   }, 180_000);
 

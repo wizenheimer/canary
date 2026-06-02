@@ -42,9 +42,13 @@ describe("QuickJSHost", () => {
       },
     });
 
-    expect(host.executeScriptSync('__hostCall("add", JSON.stringify([4, 5]))')).toBe(9);
     expect(
-      host.executeScriptSync('__transport_send(JSON.stringify({ type: "ping", id: 1 }))')
+      host.executeScriptSync('__hostCall("add", JSON.stringify([4, 5]))')
+    ).toBe(9);
+    expect(
+      host.executeScriptSync(
+        '__transport_send(JSON.stringify({ type: "ping", id: 1 }))'
+      )
     ).toBeUndefined();
     expect(sentMessages).toEqual(['{"type":"ping","id":1}']);
   });
@@ -78,9 +82,9 @@ describe("QuickJSHost", () => {
       };
     `);
 
-    await expect(host.callFunction("__transport_receive", "hello from host")).resolves.toBe(
-      "HELLO FROM HOST"
-    );
+    await expect(
+      host.callFunction("__transport_receive", "hello from host")
+    ).resolves.toBe("HELLO FROM HOST");
     expect(host.executeScriptSync("lastMessage")).toBe("hello from host");
   });
 
@@ -124,7 +128,9 @@ describe("QuickJSHost", () => {
       cpuTimeoutMs: 10,
     });
 
-    await expect(host.executeScript("while (true) {}")).rejects.toThrow(/interrupted/i);
+    await expect(host.executeScript("while (true) {}")).rejects.toThrow(
+      /interrupted/i
+    );
   });
 
   it("routes console output to the host callback", async () => {
@@ -135,7 +141,9 @@ describe("QuickJSHost", () => {
       },
     });
 
-    expect(host.executeScriptSync('console.log("hello", 42, { ok: true })')).toBeUndefined();
+    expect(
+      host.executeScriptSync('console.log("hello", 42, { ok: true })')
+    ).toBeUndefined();
     expect(entries).toEqual([
       {
         level: "log",

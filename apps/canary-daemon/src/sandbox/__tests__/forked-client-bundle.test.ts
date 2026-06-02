@@ -39,8 +39,12 @@ describe("forked Playwright bundle", () => {
       })
     ).not.toThrow();
 
-    expect(host.executeScriptSync("typeof __PlaywrightClient.Connection")).toBe("function");
-    expect(host.executeScriptSync("typeof __PlaywrightClient.quickjsPlatform")).toBe("object");
+    expect(host.executeScriptSync("typeof __PlaywrightClient.Connection")).toBe(
+      "function"
+    );
+    expect(
+      host.executeScriptSync("typeof __PlaywrightClient.quickjsPlatform")
+    ).toBe("object");
 
     expect(() =>
       host.executeScriptSync(`
@@ -48,6 +52,8 @@ describe("forked Playwright bundle", () => {
       `)
     ).not.toThrow();
 
-    expect(host.executeScriptSync("typeof __sandboxConnection.dispatch")).toBe("function");
+    expect(host.executeScriptSync("typeof __sandboxConnection.dispatch")).toBe(
+      "function"
+    );
   }, 120_000);
 });

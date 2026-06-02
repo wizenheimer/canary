@@ -6,7 +6,10 @@ import { basename, dirname, join, sep } from "node:path";
 // Mirrors cli/src/skill.rs:192-216 and cli-go/internal/skill/atomic.go —
 // pattern is `.{name}.tmp-{pid}-{nonce}` so both binaries interoperate
 // during the parity window.
-export async function atomicWrite(path: string, contents: string | Uint8Array): Promise<void> {
+export async function atomicWrite(
+  path: string,
+  contents: string | Uint8Array
+): Promise<void> {
   const tempPath = tempPathFor(path);
   try {
     await writeFile(tempPath, contents);

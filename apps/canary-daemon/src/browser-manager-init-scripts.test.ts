@@ -122,7 +122,9 @@ describe("BrowserManager.applyInitScripts", () => {
 
     await manager.stopBrowser(browserName);
 
-    await expect(manager.applyInitScripts(browserName, ["x"])).rejects.toThrow(/not running/);
+    await expect(manager.applyInitScripts(browserName, ["x"])).rejects.toThrow(
+      /not running/
+    );
 
     fake = createFakeContext();
     launchPersistentContext.mockResolvedValueOnce(fake.context);
@@ -132,6 +134,8 @@ describe("BrowserManager.applyInitScripts", () => {
   });
 
   it("throws when the browser is not running", async () => {
-    await expect(manager.applyInitScripts("missing-browser", ["a"])).rejects.toThrow(/not running/);
+    await expect(
+      manager.applyInitScripts("missing-browser", ["a"])
+    ).rejects.toThrow(/not running/);
   });
 });

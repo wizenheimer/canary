@@ -10,11 +10,19 @@ export async function installRuntime(): Promise<number> {
   await ensureDaemonExtracted();
   const npm = npmCommand();
   await runInstall(npm, ["install"], base);
-  await runInstall(npm, ["exec", "--", "playwright", "install", "chromium"], base);
+  await runInstall(
+    npm,
+    ["exec", "--", "playwright", "install", "chromium"],
+    base
+  );
   return 0;
 }
 
-function runInstall(program: string, args: string[], cwd: string): Promise<void> {
+function runInstall(
+  program: string,
+  args: string[],
+  cwd: string
+): Promise<void> {
   return new Promise((resolve, reject) => {
     const child = spawn(program, args, {
       cwd,
@@ -31,7 +39,11 @@ function runInstall(program: string, args: string[], cwd: string): Promise<void>
         );
         return;
       }
-      reject(new Error(`Failed to run \`${program} ${args.join(" ")}\` in ${cwd}: ${err.message}`));
+      reject(
+        new Error(
+          `Failed to run \`${program} ${args.join(" ")}\` in ${cwd}: ${err.message}`
+        )
+      );
     });
     child.on("exit", (code, signal) => {
       if (code === 0) {
@@ -39,10 +51,16 @@ function runInstall(program: string, args: string[], cwd: string): Promise<void>
         return;
       }
       if (signal) {
-        reject(new Error(`\`${program} ${args.join(" ")}\` terminated by signal`));
+        reject(
+          new Error(`\`${program} ${args.join(" ")}\` terminated by signal`)
+        );
         return;
       }
-      reject(new Error(`\`${program} ${args.join(" ")}\` failed with exit code ${code ?? "?"}`));
+      reject(
+        new Error(
+          `\`${program} ${args.join(" ")}\` failed with exit code ${code ?? "?"}`
+        )
+      );
     });
   });
 }

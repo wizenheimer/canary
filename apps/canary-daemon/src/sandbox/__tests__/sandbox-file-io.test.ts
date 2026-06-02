@@ -26,8 +26,8 @@ const INVALID_PATH_ERROR =
   /absolute paths are not allowed|null bytes|must not contain|escapes the controlled temp directory|symlink/i;
 
 interface CapturedOutput {
-  stdout: string[];
   stderr: string[];
+  stdout: string[];
 }
 
 function createOutput(): CapturedOutput & {
@@ -54,7 +54,9 @@ function createOutput(): CapturedOutput & {
 }
 
 function parseLastJsonLine<T>(output: CapturedOutput): T {
-  const lines = output.stdout.map((line) => line.trim()).filter((line) => line.length > 0);
+  const lines = output.stdout
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
   const lastLine = lines.at(-1);
   if (!lastLine) {
     throw new Error("Expected sandbox output");
@@ -73,7 +75,9 @@ describe.sequential("QuickJS sandbox file I/O", () => {
 
     await ensureDevBrowserTempDir();
 
-    browserRootDir = await mkdtemp(path.join(os.tmpdir(), "dev-browser-quickjs-file-io-"));
+    browserRootDir = await mkdtemp(
+      path.join(os.tmpdir(), "dev-browser-quickjs-file-io-")
+    );
     manager = new BrowserManager(path.join(browserRootDir, "browsers"));
     await manager.ensureBrowser(browserName, {
       headless: true,
@@ -126,11 +130,15 @@ describe.sequential("QuickJS sandbox file I/O", () => {
       console.log(JSON.stringify({ savedPath, size: screenshot.length }));
     `);
 
-    const result = parseLastJsonLine<{ savedPath: string; size: number }>(output);
-    expect(result.savedPath).toBe(expectedPath);
-    expect(result.savedPath.startsWith(`${path.resolve(DEV_BROWSER_TMP_DIR)}${path.sep}`)).toBe(
-      true
+    const result = parseLastJsonLine<{ savedPath: string; size: number }>(
+      output
     );
+    expect(result.savedPath).toBe(expectedPath);
+    expect(
+      result.savedPath.startsWith(
+        `${path.resolve(DEV_BROWSER_TMP_DIR)}${path.sep}`
+      )
+    ).toBe(true);
     expect(result.size).toBeGreaterThan(0);
     expect((await stat(result.savedPath)).size).toBeGreaterThan(0);
   }, 120_000);
@@ -148,7 +156,9 @@ describe.sequential("QuickJS sandbox file I/O", () => {
       console.log(JSON.stringify({ savedPath: options.path, size: screenshot.length }));
     `);
 
-    const result = parseLastJsonLine<{ savedPath: string; size: number }>(output);
+    const result = parseLastJsonLine<{ savedPath: string; size: number }>(
+      output
+    );
     expect(result.savedPath).toBe(expectedPath);
     expect(result.size).toBeGreaterThan(0);
     expect((await stat(result.savedPath)).size).toBeGreaterThan(0);
@@ -168,7 +178,9 @@ describe.sequential("QuickJS sandbox file I/O", () => {
       console.log(JSON.stringify({ savedPath, content }));
     `);
 
-    const result = parseLastJsonLine<{ savedPath: string; content: string }>(output);
+    const result = parseLastJsonLine<{ savedPath: string; content: string }>(
+      output
+    );
     expect(result.savedPath).toBe(expectedPath);
     expect(result.content).toBe('{"ok":true,"value":42}');
     expect(await readFileFs(result.savedPath, "utf8")).toBe(result.content);
@@ -232,14 +244,15 @@ describe.sequential("QuickJS sandbox file I/O", () => {
       console.log(JSON.stringify(results));
     `);
 
-    const results = parseLastJsonLine<
-      Array<{
-        invalidName: string;
-        label: string;
-        ok: boolean;
-        message: string | null;
-      }>
-    >(output);
+    const results =
+      parseLastJsonLine<
+        Array<{
+          invalidName: string;
+          label: string;
+          ok: boolean;
+          message: string | null;
+        }>
+      >(output);
 
     expect(results).toHaveLength(invalidNames.length * 3);
 
@@ -260,7 +273,10 @@ describe.sequential("QuickJS sandbox file I/O", () => {
   it("rejects symlinked temp-file targets", async () => {
     const symlinkName = "sandbox-file-io-symlink.txt";
     const symlinkPath = path.join(DEV_BROWSER_TMP_DIR, symlinkName);
-    const targetPath = path.join(os.tmpdir(), "sandbox-file-io-symlink-target.txt");
+    const targetPath = path.join(
+      os.tmpdir(),
+      "sandbox-file-io-symlink-target.txt"
+    );
 
     cleanupPaths.add(symlinkPath);
     cleanupPaths.add(targetPath);
@@ -271,6 +287,8 @@ describe.sequential("QuickJS sandbox file I/O", () => {
     await expectSandboxScriptToThrow(
       `await writeFile(${JSON.stringify(symlinkName)}, "should fail");`
     );
-    await expectSandboxScriptToThrow(`await readFile(${JSON.stringify(symlinkName)});`);
+    await expectSandboxScriptToThrow(
+      `await readFile(${JSON.stringify(symlinkName)});`
+    );
   });
 });

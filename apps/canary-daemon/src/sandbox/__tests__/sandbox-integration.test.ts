@@ -10,8 +10,8 @@ import { runScript } from "../script-runner-quickjs.js";
 import { ensureSandboxClientBundle } from "./bundle-test-helpers.js";
 
 interface CapturedOutput {
-  stdout: string[];
   stderr: string[];
+  stdout: string[];
 }
 
 function createOutput(): CapturedOutput & {
@@ -44,7 +44,9 @@ describe.sequential("QuickJS sandbox integration", () => {
   beforeAll(async () => {
     await ensureSandboxClientBundle();
 
-    browserRootDir = await mkdtemp(path.join(os.tmpdir(), "dev-browser-quickjs-"));
+    browserRootDir = await mkdtemp(
+      path.join(os.tmpdir(), "dev-browser-quickjs-")
+    );
     manager = new BrowserManager(path.join(browserRootDir, "browsers"));
     await manager.ensureBrowser("default", {
       headless: true,

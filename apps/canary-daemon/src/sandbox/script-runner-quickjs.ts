@@ -2,8 +2,8 @@ import type { BrowserManager } from "../browser-manager.js";
 import { QuickJSSandbox } from "./quickjs-sandbox.js";
 
 interface ScriptOutput {
-  onStdout: (data: string) => void;
   onStderr: (data: string) => void;
+  onStdout: (data: string) => void;
 }
 
 export async function runScript(

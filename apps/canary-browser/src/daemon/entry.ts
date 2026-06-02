@@ -26,7 +26,9 @@ async function commandFromEntry(entry: string): Promise<DaemonCommand> {
   try {
     resolved = await realpath(abs);
   } catch (err) {
-    throw new Error(`Failed to resolve DEV_BROWSER_DAEMON entry ${abs}: ${(err as Error).message}`);
+    throw new Error(
+      `Failed to resolve DEV_BROWSER_DAEMON entry ${abs}: ${(err as Error).message}`
+    );
   }
   const parent = dirname(resolved);
   if (!parent || parent === "." || parent === resolved) {
@@ -71,13 +73,19 @@ async function findTsxCli(entry: string): Promise<string> {
     const candidate = join(dir, "node_modules", "tsx", "dist", "cli.mjs");
     try {
       const info = await stat(candidate);
-      if (info.isFile()) return candidate;
+      if (info.isFile()) {
+        return candidate;
+      }
     } catch {
       // try parent
     }
     const parent = dirname(dir);
-    if (parent === dir) break;
+    if (parent === dir) {
+      break;
+    }
     dir = parent;
   }
-  throw new Error("Could not locate the tsx runtime required to launch the TypeScript daemon.");
+  throw new Error(
+    "Could not locate the tsx runtime required to launch the TypeScript daemon."
+  );
 }

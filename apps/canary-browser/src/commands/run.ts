@@ -1,13 +1,16 @@
 import { readFile } from "node:fs/promises";
+import type { ExecuteRequest } from "@canary/protocol";
 import { ensureDaemonRunning } from "../daemon/lifecycle.js";
 import { readInjectScripts } from "../inject-scripts.js";
 import { sendRequest } from "../ipc/connect.js";
-import type { ExecuteRequest } from "@canary/protocol";
 import { requestId } from "../util/request-id.js";
 import type { GlobalFlags } from "./flags.js";
 import { renderJsonResult } from "./render.js";
 
-export async function runScript(flags: GlobalFlags, script: string): Promise<number> {
+export async function runScript(
+  flags: GlobalFlags,
+  script: string
+): Promise<number> {
   await ensureDaemonRunning();
 
   const timeoutSeconds = flags.timeout;
@@ -16,9 +19,12 @@ export async function runScript(flags: GlobalFlags, script: string): Promise<num
       `invalid value '${flags.timeout}' for '--timeout <SECONDS>': must be at least 1`
     );
   }
-  const timeoutMs = timeoutSeconds * 1_000;
+  const timeoutMs = timeoutSeconds * 1000;
 
-  const initScripts = await readInjectScripts(flags.injectScriptPaths, process.cwd());
+  const initScripts = await readInjectScripts(
+    flags.injectScriptPaths,
+    process.cwd()
+  );
 
   const request: ExecuteRequest = {
     id: requestId("execute"),
@@ -27,15 +33,26 @@ export async function runScript(flags: GlobalFlags, script: string): Promise<num
     script,
     timeoutMs,
   };
-  if (flags.headless) request.headless = true;
-  if (flags.ignoreHttpsErrors) request.ignoreHTTPSErrors = true;
-  if (flags.connect !== undefined) request.connect = flags.connect;
-  if (initScripts.length > 0) request.initScripts = initScripts;
+  if (flags.headless) {
+    request.headless = true;
+  }
+  if (flags.ignoreHttpsErrors) {
+    request.ignoreHTTPSErrors = true;
+  }
+  if (flags.connect !== undefined) {
+    request.connect = flags.connect;
+  }
+  if (initScripts.length > 0) {
+    request.initScripts = initScripts;
+  }
 
   return sendRequest(request, renderJsonResult);
 }
 
-export async function runScriptFromFile(flags: GlobalFlags, file: string): Promise<number> {
+export async function runScriptFromFile(
+  flags: GlobalFlags,
+  file: string
+): Promise<number> {
   let script: string;
   try {
     script = await readFile(file, "utf8");

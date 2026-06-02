@@ -18,7 +18,9 @@ describe.sequential("BrowserManager page discovery", () => {
   let manager: BrowserManager;
 
   beforeAll(async () => {
-    browserRootDir = await mkdtemp(path.join(os.tmpdir(), "dev-browser-manager-pages-"));
+    browserRootDir = await mkdtemp(
+      path.join(os.tmpdir(), "dev-browser-manager-pages-")
+    );
     manager = new BrowserManager(path.join(browserRootDir, "browsers"));
   }, 180_000);
 
@@ -41,7 +43,9 @@ describe.sequential("BrowserManager page discovery", () => {
     await ensureBrowser();
 
     const anonymousPage = await manager.newPage(browserName);
-    await anonymousPage.goto(createDataUrl("Anonymous Tab", "<h1>anonymous</h1>"));
+    await anonymousPage.goto(
+      createDataUrl("Anonymous Tab", "<h1>anonymous</h1>")
+    );
 
     const pages = await manager.listPages(browserName);
     const anonymousSummary = pages.find(
@@ -100,7 +104,9 @@ describe.sequential("BrowserManager page discovery", () => {
 
     expect(connectedPage).toBe(existingPage);
     expect(
-      (await manager.listPages(browserName)).filter((page) => page.title === "Target Tab")
+      (await manager.listPages(browserName)).filter(
+        (page) => page.title === "Target Tab"
+      )
     ).toHaveLength(1);
   }, 120_000);
 
@@ -116,9 +122,13 @@ describe.sequential("BrowserManager page discovery", () => {
     const secondPage = await manager.getPage(browserName, "persist");
 
     expect(secondPage).toBe(firstPage);
-    await expect(secondPage.evaluate(() => window.name)).resolves.toBe("persisted-state");
+    await expect(secondPage.evaluate(() => window.name)).resolves.toBe(
+      "persisted-state"
+    );
     expect(
-      (await manager.listPages(browserName)).filter((page) => page.name === "persist")
+      (await manager.listPages(browserName)).filter(
+        (page) => page.name === "persist"
+      )
     ).toHaveLength(1);
   }, 120_000);
 
@@ -129,7 +139,9 @@ describe.sequential("BrowserManager page discovery", () => {
     const anonymousPage = await manager.newPage(browserName);
 
     await namedPage.goto(createDataUrl("Cleanup Named", "<div>named</div>"));
-    await anonymousPage.goto(createDataUrl("Cleanup Anonymous", "<div>anon</div>"));
+    await anonymousPage.goto(
+      createDataUrl("Cleanup Anonymous", "<div>anon</div>")
+    );
 
     await manager.stopBrowser(browserName);
 

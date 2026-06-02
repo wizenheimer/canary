@@ -1,5 +1,5 @@
-import { describe, expect, it, vi, afterEach } from "vitest";
-import { sanitizePipeSegment, daemonPipeName } from "../../src/ipc/pipename.js";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { daemonPipeName, sanitizePipeSegment } from "../../src/ipc/pipename.js";
 
 describe("sanitizePipeSegment", () => {
   it("keeps allowed characters", () => {
@@ -35,10 +35,16 @@ describe("daemonPipeName", () => {
   };
 
   afterEach(() => {
-    if (original.USER === undefined) delete process.env.USER;
-    else process.env.USER = original.USER;
-    if (original.USERNAME === undefined) delete process.env.USERNAME;
-    else process.env.USERNAME = original.USERNAME;
+    if (original.USER === undefined) {
+      delete process.env.USER;
+    } else {
+      process.env.USER = original.USER;
+    }
+    if (original.USERNAME === undefined) {
+      delete process.env.USERNAME;
+    } else {
+      process.env.USERNAME = original.USERNAME;
+    }
     vi.unstubAllEnvs();
   });
 

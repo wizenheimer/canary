@@ -7,7 +7,7 @@ describe.skipIf(skip)("browsers/status against fake daemon", () => {
   it("browsers renders aligned table for two browsers", async () => {
     const fake = await startFakeDaemon(function* (req) {
       yield {
-        id: req["id"],
+        id: req.id,
         type: "result",
         data: [
           { name: "default", type: "launched", status: "running", pages: [] },
@@ -19,9 +19,11 @@ describe.skipIf(skip)("browsers/status against fake daemon", () => {
           },
         ],
       };
-      yield { id: req["id"], type: "complete", success: true };
+      yield { id: req.id, type: "complete", success: true };
     });
-    if (!fake) return;
+    if (!fake) {
+      return;
+    }
     try {
       const out = await runCli(["browsers"], fake.env);
       expect(out.code).toBe(0);
@@ -37,10 +39,12 @@ describe.skipIf(skip)("browsers/status against fake daemon", () => {
 
   it("browsers renders 'No browsers.' on empty list", async () => {
     const fake = await startFakeDaemon(function* (req) {
-      yield { id: req["id"], type: "result", data: [] };
-      yield { id: req["id"], type: "complete", success: true };
+      yield { id: req.id, type: "result", data: [] };
+      yield { id: req.id, type: "complete", success: true };
     });
-    if (!fake) return;
+    if (!fake) {
+      return;
+    }
     try {
       const out = await runCli(["browsers"], fake.env);
       expect(out.code).toBe(0);
@@ -53,19 +57,23 @@ describe.skipIf(skip)("browsers/status against fake daemon", () => {
   it("status renders all fields", async () => {
     const fake = await startFakeDaemon(function* (req) {
       yield {
-        id: req["id"],
+        id: req.id,
         type: "result",
         data: {
           pid: 4242,
           uptimeMs: 125_000,
           browserCount: 1,
           socketPath: "/fake/path/daemon.sock",
-          browsers: [{ name: "default", type: "launched", status: "running", pages: [] }],
+          browsers: [
+            { name: "default", type: "launched", status: "running", pages: [] },
+          ],
         },
       };
-      yield { id: req["id"], type: "complete", success: true };
+      yield { id: req.id, type: "complete", success: true };
     });
-    if (!fake) return;
+    if (!fake) {
+      return;
+    }
     try {
       const out = await runCli(["status"], fake.env);
       expect(out.code).toBe(0);
@@ -83,9 +91,11 @@ describe.skipIf(skip)("browsers/status against fake daemon", () => {
 
   it("error response writes message to stderr and exits 1", async () => {
     const fake = await startFakeDaemon(function* (req) {
-      yield { id: req["id"], type: "error", message: "boom!" };
+      yield { id: req.id, type: "error", message: "boom!" };
     });
-    if (!fake) return;
+    if (!fake) {
+      return;
+    }
     try {
       const out = await runCli(["browsers"], fake.env);
       expect(out.code).toBe(1);
@@ -97,12 +107,14 @@ describe.skipIf(skip)("browsers/status against fake daemon", () => {
 
   it("script execution streams stdout/stderr and respects result type", async () => {
     const fake = await startFakeDaemon(function* (req) {
-      yield { id: req["id"], type: "stdout", data: "hello\n" };
-      yield { id: req["id"], type: "stderr", data: "warn\n" };
-      yield { id: req["id"], type: "result", data: { ok: true } };
-      yield { id: req["id"], type: "complete", success: true };
+      yield { id: req.id, type: "stdout", data: "hello\n" };
+      yield { id: req.id, type: "stderr", data: "warn\n" };
+      yield { id: req.id, type: "result", data: { ok: true } };
+      yield { id: req.id, type: "complete", success: true };
     });
-    if (!fake) return;
+    if (!fake) {
+      return;
+    }
     try {
       const out = await runCli(["run", "/dev/null"], fake.env);
       expect(out.code).toBe(0);

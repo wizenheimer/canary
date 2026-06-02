@@ -6,7 +6,9 @@ export const INJECT_SCRIPT_ENV_VAR = "DEV_BROWSER_INJECT_SCRIPT";
 // Splits the env-var value on commas and newlines, trims, and drops empties.
 // Mirrors the agent-browser convention (comma OR newline separated).
 export function parseInjectScriptEnv(value: string | undefined): string[] {
-  if (!value) return [];
+  if (!value) {
+    return [];
+  }
   return value
     .split(/[,\n]/)
     .map((entry) => entry.trim())
