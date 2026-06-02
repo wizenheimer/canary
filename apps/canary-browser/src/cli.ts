@@ -1,41 +1,47 @@
-import * as commander from "commander";
 import type { Command as CommandType } from "commander";
+import * as commander from "commander";
+
 const { Command, InvalidArgumentError, Option } = commander as unknown as {
   Command: typeof commander.Command;
   InvalidArgumentError: typeof commander.InvalidArgumentError;
   Option: typeof commander.Option;
 };
-import {
-  CLI_LONG_ABOUT,
-  CLI_AFTER_LONG_HELP,
-  RUN_LONG_ABOUT,
-  RUN_SHORT,
-  INSTALL_LONG_ABOUT,
-  INSTALL_SHORT,
-  INSTALL_SKILL_LONG_ABOUT,
-  INSTALL_SKILL_SHORT,
-  BROWSERS_LONG_ABOUT,
-  BROWSERS_SHORT,
-  STATUS_LONG_ABOUT,
-  STATUS_SHORT,
-  STOP_LONG_ABOUT,
-  STOP_SHORT,
-  ROOT_SHORT,
-} from "./commands/help-text.js";
+
+import { browsersCommand } from "./commands/browsers.js";
 import {
   CONNECT_AUTO_SENTINEL,
   DEFAULT_BROWSER,
   DEFAULT_TIMEOUT_SECS,
   type GlobalFlags,
 } from "./commands/flags.js";
-import { preprocessArgs } from "./commands/preprocess.js";
-import { runScript, runScriptFromFile } from "./commands/run.js";
-import { INJECT_SCRIPT_ENV_VAR, collectInjectScriptPaths } from "./inject-scripts.js";
+import {
+  BROWSERS_LONG_ABOUT,
+  BROWSERS_SHORT,
+  CLI_AFTER_LONG_HELP,
+  CLI_LONG_ABOUT,
+  INSTALL_LONG_ABOUT,
+  INSTALL_SHORT,
+  INSTALL_SKILL_LONG_ABOUT,
+  INSTALL_SKILL_SHORT,
+  ROOT_SHORT,
+  RUN_LONG_ABOUT,
+  RUN_SHORT,
+  STATUS_LONG_ABOUT,
+  STATUS_SHORT,
+  STOP_LONG_ABOUT,
+  STOP_SHORT,
+} from "./commands/help-text.js";
 import { installRuntime } from "./commands/install.js";
 import { installSkillCommand } from "./commands/install-skill.js";
-import { browsersCommand } from "./commands/browsers.js";
+import { preprocessArgs } from "./commands/preprocess.js";
+import { runScript, runScriptFromFile } from "./commands/run.js";
 import { statusCommand } from "./commands/status.js";
 import { stopCommand } from "./commands/stop.js";
+import {
+  collectInjectScriptPaths,
+  INJECT_SCRIPT_ENV_VAR,
+} from "./inject-scripts.js";
+import { logger } from "./logger.js";
 
 class ExitCodeError extends Error {
   readonly code: number;
@@ -50,8 +56,8 @@ interface RawOpts {
   connect?: string | true;
   headless?: boolean;
   ignoreHttpsErrors?: boolean;
-  timeout: number;
   injectScript?: string[];
+  timeout: number;
 }
 
 function resolveGlobalFlags(program: CommandType): GlobalFlags {
@@ -95,7 +101,9 @@ function stdinIsTty(): boolean {
 async function readScriptFromStdin(): Promise<string> {
   const chunks: Buffer[] = [];
   for await (const chunk of process.stdin) {
-    chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : (chunk as Buffer));
+    chunks.push(
+      typeof chunk === "string" ? Buffer.from(chunk) : (chunk as Buffer)
+    );
   }
   return Buffer.concat(chunks).toString("utf8");
 }
@@ -116,10 +124,22 @@ export function buildProgram(): CommandType {
     .allowExcessArguments(false);
 
   program
-    .option("--browser <NAME>", "Use a named daemon-managed browser instance", DEFAULT_BROWSER)
-    .addOption(new Option("--connect [URL]", "Connect to a running Chrome instance"))
-    .option("--headless", "Launch daemon-managed Chromium without a visible window")
-    .option("--ignore-https-errors", "Ignore HTTPS certificate errors for daemon-managed Chromium")
+    .option(
+      "--browser <NAME>",
+      "Use a named daemon-managed browser instance",
+      DEFAULT_BROWSER
+    )
+    .addOption(
+      new Option("--connect [URL]", "Connect to a running Chrome instance")
+    )
+    .option(
+      "--headless",
+      "Launch daemon-managed Chromium without a visible window"
+    )
+    .option(
+      "--ignore-https-errors",
+      "Ignore HTTPS certificate errors for daemon-managed Chromium"
+    )
     .option(
       "--timeout <SECONDS>",
       "Maximum script execution time in seconds",
@@ -131,6 +151,11 @@ export function buildProgram(): CommandType {
       "Pre-load a JavaScript file on every page in the browser context (repeatable)",
       (value: string, previous: string[] = []) => [...previous, value],
       [] as string[]
+    )
+    .option("-v, --verbose", "Enable verbose diagnostic logging on stderr")
+    .option(
+      "--json",
+      "Emit machine-readable JSON diagnostics on stderr (disable pretty)"
     );
 
   program.action(async () => {
@@ -169,8 +194,14 @@ export function buildProgram(): CommandType {
     .description(INSTALL_SKILL_SHORT)
     .summary(INSTALL_SKILL_SHORT)
     .addHelpText("before", `${INSTALL_SKILL_LONG_ABOUT}\n`)
-    .option("--claude", "Install the skill into ~/.claude/skills without prompting")
-    .option("--agents", "Install the skill into ~/.agents/skills without prompting")
+    .option(
+      "--claude",
+      "Install the skill into ~/.claude/skills without prompting"
+    )
+    .option(
+      "--agents",
+      "Install the skill into ~/.agents/skills without prompting"
+    )
     .action(async (opts: { claude?: boolean; agents?: boolean }) => {
       const code = await installSkillCommand({
         claude: opts.claude === true,
@@ -222,14 +253,25 @@ export async function execute(argv: readonly string[]): Promise<number> {
     if (err instanceof ExitCodeError) {
       return err.code;
     }
-    if (err && typeof err === "object" && "code" in (err as Record<string, unknown>)) {
+    if (
+      err &&
+      typeof err === "object" &&
+      "code" in (err as Record<string, unknown>)
+    ) {
       const code = (err as { code?: string }).code;
-      if (code === "commander.helpDisplayed" || code === "commander.help") return 0;
-      if (code === "commander.version") return 0;
+      if (code === "commander.helpDisplayed" || code === "commander.help") {
+        return 0;
+      }
+      if (code === "commander.version") {
+        return 0;
+      }
       // Usage errors map to exit 2 to match clap's "bad usage" code.
       // commander's own message is already on stderr.
-      if (typeof code === "string" && code.startsWith("commander.")) return 2;
+      if (typeof code === "string" && code.startsWith("commander.")) {
+        return 2;
+      }
     }
+    logger.debug({ err }, "command failed");
     const message = err instanceof Error ? err.message : String(err);
     process.stderr.write(`Error: ${message}\n`);
     return 1;
@@ -251,7 +293,9 @@ if (isMain) {
   execute(process.argv).then(
     (code) => process.exit(code),
     (err) => {
-      process.stderr.write(`Error: ${err instanceof Error ? err.message : String(err)}\n`);
+      process.stderr.write(
+        `Error: ${err instanceof Error ? err.message : String(err)}\n`
+      );
       process.exit(1);
     }
   );

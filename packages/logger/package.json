@@ -1,0 +1,25 @@
+{
+  "name": "@canary/logger",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "description": "Canary shared logger — pino-backed structured logging (single source of truth).",
+  "exports": {
+    ".": {
+      "source": "./src/index.ts",
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "compile": "tsc --noEmit"
+  },
+  "dependencies": {
+    "pino": "^9.5.0"
+  },
+  "devDependencies": {
+    "@canary/config": "workspace:*",
+    "typescript": "^5.7.2"
+  }
+}

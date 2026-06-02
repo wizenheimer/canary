@@ -2,8 +2,14 @@ import { spawn } from "node:child_process";
 import { mkdir, unlink, writeFile } from "node:fs/promises";
 import net from "node:net";
 import path from "node:path";
+import { createLogger } from "@canary/logger";
+import {
+  type ExecuteRequest,
+  parseRequest,
+  type Response,
+  serialize,
+} from "@canary/protocol";
 import { BrowserManager } from "./browser-manager.js";
-import { createKeyedLock, createMutex } from "./lock.js";
 import {
   getBrowsersDir,
   getDaemonEndpoint,
@@ -11,7 +17,7 @@ import {
   getPidPath,
   requiresDaemonEndpointCleanup,
 } from "./local-endpoint.js";
-import { parseRequest, serialize, type ExecuteRequest, type Response } from "@canary/protocol";
+import { createKeyedLock, createMutex } from "./lock.js";
 import { runScript } from "./sandbox/script-runner-quickjs.js";
 import { ensureDevBrowserTempDir } from "./temp-files.js";
 
@@ -26,10 +32,20 @@ const EMBEDDED_PACKAGE_JSON = JSON.stringify({
   private: true,
   type: "module",
   dependencies: {
+    pino: "^9.5.0",
     playwright: "1.58.2",
     "playwright-core": "1.58.2",
     "quickjs-emscripten": "^0.32.0",
   },
+});
+
+const LOG_PATH = path.join(BASE_DIR, "daemon.log");
+const log = createLogger({
+  name: "daemon",
+  destination: LOG_PATH,
+  fallbackLevel: "info",
+  // Synchronous writes so error/shutdown records flush before process.exit().
+  sync: true,
 });
 
 const manager = new BrowserManager(BROWSERS_DIR);
@@ -52,7 +68,10 @@ function formatError(error: unknown): string {
   return String(error);
 }
 
-async function writeMessage(socket: net.Socket, message: Response): Promise<void> {
+async function writeMessage(
+  socket: net.Socket,
+  message: Response
+): Promise<void> {
   if (socket.destroyed) {
     return;
   }
@@ -117,7 +136,9 @@ function createMessageQueue(socket: net.Socket) {
 
   return {
     push(message: Response): Promise<void> {
-      queue = queue.then(() => writeMessage(socket, message)).catch(() => undefined);
+      queue = queue
+        .then(() => writeMessage(socket, message))
+        .catch(() => undefined);
       return queue;
     },
     async drain(): Promise<void> {
@@ -126,7 +147,10 @@ function createMessageQueue(socket: net.Socket) {
   };
 }
 
-async function handleExecute(socket: net.Socket, request: ExecuteRequest): Promise<void> {
+async function handleExecute(
+  socket: net.Socket,
+  request: ExecuteRequest
+): Promise<void> {
   await withBrowserLock(request.browser, async () => {
     if (request.connect === "auto") {
       await manager.autoConnect(request.browser);
@@ -192,14 +216,27 @@ async function handleExecute(socket: net.Socket, request: ExecuteRequest): Promi
   });
 }
 
-async function handleInstall(socket: net.Socket, request: { id: string }): Promise<void> {
+async function handleInstall(
+  socket: net.Socket,
+  request: { id: string }
+): Promise<void> {
   await withInstallLock(async () => {
     const output = createMessageQueue(socket);
     try {
       await mkdir(BASE_DIR, { recursive: true });
-      await writeFile(path.join(BASE_DIR, "package.json"), EMBEDDED_PACKAGE_JSON);
+      await writeFile(
+        path.join(BASE_DIR, "package.json"),
+        EMBEDDED_PACKAGE_JSON
+      );
       const npmProgram = process.platform === "win32" ? "npm.cmd" : "npm";
-      await runInstallCommand(output, request.id, npmProgram, ["install"], BASE_DIR, "npm install");
+      await runInstallCommand(
+        output,
+        request.id,
+        npmProgram,
+        ["install"],
+        BASE_DIR,
+        "npm install"
+      );
       await runInstallCommand(
         output,
         request.id,
@@ -256,14 +293,15 @@ async function runInstallCommand(
     });
   });
 
-  const result = await new Promise<{ code: number | null; signal: NodeJS.Signals | null }>(
-    (resolve, reject) => {
-      child.once("error", reject);
-      child.once("close", (code, signal) => {
-        resolve({ code, signal });
-      });
-    }
-  );
+  const result = await new Promise<{
+    code: number | null;
+    signal: NodeJS.Signals | null;
+  }>((resolve, reject) => {
+    child.once("error", reject);
+    child.once("close", (code, signal) => {
+      resolve({ code, signal });
+    });
+  });
 
   await output.drain();
 
@@ -272,9 +310,9 @@ async function runInstallCommand(
   }
 
   const reason =
-    result.signal !== null
-      ? `${label} terminated by signal ${result.signal}`
-      : `${label} failed with exit code ${result.code ?? "unknown"}`;
+    result.signal === null
+      ? `${label} failed with exit code ${result.code ?? "unknown"}`
+      : `${label} terminated by signal ${result.signal}`;
 
   throw new Error(reason);
 }
@@ -291,6 +329,8 @@ async function handleRequest(socket: net.Socket, line: string): Promise<void> {
   }
 
   const { request } = parsed;
+
+  log.debug({ id: request.id, type: request.type }, "handling request");
 
   if (shuttingDown && request.type !== "stop") {
     await writeMessage(socket, {
@@ -321,6 +361,7 @@ async function handleRequest(socket: net.Socket, line: string): Promise<void> {
 
     case "browser-stop":
       await manager.stopBrowser(request.browser);
+      log.info({ browser: request.browser }, "browser stopped");
       await writeMessage(socket, {
         id: request.id,
         type: "result",
@@ -369,21 +410,29 @@ async function handleRequest(socket: net.Socket, line: string): Promise<void> {
       });
       void shutdown(0);
       return;
+
+    default:
+      return;
   }
 }
 
-async function shutdown(exitCode = 0): Promise<void> {
+function shutdown(exitCode = 0): Promise<void> {
   if (shuttingDown) {
     return shuttingDown;
   }
 
   shuttingDown = (async () => {
+    log.info({ exitCode }, "daemon shutting down");
     const serverToClose = server;
     server = null;
-    const serverClosed = serverToClose ? closeServerInstance(serverToClose) : Promise.resolve();
+    const serverClosed = serverToClose
+      ? closeServerInstance(serverToClose)
+      : Promise.resolve();
 
     await manager.stopAll();
-    await Promise.allSettled(Array.from(clients, (socket) => closeClientSocket(socket)));
+    await Promise.allSettled(
+      Array.from(clients, (socket) => closeClientSocket(socket))
+    );
     await serverClosed;
     const cleanup = [unlinkIfExists(PID_PATH)];
     if (requiresDaemonEndpointCleanup()) {
@@ -433,7 +482,7 @@ async function start(): Promise<void> {
         queue = queue
           .then(() => handleRequest(socket, line))
           .catch(async (error) => {
-            console.error("Request handling error:", error);
+            log.error({ err: error }, "request handling error");
             if (!socket.destroyed) {
               await writeMessage(socket, {
                 id: "unknown",
@@ -455,7 +504,7 @@ async function start(): Promise<void> {
   });
 
   server.on("error", (error) => {
-    console.error("Daemon server error:", error);
+    log.error({ err: error }, "daemon server error");
     void shutdown(1);
   });
 
@@ -467,7 +516,7 @@ async function start(): Promise<void> {
     });
   });
 
-  process.stderr.write("daemon ready\n");
+  log.info({ socket: SOCKET_PATH, pid: process.pid }, "daemon ready");
 }
 
 function registerShutdownHandlers(): void {
@@ -476,7 +525,7 @@ function registerShutdownHandlers(): void {
   };
 
   const handleFatalError = (error: unknown) => {
-    console.error("Fatal daemon error:", error);
+    log.error({ err: error }, "fatal daemon error");
     void shutdown(1);
   };
 
@@ -490,6 +539,6 @@ function registerShutdownHandlers(): void {
 registerShutdownHandlers();
 
 start().catch((error) => {
-  console.error("Failed to start daemon:", error);
+  log.error({ err: error }, "failed to start daemon");
   void shutdown(1);
 });
