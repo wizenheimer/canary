@@ -12,29 +12,27 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
-    "lint": "turbo run lint",
+    "lint": "ultracite check",
+    "lint:fix": "ultracite fix",
     "test": "turbo run test",
     "compile": "turbo run compile",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
-    "check": "turbo run compile lint test",
+    "format": "ultracite fix",
+    "check": "ultracite check && turbo run compile test",
     "clean": "turbo run clean && rm -rf node_modules/.cache .turbo",
     "prepare": "husky"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.4.16",
     "@commitlint/cli": "^19.6.0",
     "@commitlint/config-conventional": "^19.6.0",
     "husky": "^9.1.7",
     "lint-staged": "^15.2.10",
-    "prettier": "^3.4.2",
-    "turbo": "^2.3.0"
+    "turbo": "^2.3.0",
+    "ultracite": "^7.8.1"
   },
   "lint-staged": {
-    "*.{ts,tsx,js,jsx,mjs,cjs}": [
-      "prettier --write"
-    ],
-    "*.{json,md,yml,yaml,css}": [
-      "prettier --write"
+    "*.{js,jsx,ts,tsx,json,jsonc,css}": [
+      "ultracite fix"
     ]
   }
 }
