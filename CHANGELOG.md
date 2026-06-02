@@ -6,10 +6,13 @@
 
 - Initial canary monorepo scaffold (pnpm + Turborepo).
 - Forked from the TypeScript portion of `dev-browser` (MIT, Sawyer Hood). Migrated:
-  - `proof/` → `apps/canary/` (QA workflow CLI, bin: `canary`)
   - `cli-ts/` → `apps/canary-browser/` (browser engine CLI, bin: `canary-browser`)
-  - `daemon/` → `apps/canary-daemon/` (internal Playwright host)
-  - `proof/src/viewer/bundle/` → `packages/viewer/` (source-distributed React)
-  - `daemon/src/protocol.ts` → `packages/protocol/` (single source of truth)
-- Shared `@canary/typescript-config` and `@canary/eslint-config` packages.
+  - `daemon/` → `apps/canary-daemon/` (internal Playwright host + QuickJS sandbox)
+  - `daemon/src/protocol.ts` → `packages/protocol/` (Zod schemas, single source of truth)
+- Shared `@canary/config` package (tsconfig bases).
+- `@canary/logger` — shared pino-backed structured logging, used by the daemon
+  (writes to `~/.dev-browser/daemon.log`) and the CLI (stderr; `--verbose` /
+  `CANARY_LOG_LEVEL`).
+- [Ultracite](https://docs.ultracite.ai/) (Biome) for linting + formatting,
+  enforced in CI; replaced Prettier and removed the unused eslint-config package.
 - Dropped the Rust and Go CLI implementations and their docs entirely.

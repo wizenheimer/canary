@@ -27,7 +27,7 @@ pnpm --filter @canary/cli     dev   # canary in watch mode
 
 ## House rules
 
-- No `console.log` in committed code (use the workspace's logger).
+- No `console.*` in committed code — use `@canary/logger` for diagnostics and `process.stdout` for CLI output (enforced by Biome's `noConsole`).
 - All new code is TypeScript with `strict: true` and no `any`.
 - Tests are vitest; colocated for daemon, in `test/` for cli + canary.
-- Prettier formats everything; the pre-commit hook handles it.
+- Ultracite (Biome) formats and lints everything; the pre-commit hook runs `ultracite fix` on staged files (`pnpm lint` / `pnpm format` to run manually).
