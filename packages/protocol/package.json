@@ -14,14 +14,13 @@
   },
   "scripts": {
     "compile": "tsc --noEmit",
-    "lint": "echo \"(no lint configured for @canary/protocol)\"",
     "test": "echo \"(no tests for @canary/protocol)\""
   },
   "dependencies": {
     "zod": "3.25.76"
   },
   "devDependencies": {
-    "@canary/typescript-config": "workspace:*",
+    "@canary/config": "workspace:*",
     "typescript": "^5.7.2"
   }
 }

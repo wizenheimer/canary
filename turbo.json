@@ -15,7 +15,6 @@
       "cache": false,
       "persistent": true
     },
-    "lint": {},
     "test": {
       "dependsOn": ["^build", "build"],
       "outputs": ["coverage/**"]
@@ -23,9 +22,6 @@
     "compile": {
       "dependsOn": ["^build"],
       "outputs": []
-    },
-    "format": {
-      "cache": false
     },
     "clean": {
       "cache": false

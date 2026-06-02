@@ -7,24 +7,25 @@
   "license": "MIT",
   "scripts": {
     "build": "pnpm bundle && pnpm bundle:sandbox-client",
-    "bundle": "esbuild src/daemon.ts --bundle --platform=node --format=esm --outfile=dist/daemon.bundle.mjs --external:playwright --external:quickjs-emscripten --external:@jitl/*",
+    "bundle": "esbuild src/daemon.ts --bundle --platform=node --format=esm --outfile=dist/daemon.bundle.mjs --external:playwright --external:quickjs-emscripten --external:@jitl/* --external:pino",
     "bundle:sandbox-client": "tsx scripts/bundle-sandbox-client.ts",
     "dev": "tsx src/daemon.ts",
     "compile": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "echo \"(no eslint configured yet for @canary/daemon)\"",
     "clean": "rm -rf dist coverage .turbo"
   },
   "dependencies": {
+    "@canary/logger": "workspace:*",
     "@canary/protocol": "workspace:*",
+    "pino": "^9.5.0",
     "playwright": "1.58.2",
     "playwright-core": "1.58.2",
     "quickjs-emscripten": "^0.32.0",
     "zod": "3.25.76"
   },
   "devDependencies": {
-    "@canary/typescript-config": "workspace:*",
+    "@canary/config": "workspace:*",
     "@types/node": "^24.0.0",
     "esbuild": "^0.27.4",
     "tsx": "^4.20.0",

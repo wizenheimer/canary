@@ -1,7 +1,6 @@
 {
-  "extends": "@canary/typescript-config/base.json",
+  "extends": "@canary/config/base.json",
   "compilerOptions": {
-    "baseUrl": ".",
     "rootDir": "./src",
     "noEmit": true
   },

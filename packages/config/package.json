@@ -1,5 +1,5 @@
 {
-  "name": "@canary/typescript-config",
+  "name": "@canary/config",
   "version": "0.0.0",
   "private": true,
   "license": "MIT"
