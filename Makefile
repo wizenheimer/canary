@@ -15,10 +15,10 @@ build: ## Build all workspaces in topological order
 test: ## Run all tests
 	pnpm test
 
-lint: ## Lint all workspaces
+lint: ## Lint + format-check with ultracite (biome)
 	pnpm lint
 
-format: ## Format all files with prettier
+format: ## Format + autofix all files with ultracite (biome)
 	pnpm format
 
 check: ## Compile + lint + test (what CI runs)
