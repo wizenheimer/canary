@@ -1,7 +1,12 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { daemonBundlePath, devBrowserDir, packageJsonPath, sandboxClientPath } from "../paths.js";
-import { DAEMON_BUNDLE, SANDBOX_CLIENT } from "../assets/embedded.generated.js";
 import { EMBEDDED_PACKAGE_JSON } from "../assets/daemon-package.js";
+import { DAEMON_BUNDLE, SANDBOX_CLIENT } from "../assets/embedded.generated.js";
+import {
+  daemonBundlePath,
+  devBrowserDir,
+  packageJsonPath,
+  sandboxClientPath,
+} from "../paths.js";
 
 const DAEMON_BUNDLE_TEXT: string = DAEMON_BUNDLE;
 const SANDBOX_CLIENT_TEXT: string = SANDBOX_CLIENT;
@@ -29,14 +34,20 @@ export async function ensureDaemonExtracted(): Promise<string> {
 
 // Returns true if the npm-managed runtime has been installed (i.e.
 // `dev-browser install` has been run). Mirrors cli/src/daemon.rs:211-222.
-export async function embeddedRuntimeInstalled(baseDir: string): Promise<boolean> {
+export async function embeddedRuntimeInstalled(
+  baseDir: string
+): Promise<boolean> {
   return (
+    (await dependencyInstalled(baseDir, "pino")) &&
     (await dependencyInstalled(baseDir, "playwright")) &&
     (await dependencyInstalled(baseDir, "quickjs-emscripten"))
   );
 }
 
-async function dependencyInstalled(baseDir: string, pkg: string): Promise<boolean> {
+async function dependencyInstalled(
+  baseDir: string,
+  pkg: string
+): Promise<boolean> {
   try {
     await readFile(`${baseDir}/node_modules/${pkg}/package.json`);
     return true;
@@ -48,7 +59,9 @@ async function dependencyInstalled(baseDir: string, pkg: string): Promise<boolea
 async function syncTextFile(path: string, contents: string): Promise<void> {
   try {
     const existing = await readFile(path, "utf8");
-    if (existing === contents) return;
+    if (existing === contents) {
+      return;
+    }
   } catch (err) {
     const code = (err as NodeJS.ErrnoException).code;
     if (code !== "ENOENT") {

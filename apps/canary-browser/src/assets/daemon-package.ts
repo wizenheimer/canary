@@ -7,6 +7,7 @@ export const EMBEDDED_PACKAGE_JSON = `{
   "private": true,
   "type": "module",
   "dependencies": {
+    "pino": "^9.5.0",
     "playwright": "1.58.2",
     "playwright-core": "1.58.2",
     "quickjs-emscripten": "^0.32.0"

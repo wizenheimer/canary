@@ -1,10 +1,11 @@
 import { spawn } from "node:child_process";
+import { logger } from "../logger.js";
 
 export interface DaemonCommand {
-  program: string;
   args: string[];
-  workdir: string;
+  program: string;
   requiresRuntimeInstall: boolean;
+  workdir: string;
 }
 
 // Spawn the daemon as a fully detached background process.
@@ -24,10 +25,11 @@ export function spawnDaemon(command: DaemonCommand): void {
     stdio: "ignore",
     windowsHide: true,
   });
-  child.on("error", () => {
-    // Errors are surfaced via the socket-poll loop in lifecycle.ts — if
-    // the spawn fails the daemon will never come up and ensureRunning()
-    // returns "Daemon failed to start within 5 seconds".
+  child.on("error", (err) => {
+    // Errors are otherwise surfaced via the socket-poll loop in lifecycle.ts —
+    // if the spawn fails the daemon never comes up and ensureRunning() returns
+    // "Daemon failed to start within 5 seconds". Log the underlying cause.
+    logger.error({ err }, "daemon process spawn error");
   });
   child.unref();
 }
