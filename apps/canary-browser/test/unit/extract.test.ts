@@ -1,7 +1,15 @@
-import { describe, expect, it, beforeEach, afterEach } from "vitest";
-import { mkdtemp, readFile, rm, stat, utimes, writeFile, mkdir } from "node:fs/promises";
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  stat,
+  utimes,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { ensureDaemonExtracted } from "../../src/daemon/extract.js";
 
 let tempHome: string;
@@ -15,10 +23,16 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  if (originalHome === undefined) delete process.env.HOME;
-  else process.env.HOME = originalHome;
-  if (originalUserProfile === undefined) delete process.env.USERPROFILE;
-  else process.env.USERPROFILE = originalUserProfile;
+  if (originalHome === undefined) {
+    delete process.env.HOME;
+  } else {
+    process.env.HOME = originalHome;
+  }
+  if (originalUserProfile === undefined) {
+    delete process.env.USERPROFILE;
+  } else {
+    process.env.USERPROFILE = originalUserProfile;
+  }
   await rm(tempHome, { recursive: true, force: true });
 });
 

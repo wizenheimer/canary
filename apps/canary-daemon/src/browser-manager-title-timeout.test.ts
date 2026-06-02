@@ -1,14 +1,17 @@
 import type { Browser, BrowserContext, Page } from "playwright";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { BrowserManager, type BrowserEntry } from "./browser-manager.js";
+import { type BrowserEntry, BrowserManager } from "./browser-manager.js";
 
 const browserName = "browser-manager-title-timeout";
 
-type BrowserManagerInternals = {
+interface BrowserManagerInternals {
   browsers: Map<string, BrowserEntry>;
-  getPageTargetId: (context: BrowserContext, page: Page) => Promise<string | null>;
-};
+  getPageTargetId: (
+    context: BrowserContext,
+    page: Page
+  ) => Promise<string | null>;
+}
 
 function createMockEntry(page: Page): BrowserEntry {
   const context = {
@@ -55,7 +58,7 @@ describe("BrowserManager listPages title handling", () => {
     vi.spyOn(internals, "getPageTargetId").mockResolvedValue("target-1");
 
     const pagesPromise = manager.listPages(browserName);
-    await vi.advanceTimersByTimeAsync(1_500);
+    await vi.advanceTimersByTimeAsync(1500);
 
     await expect(pagesPromise).resolves.toEqual([
       {
@@ -80,6 +83,8 @@ describe("BrowserManager listPages title handling", () => {
     internals.browsers.set(browserName, createMockEntry(page));
     vi.spyOn(internals, "getPageTargetId").mockResolvedValue("target-2");
 
-    await expect(manager.listPages(browserName)).rejects.toThrow("title failed");
+    await expect(manager.listPages(browserName)).rejects.toThrow(
+      "title failed"
+    );
   });
 });

@@ -42,7 +42,9 @@ export function getDaemonEndpoint(
   const platform = options.platform ?? process.platform;
 
   if (platform === "win32") {
-    const username = sanitizePipeSegment(options.username ?? getDefaultUsername(homedir));
+    const username = sanitizePipeSegment(
+      options.username ?? getDefaultUsername(homedir)
+    );
     return `\\\\.\\pipe\\dev-browser-daemon-${username}`;
   }
 
@@ -57,6 +59,8 @@ export function getBrowsersDir(homedir = os.homedir()): string {
   return path.join(getDevBrowserBaseDir(homedir), "browsers");
 }
 
-export function requiresDaemonEndpointCleanup(platform = process.platform): boolean {
+export function requiresDaemonEndpointCleanup(
+  platform = process.platform
+): boolean {
   return platform !== "win32";
 }

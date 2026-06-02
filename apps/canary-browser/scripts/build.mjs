@@ -1,11 +1,11 @@
 #!/usr/bin/env node
+import { chmod, mkdir } from "node:fs/promises";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 // Build entry: bundles src/cli.ts into dist/cli.js with esbuild.
 // Daemon bundles and SKILL.md are embedded as strings via the `text` loader
 // (parity with Rust `include_str!`).
 import { build } from "esbuild";
-import { chmod, mkdir } from "node:fs/promises";
-import { fileURLToPath } from "node:url";
-import { dirname, resolve } from "node:path";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "..");
@@ -51,4 +51,3 @@ const cjs = build({
 
 await Promise.all([esm, cjs]);
 await chmod(resolve(dist, "cli.js"), 0o755);
-console.log("Built dist/cli.js and dist/cli.cjs (SEA)");

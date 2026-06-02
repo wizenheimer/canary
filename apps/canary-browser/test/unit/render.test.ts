@@ -1,6 +1,9 @@
-import { describe, expect, it } from "vitest";
 import { PassThrough } from "node:stream";
-import { renderBrowsersResult, renderStatusResult } from "../../src/commands/render.js";
+import { describe, expect, it } from "vitest";
+import {
+  renderBrowsersResult,
+  renderStatusResult,
+} from "../../src/commands/render.js";
 
 function capture(fn: (stream: NodeJS.WritableStream) => void): string {
   const out = new PassThrough();
@@ -18,7 +21,12 @@ describe("renderBrowsersResult", () => {
   it("renders aligned columns and joins pages", () => {
     const data = [
       { name: "default", type: "launched", status: "running", pages: [] },
-      { name: "my-proj", type: "connected", status: "ready", pages: ["login", "cart"] },
+      {
+        name: "my-proj",
+        type: "connected",
+        status: "ready",
+        pages: ["login", "cart"],
+      },
     ];
     const out = capture((s) => renderBrowsersResult(data, s));
     expect(out).toBe(
@@ -36,7 +44,9 @@ describe("renderStatusResult", () => {
       uptimeMs: 65_000,
       browserCount: 1,
       socketPath: "/tmp/daemon.sock",
-      browsers: [{ name: "default", type: "launched", status: "running", pages: [] }],
+      browsers: [
+        { name: "default", type: "launched", status: "running", pages: [] },
+      ],
     };
     const out = capture((s) => renderStatusResult(data, s));
     expect(out).toBe(
@@ -57,6 +67,8 @@ describe("renderStatusResult", () => {
       browsers: [],
     };
     const out = capture((s) => renderStatusResult(data, s));
-    expect(out).toBe("PID: 99\nUptime: 500ms\nBrowsers: 0\nSocket: /tmp/daemon.sock\n");
+    expect(out).toBe(
+      "PID: 99\nUptime: 500ms\nBrowsers: 0\nSocket: /tmp/daemon.sock\n"
+    );
   });
 });

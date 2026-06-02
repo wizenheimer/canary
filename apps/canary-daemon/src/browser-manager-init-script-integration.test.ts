@@ -22,7 +22,9 @@ describe.sequential("BrowserManager init-script integration (real Chromium)", ()
   let manager: BrowserManager;
 
   beforeAll(async () => {
-    browserRootDir = await mkdtemp(path.join(os.tmpdir(), "dvb-init-script-int-"));
+    browserRootDir = await mkdtemp(
+      path.join(os.tmpdir(), "dvb-init-script-int-")
+    );
     manager = new BrowserManager(path.join(browserRootDir, "browsers"));
   }, 180_000);
 
@@ -37,7 +39,9 @@ describe.sequential("BrowserManager init-script integration (real Chromium)", ()
 
   it("evaluates the inject script before any page JS runs", async () => {
     await manager.ensureBrowser(browserName, { headless: true });
-    await manager.applyInitScripts(browserName, ['window.__inject_marker = "hi";']);
+    await manager.applyInitScripts(browserName, [
+      'window.__inject_marker = "hi";',
+    ]);
 
     const page = await manager.newPage(browserName);
     await page.goto(createDataUrl("t", "<p>hello</p>"));
@@ -50,7 +54,9 @@ describe.sequential("BrowserManager init-script integration (real Chromium)", ()
 
   it("persists the inject script across new pages on the same browser", async () => {
     await manager.ensureBrowser(browserName, { headless: true });
-    await manager.applyInitScripts(browserName, ['window.__inject_marker = "persist";']);
+    await manager.applyInitScripts(browserName, [
+      'window.__inject_marker = "persist";',
+    ]);
 
     const first = await manager.newPage(browserName);
     await first.goto(createDataUrl("a", "<p>a</p>"));
@@ -79,7 +85,9 @@ describe.sequential("BrowserManager init-script integration (real Chromium)", ()
 
     const page = await manager.newPage(browserName);
     await page.goto(createDataUrl("t", "<p>once</p>"));
-    const count = await page.evaluate(() => (window as { __count?: number }).__count);
+    const count = await page.evaluate(
+      () => (window as { __count?: number }).__count
+    );
     expect(count).toBe(1);
   }, 120_000);
 
@@ -94,12 +102,16 @@ describe.sequential("BrowserManager init-script integration (real Chromium)", ()
     // Setting __ran=true before the throw lets us prove the script
     // executed up to the throw — i.e. it was registered and evaluated.
     const throwing = 'window.__ran = true; throw new Error("inject boom");';
-    await expect(manager.applyInitScripts(browserName, [throwing])).resolves.toBeUndefined();
+    await expect(
+      manager.applyInitScripts(browserName, [throwing])
+    ).resolves.toBeUndefined();
 
     const page = await manager.newPage(browserName);
     await page.goto(createDataUrl("t", "<p>hello</p>"));
 
-    const ran = await page.evaluate(() => (window as { __ran?: boolean }).__ran);
+    const ran = await page.evaluate(
+      () => (window as { __ran?: boolean }).__ran
+    );
     expect(ran).toBe(true);
 
     // Page is otherwise responsive — a throwing init script doesn't
@@ -123,7 +135,10 @@ describe.sequential("BrowserManager init-script integration (real Chromium)", ()
   }, 120_000);
 
   it("rrweb captures a FullSnapshot before page JS mutates the DOM", async () => {
-    const rrwebBundle = await readFile(path.join(FIXTURES, "rrweb-record.min.js"), "utf8");
+    const rrwebBundle = await readFile(
+      path.join(FIXTURES, "rrweb-record.min.js"),
+      "utf8"
+    );
 
     // Playwright wraps addInitScript source in `(() => { ... })()`, so the
     // bundle's top-level `var rrwebRecord` is scoped to that IIFE — call it
@@ -155,7 +170,9 @@ rrwebRecord({ emit: function(e){ window.__events.push(e); } });`;
     // before the FullSnapshot but never attached its observer.
     await page.evaluate(() => {
       const el = document.getElementById("x");
-      if (el) el.textContent = "world";
+      if (el) {
+        el.textContent = "world";
+      }
     });
 
     await page.waitForFunction(
@@ -185,7 +202,10 @@ rrwebRecord({ emit: function(e){ window.__events.push(e); } });`;
   }, 180_000);
 
   it("rrweb hook persists into a second page on the same browser", async () => {
-    const rrwebBundle = await readFile(path.join(FIXTURES, "rrweb-record.min.js"), "utf8");
+    const rrwebBundle = await readFile(
+      path.join(FIXTURES, "rrweb-record.min.js"),
+      "utf8"
+    );
     // Playwright wraps addInitScript source in `(() => { ... })()`, so the
     // bundle's top-level `var rrwebRecord` is scoped to that IIFE — call it
     // directly (in-scope) rather than via window.

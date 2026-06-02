@@ -48,10 +48,8 @@ const sources = [
 
 const missing = sources.filter((s) => !existsSync(s.path));
 if (missing.length > 0) {
-  console.error("Error: required source files missing:");
   for (const m of missing) {
-    console.error(`  - ${m.path}`);
-    console.error(`      fix: ${m.hint}`);
+    process.stderr.write(`Missing required asset: ${m.path} (${m.hint})\n`);
   }
   process.exit(1);
 }
@@ -78,5 +76,4 @@ if (existsSync(out)) {
 }
 if (needsWrite) {
   writeFileSync(out, newContent);
-  console.log(`Generated src/assets/embedded.generated.ts (${newContent.length} bytes)`);
 }

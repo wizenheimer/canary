@@ -1,15 +1,15 @@
 import { rm } from "node:fs/promises";
 import { setTimeout as delay } from "node:timers/promises";
 
-type RemoveDirectoryDependencies = {
-  rm?: typeof rm;
-  sleep?: (milliseconds: number) => Promise<unknown>;
+interface RemoveDirectoryDependencies {
   maxRetries?: number;
   retryDelayMs?: (attempt: number) => number;
-};
+  rm?: typeof rm;
+  sleep?: (milliseconds: number) => Promise<unknown>;
+}
 
 const TRANSIENT_RM_ERROR_CODES = new Set(["EBUSY", "ENOTEMPTY", "EPERM"]);
-const DEFAULT_RETRY_DELAYS_MS = [50, 100, 250, 500, 1_000];
+const DEFAULT_RETRY_DELAYS_MS = [50, 100, 250, 500, 1000];
 
 function shouldRetryDirectoryRemoval(error: unknown): boolean {
   const code = (error as NodeJS.ErrnoException | undefined)?.code;
@@ -26,7 +26,9 @@ export async function removeDirectoryWithRetries(
   const retryDelayMs =
     dependencies.retryDelayMs ??
     ((attempt: number) =>
-      DEFAULT_RETRY_DELAYS_MS[attempt] ?? DEFAULT_RETRY_DELAYS_MS.at(-1) ?? 1_000);
+      DEFAULT_RETRY_DELAYS_MS[attempt] ??
+      DEFAULT_RETRY_DELAYS_MS.at(-1) ??
+      1000);
 
   for (let attempt = 0; ; attempt += 1) {
     try {

@@ -1,7 +1,13 @@
-import { describe, expect, it, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import {
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { runCli } from "../helpers/run-cli.js";
 
 let home: string;
@@ -36,7 +42,9 @@ describe("install-skill", () => {
     const out = await run(["install-skill", "--agents"]);
     expect(out.code).toBe(0);
     expect(out.stdout).toContain("~/.agents/skills/dev-browser/SKILL.md");
-    expect(statSync(join(home, ".agents/skills/dev-browser/SKILL.md")).isFile()).toBe(true);
+    expect(
+      statSync(join(home, ".agents/skills/dev-browser/SKILL.md")).isFile()
+    ).toBe(true);
   });
 
   it("--claude --agents installs to both", async () => {

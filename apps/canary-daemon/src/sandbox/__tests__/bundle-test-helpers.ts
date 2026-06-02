@@ -9,7 +9,11 @@ const tsxCliPath = fileURLToPath(
 );
 
 export async function ensureSandboxClientBundle(): Promise<void> {
-  await execFileAsync(process.execPath, [tsxCliPath, "scripts/bundle-sandbox-client.ts"], {
-    cwd: daemonDir,
-  });
+  await execFileAsync(
+    process.execPath,
+    [tsxCliPath, "scripts/bundle-sandbox-client.ts"],
+    {
+      cwd: daemonDir,
+    }
+  );
 }

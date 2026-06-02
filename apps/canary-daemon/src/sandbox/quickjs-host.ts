@@ -1,6 +1,6 @@
 import {
-  getQuickJS,
   type ContextEvalOptions,
+  getQuickJS,
   type QuickJSContext,
   type QuickJSDeferredPromise,
   type QuickJSHandle,
@@ -21,15 +21,18 @@ export type QuickJSHostValue =
   | { [key: string]: QuickJSHostValue };
 
 export interface QuickJSHostOptions {
-  memoryLimitBytes?: number;
-  maxStackSizeBytes?: number;
   cpuTimeoutMs?: number;
   globals?: Record<string, QuickJSHostValue>;
-  hostFunctions?: Record<string, (...args: unknown[]) => unknown | Promise<unknown>>;
-  onHostCall?: (name: string, args: unknown[]) => unknown | Promise<unknown>;
-  onDrain?: () => void | Promise<void>;
-  onTransportSend?: (message: string) => void | Promise<void>;
+  hostFunctions?: Record<
+    string,
+    (...args: unknown[]) => unknown | Promise<unknown>
+  >;
+  maxStackSizeBytes?: number;
+  memoryLimitBytes?: number;
   onConsole?: (level: QuickJSConsoleLevel, args: unknown[]) => void;
+  onDrain?: () => void | Promise<void>;
+  onHostCall?: (name: string, args: unknown[]) => unknown | Promise<unknown>;
+  onTransportSend?: (message: string) => void | Promise<void>;
 }
 
 export interface QuickJSExecutionOptions {
@@ -38,8 +41,8 @@ export interface QuickJSExecutionOptions {
 }
 
 interface TimerRecord {
-  callback: QuickJSHandle;
   args: QuickJSHandle[];
+  callback: QuickJSHandle;
   timeout: NodeJS.Timeout;
 }
 
@@ -48,8 +51,6 @@ export class QuickJSHost {
     const quickjs = await getQuickJS();
     return new QuickJSHost(quickjs, options);
   }
-
-  readonly #quickjs: QuickJSWASMModule;
   readonly #runtime: QuickJSRuntime;
   readonly #context: QuickJSContext;
   readonly #options: QuickJSHostOptions;
@@ -61,7 +62,6 @@ export class QuickJSHost {
   #nextTimerId = 1;
 
   private constructor(quickjs: QuickJSWASMModule, options: QuickJSHostOptions) {
-    this.#quickjs = quickjs;
     this.#options = options;
     this.#runtime = quickjs.newRuntime();
 
@@ -72,9 +72,11 @@ export class QuickJSHost {
       this.#runtime.setMaxStackSize(options.maxStackSizeBytes);
     }
     if (options.cpuTimeoutMs !== undefined) {
-      this.#runtime.setInterruptHandler(() => {
-        return this.#interruptDeadline !== undefined && Date.now() > this.#interruptDeadline;
-      });
+      this.#runtime.setInterruptHandler(
+        () =>
+          this.#interruptDeadline !== undefined &&
+          Date.now() > this.#interruptDeadline
+      );
     }
 
     this.#context = this.#runtime.newContext();
@@ -103,12 +105,17 @@ export class QuickJSHost {
     }
   }
 
-  executeScriptSync(code: string, options: QuickJSExecutionOptions = {}): unknown {
+  executeScriptSync(
+    code: string,
+    options: QuickJSExecutionOptions = {}
+  ): unknown {
     const resultHandle = this.#evalCode(code, options);
     try {
       const promiseState = this.#context.getPromiseState(resultHandle);
       if (!(promiseState.type === "fulfilled" && promiseState.notAPromise)) {
-        throw new Error("QuickJS script returned a promise; use executeScript() instead");
+        throw new Error(
+          "QuickJS script returned a promise; use executeScript() instead"
+        );
       }
       return this.#dumpHandle(resultHandle);
     } finally {
@@ -116,12 +123,18 @@ export class QuickJSHost {
     }
   }
 
-  async executeScript(code: string, options: QuickJSExecutionOptions = {}): Promise<unknown> {
+  async executeScript(
+    code: string,
+    options: QuickJSExecutionOptions = {}
+  ): Promise<unknown> {
     const resultHandle = this.#evalCode(code, options);
     return this.#consumeHandle(resultHandle);
   }
 
-  async callFunction(name: string, ...args: QuickJSHostValue[]): Promise<unknown> {
+  async callFunction(
+    name: string,
+    ...args: QuickJSHostValue[]
+  ): Promise<unknown> {
     this.#assertAlive();
 
     const functionHandle = this.#context.getProp(this.#context.global, name);
@@ -133,9 +146,16 @@ export class QuickJSHost {
       }
 
       const result = this.#runWithCpuLimit(() =>
-        this.#context.callFunction(functionHandle, this.#context.global, ...argHandles)
+        this.#context.callFunction(
+          functionHandle,
+          this.#context.global,
+          ...argHandles
+        )
       );
-      const resultHandle = this.#unwrapResult(result, `QuickJS function "${name}" failed`);
+      const resultHandle = this.#unwrapResult(
+        result,
+        `QuickJS function "${name}" failed`
+      );
       return await this.#consumeHandle(resultHandle);
     } finally {
       for (const argHandle of argHandles) {
@@ -184,36 +204,48 @@ export class QuickJSHost {
   }
 
   #installHostCall(): void {
-    const hostCall = this.#context.newFunction("__hostCall", (nameHandle, argsJsonHandle) => {
-      const name = this.#context.getString(nameHandle);
-      const argsJson = this.#context.getString(argsJsonHandle);
-      const args = this.#parseArgs(name, argsJson);
+    const hostCall = this.#context.newFunction(
+      "__hostCall",
+      (nameHandle, argsJsonHandle) => {
+        const name = this.#context.getString(nameHandle);
+        const argsJson = this.#context.getString(argsJsonHandle);
+        const args = this.#parseArgs(name, argsJson);
 
-      const invoke = () => {
-        if (this.#options.onHostCall) {
-          return this.#options.onHostCall(name, args);
-        }
-        const handler = this.#options.hostFunctions?.[name];
-        if (!handler) {
-          throw new Error(`No host function registered for "${name}"`);
-        }
-        return handler(...args);
-      };
+        const invoke = () => {
+          if (this.#options.onHostCall) {
+            return this.#options.onHostCall(name, args);
+          }
+          const handler = this.#options.hostFunctions?.[name];
+          if (!handler) {
+            throw new Error(`No host function registered for "${name}"`);
+          }
+          return handler(...args);
+        };
 
-      return this.#bridgeHostResult(invoke);
-    });
+        return this.#bridgeHostResult(invoke);
+      }
+    );
 
     this.#context.setProp(this.#context.global, "__hostCall", hostCall);
     hostCall.dispose();
   }
 
   #installTransportSend(): void {
-    const transportSend = this.#context.newFunction("__transport_send", (messageHandle) => {
-      const message = this.#context.getString(messageHandle);
-      return this.#bridgeHostResult(() => this.#options.onTransportSend?.(message));
-    });
+    const transportSend = this.#context.newFunction(
+      "__transport_send",
+      (messageHandle) => {
+        const message = this.#context.getString(messageHandle);
+        return this.#bridgeHostResult(() =>
+          this.#options.onTransportSend?.(message)
+        );
+      }
+    );
 
-    this.#context.setProp(this.#context.global, "__transport_send", transportSend);
+    this.#context.setProp(
+      this.#context.global,
+      "__transport_send",
+      transportSend
+    );
     transportSend.dispose();
   }
 
@@ -243,7 +275,11 @@ export class QuickJSHost {
 
           try {
             const result = this.#runWithCpuLimit(() =>
-              this.#context.callFunction(record.callback, this.#context.undefined, ...record.args)
+              this.#context.callFunction(
+                record.callback,
+                this.#context.undefined,
+                ...record.args
+              )
             );
 
             if (result.error) {
@@ -264,12 +300,19 @@ export class QuickJSHost {
       }
     );
 
-    const clearTimeoutHandle = this.#context.newFunction("clearTimeout", (timerIdHandle) => {
-      this.#clearTimer(this.#context.getNumber(timerIdHandle));
-    });
+    const clearTimeoutHandle = this.#context.newFunction(
+      "clearTimeout",
+      (timerIdHandle) => {
+        this.#clearTimer(this.#context.getNumber(timerIdHandle));
+      }
+    );
 
     this.#context.setProp(this.#context.global, "setTimeout", setTimeoutHandle);
-    this.#context.setProp(this.#context.global, "clearTimeout", clearTimeoutHandle);
+    this.#context.setProp(
+      this.#context.global,
+      "clearTimeout",
+      clearTimeoutHandle
+    );
     setTimeoutHandle.dispose();
     clearTimeoutHandle.dispose();
   }
@@ -288,7 +331,9 @@ export class QuickJSHost {
     this.#timers.delete(timerId);
   }
 
-  #bridgeHostResult(invoker: () => unknown | Promise<unknown>): QuickJSHandle | void {
+  #bridgeHostResult(
+    invoker: () => unknown | Promise<unknown>
+  ): QuickJSHandle | undefined {
     try {
       const result = invoker();
       if (this.#isPromiseLike(result)) {
@@ -316,7 +361,9 @@ export class QuickJSHost {
         }
 
         const valueHandle =
-          value === undefined ? undefined : this.#toHandle(value as QuickJSHostValue);
+          value === undefined
+            ? undefined
+            : this.#toHandle(value as QuickJSHostValue);
         try {
           deferred.resolve(valueHandle);
         } finally {
@@ -399,11 +446,15 @@ export class QuickJSHost {
     }
   }
 
-  async #awaitQuickJSPromise(promiseHandle: QuickJSHandle): Promise<QuickJSHandle> {
+  async #awaitQuickJSPromise(
+    promiseHandle: QuickJSHandle
+  ): Promise<QuickJSHandle> {
     let settled = false;
-    const nativePromise = this.#context.resolvePromise(promiseHandle).finally(() => {
-      settled = true;
-    });
+    const nativePromise = this.#context
+      .resolvePromise(promiseHandle)
+      .finally(() => {
+        settled = true;
+      });
 
     while (!settled) {
       this.#drainPendingJobs();
@@ -428,9 +479,14 @@ export class QuickJSHost {
     this.#assertAlive();
 
     while (true) {
-      const jobResult = this.#runWithCpuLimit(() => this.#runtime.executePendingJobs());
+      const jobResult = this.#runWithCpuLimit(() =>
+        this.#runtime.executePendingJobs()
+      );
       if (jobResult.error) {
-        const error = this.#toError("QuickJS pending job failed", jobResult.error);
+        const error = this.#toError(
+          "QuickJS pending job failed",
+          jobResult.error
+        );
         jobResult.error.dispose();
         throw error;
       }
@@ -587,7 +643,10 @@ export class QuickJSHost {
     }
 
     if (typeof error === "object" && error !== null) {
-      const name = "name" in error && typeof error.name === "string" ? error.name : "Error";
+      const name =
+        "name" in error && typeof error.name === "string"
+          ? error.name
+          : "Error";
       const message =
         "message" in error && typeof error.message === "string"
           ? error.message

@@ -1,14 +1,14 @@
 import {
+  type ClientConnectionLike,
   Connection,
   nodePlatform,
-  type ClientConnectionLike,
   type PlaywrightClientLike,
   type WireMessage,
 } from "./playwright-internals.js";
 
 export interface SandboxTransportOptions {
-  sendToHost: (json: string) => void;
   connection?: ClientConnectionLike;
+  sendToHost: (json: string) => void;
 }
 
 export class SandboxTransport {

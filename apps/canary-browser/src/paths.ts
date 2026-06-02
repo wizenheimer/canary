@@ -62,9 +62,9 @@ export function daemonEndpoint(): string {
 }
 
 export interface SkillTarget {
+  fileDisplay: string;
   promptLabel: string;
   rootDisplay: string;
-  fileDisplay: string;
   rootRelative: string;
 }
 

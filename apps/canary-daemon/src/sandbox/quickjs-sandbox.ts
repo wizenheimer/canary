@@ -10,10 +10,11 @@ import {
   writeDevBrowserTempFile,
 } from "../temp-files.js";
 import { HostBridge } from "./host-bridge.js";
-import { QuickJSHost, type QuickJSConsoleLevel } from "./quickjs-host.js";
+import { type QuickJSConsoleLevel, QuickJSHost } from "./quickjs-host.js";
 
 const DEFAULT_MEMORY_LIMIT_BYTES = 512 * 1024 * 1024;
-const WAIT_FOR_OBJECT_ATTEMPTS = 1_000;
+const WAIT_FOR_OBJECT_ATTEMPTS = 1000;
+
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
@@ -24,7 +25,9 @@ function findBundlePath(): string {
     fileURLToPath(new URL("../../dist/sandbox-client.js", import.meta.url)),
   ];
   for (const p of candidates) {
-    if (existsSync(p)) return p;
+    if (existsSync(p)) {
+      return p;
+    }
   }
   throw new Error(
     `Failed to find sandbox-client.js. Searched:\n${candidates.map((c) => `  - ${c}`).join("\n")}`
@@ -44,7 +47,7 @@ function formatArgs(args: unknown[]): string {
             colors: false,
             depth: 6,
             compact: 3,
-            breakLength: Infinity,
+            breakLength: Number.POSITIVE_INFINITY,
           })
     )
     .join(" ");
@@ -59,18 +62,24 @@ function normalizeError(error: unknown): Error {
 }
 
 function getSandboxClientBundleCode(): Promise<string> {
-  bundleCodePromise ??= readFile(BUNDLE_PATH, "utf8").catch((error: unknown) => {
-    bundleCodePromise = undefined;
-    const message =
-      error instanceof Error ? error.message : "Sandbox client bundle could not be read";
-    throw new Error(`Failed to load sandbox client bundle at ${BUNDLE_PATH}: ${message}`);
-  });
+  bundleCodePromise ??= readFile(BUNDLE_PATH, "utf8").catch(
+    (error: unknown) => {
+      bundleCodePromise = undefined;
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Sandbox client bundle could not be read";
+      throw new Error(
+        `Failed to load sandbox client bundle at ${BUNDLE_PATH}: ${message}`
+      );
+    }
+  );
   return bundleCodePromise;
 }
 
 function formatTimeoutDuration(timeoutMs: number): string {
-  if (timeoutMs % 1_000 === 0) {
-    return `${timeoutMs / 1_000}s`;
+  if (timeoutMs % 1000 === 0) {
+    return `${timeoutMs / 1000}s`;
   }
 
   return `${timeoutMs}ms`;
@@ -93,7 +102,10 @@ function createGuestScriptTimeoutErrorSource(timeoutMs: number): string {
   })()`;
 }
 
-function wrapScriptWithWallClockTimeout(script: string, timeoutMs?: number): string {
+function wrapScriptWithWallClockTimeout(
+  script: string,
+  timeoutMs?: number
+): string {
   if (timeoutMs === undefined) {
     return script;
   }
@@ -125,8 +137,9 @@ function requireString(value: unknown, label: string): string {
 }
 
 function toServerImpl<T>(clientObject: unknown, label: string): T {
-  const connection = (clientObject as { _connection?: { toImpl?: (value: unknown) => unknown } })
-    ._connection;
+  const connection = (
+    clientObject as { _connection?: { toImpl?: (value: unknown) => unknown } }
+  )._connection;
   const toImpl = connection?.toImpl;
   if (typeof toImpl !== "function") {
     throw new Error(`${label} does not expose a server implementation`);
@@ -149,15 +162,23 @@ function extractGuid(page: Page): string {
   return guid;
 }
 
-function decodeSandboxFilePayload(value: unknown, label: string): string | Uint8Array {
+function decodeSandboxFilePayload(
+  value: unknown,
+  label: string
+): string | Uint8Array {
   if (typeof value !== "object" || value === null) {
     throw new TypeError(`${label} must be an object`);
   }
 
   const encoding = "encoding" in value ? value.encoding : undefined;
   const data = "data" in value ? value.data : undefined;
-  if ((encoding !== "utf8" && encoding !== "base64") || typeof data !== "string") {
-    throw new TypeError(`${label} must include a valid encoding and string data`);
+  if (
+    (encoding !== "utf8" && encoding !== "base64") ||
+    typeof data !== "string"
+  ) {
+    throw new TypeError(
+      `${label} must include a valid encoding and string data`
+    );
   }
 
   if (encoding === "utf8") {
@@ -168,11 +189,11 @@ function decodeSandboxFilePayload(value: unknown, label: string): string | Uint8
 }
 
 interface QuickJSSandboxOptions {
-  manager: BrowserManager;
   browserName: string;
-  onStdout: (data: string) => void;
-  onStderr: (data: string) => void;
+  manager: BrowserManager;
   memoryLimitBytes?: number;
+  onStderr: (data: string) => void;
+  onStdout: (data: string) => void;
   timeoutMs?: number;
 }
 
@@ -203,12 +224,14 @@ export class QuickJSSandbox {
       await ensureDevBrowserTempDir();
 
       this.#host = await QuickJSHost.create({
-        memoryLimitBytes: this.#options.memoryLimitBytes ?? DEFAULT_MEMORY_LIMIT_BYTES,
+        memoryLimitBytes:
+          this.#options.memoryLimitBytes ?? DEFAULT_MEMORY_LIMIT_BYTES,
         cpuTimeoutMs: this.#options.timeoutMs,
         hostFunctions: {
           getPage: (name) => this.#getPage(name),
           newPage: () => this.#newPage(),
-          listPages: () => this.#options.manager.listPages(this.#options.browserName),
+          listPages: () =>
+            this.#options.manager.listPages(this.#options.browserName),
           closePage: (name) => this.#closePage(name),
           saveScreenshot: (name, data) => this.#writeTempFile(name, data),
           writeFile: (name, data) => this.#writeTempFile(name, data),
@@ -350,7 +373,9 @@ export class QuickJSSandbox {
       );
 
       const bundleCode = await getSandboxClientBundleCode();
-      const bundleFactorySource = JSON.stringify(`${bundleCode}\nreturn __PlaywrightClient;`);
+      const bundleFactorySource = JSON.stringify(
+        `${bundleCode}\nreturn __PlaywrightClient;`
+      );
       this.#host.executeScriptSync(
         `
           globalThis.__createPlaywrightClient = () => {
@@ -362,7 +387,9 @@ export class QuickJSSandbox {
         }
       );
 
-      const browserEntry = this.#options.manager.getBrowser(this.#options.browserName);
+      const browserEntry = this.#options.manager.getBrowser(
+        this.#options.browserName
+      );
       if (!browserEntry) {
         throw new Error(
           `Browser "${this.#options.browserName}" not found. It should have been created before script execution.`
@@ -372,7 +399,10 @@ export class QuickJSSandbox {
         sendToSandbox: (json) => {
           this.#transportInbox.push(json);
         },
-        preLaunchedBrowser: toServerImpl(browserEntry.browser, "Playwright browser"),
+        preLaunchedBrowser: toServerImpl(
+          browserEntry.browser,
+          "Playwright browser"
+        ),
         sharedBrowser: true,
         denyLaunch: true,
       });
@@ -544,7 +574,7 @@ export class QuickJSSandbox {
     try {
       this.#throwIfAsyncError();
 
-      await this.#host!.executeScript(
+      await this.#host?.executeScript(
         wrapScriptWithWallClockTimeout(script, this.#options.timeoutMs),
         {
           filename: "user-script.js",
@@ -655,7 +685,7 @@ export class QuickJSSandbox {
           continue;
         }
 
-        await this.#host!.callFunction(TRANSPORT_RECEIVE_GLOBAL, message);
+        await this.#host?.callFunction(TRANSPORT_RECEIVE_GLOBAL, message);
         this.#throwIfAsyncError();
       }
     };
@@ -701,7 +731,9 @@ export class QuickJSSandbox {
     return await readDevBrowserTempFile(requireString(name, "File name"));
   }
 
-  async #cleanupAnonymousPages(options: { suppressErrors?: boolean } = {}): Promise<void> {
+  async #cleanupAnonymousPages(
+    options: { suppressErrors?: boolean } = {}
+  ): Promise<void> {
     const anonymousPages = [...this.#anonymousPages];
     this.#anonymousPages.clear();
 
@@ -744,7 +776,7 @@ export class QuickJSSandbox {
 
   #assertInitialized(): void {
     this.#assertAlive();
-    if (!this.#initialized || !this.#host || !this.#hostBridge) {
+    if (!(this.#initialized && this.#host && this.#hostBridge)) {
       throw new Error("QuickJS sandbox has not been initialized");
     }
   }

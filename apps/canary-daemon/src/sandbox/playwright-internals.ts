@@ -16,15 +16,15 @@ export interface PlaywrightClientLike {
 }
 
 export interface ClientConnectionLike {
-  onmessage: (message: WireMessage) => void;
-  initializePlaywright(): Promise<PlaywrightClientLike>;
-  dispatch(message: WireMessage): void;
   close(cause?: string): void;
+  dispatch(message: WireMessage): void;
+  initializePlaywright(): Promise<PlaywrightClientLike>;
+  onmessage: (message: WireMessage) => void;
 }
 
 export interface DispatcherConnectionLike {
-  onmessage: (message: WireMessage) => void;
   dispatch(message: WireMessage): Promise<void>;
+  onmessage: (message: WireMessage) => void;
 }
 
 export interface RootDispatcherLike {
@@ -40,9 +40,9 @@ export interface RootInitializeParams {
 }
 
 export interface HostBridgeDispatcherOptions {
+  denyLaunch?: boolean;
   preLaunchedBrowser?: unknown;
   sharedBrowser?: boolean;
-  denyLaunch?: boolean;
 }
 
 function resolvePlaywrightInternal(modulePath: string): string {
@@ -68,7 +68,10 @@ const serverInternals = require(
   DispatcherConnection: new (isLocal?: boolean) => DispatcherConnectionLike;
   RootDispatcher: new (
     connection: DispatcherConnectionLike,
-    createPlaywright?: (scope: unknown, params: RootInitializeParams) => Promise<unknown>
+    createPlaywright?: (
+      scope: unknown,
+      params: RootInitializeParams
+    ) => Promise<unknown>
   ) => RootDispatcherLike;
   PlaywrightDispatcher: new (
     scope: unknown,
@@ -84,13 +87,19 @@ const clientInternals = require(
 };
 
 const nodePlatformInternals = require(
-  resolvePlaywrightInternal(path.join("lib", "server", "utils", "nodePlatform.js"))
+  resolvePlaywrightInternal(
+    path.join("lib", "server", "utils", "nodePlatform.js")
+  )
 ) as {
   nodePlatform: unknown;
 };
 
-export const { createPlaywright, DispatcherConnection, RootDispatcher, PlaywrightDispatcher } =
-  serverInternals;
+export const {
+  createPlaywright,
+  DispatcherConnection,
+  RootDispatcher,
+  PlaywrightDispatcher,
+} = serverInternals;
 
 export const { Connection } = clientInternals;
 export const { nodePlatform } = nodePlatformInternals;

@@ -1,7 +1,7 @@
-import { describe, expect, it } from "vitest";
 import { mkdtemp, readdir, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { describe, expect, it } from "vitest";
 import { atomicWrite } from "../../src/skill/atomic.js";
 
 async function withTempDir<T>(fn: (dir: string) => Promise<T>): Promise<T> {

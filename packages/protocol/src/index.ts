@@ -118,23 +118,30 @@ export type ResultMessage = z.infer<typeof ResultMessageSchema>;
 
 export interface BrowserSummary {
   name: string;
-  type: "launched" | "connected";
-  status: "running" | "connected" | "disconnected";
   pages: string[];
+  status: "running" | "connected" | "disconnected";
+  type: "launched" | "connected";
 }
 
 export interface StatusSummary {
-  pid: number;
-  uptimeMs: number;
   browserCount: number;
-  socketPath: string;
   browsers: BrowserSummary[];
+  pid: number;
+  socketPath: string;
+  uptimeMs: number;
 }
 
 // ---------- Helpers ----------
 
-type ParseSuccess = { success: true; request: Request };
-type ParseFailure = { success: false; error: string; id?: string };
+interface ParseSuccess {
+  request: Request;
+  success: true;
+}
+interface ParseFailure {
+  error: string;
+  id?: string;
+  success: false;
+}
 
 function describeZodError(error: z.ZodError): string {
   return error.issues
@@ -147,10 +154,12 @@ function describeZodError(error: z.ZodError): string {
 
 function extractId(value: unknown): string | undefined {
   if (!value || typeof value !== "object") {
-    return undefined;
+    return;
   }
   const maybeId = (value as { id?: unknown }).id;
-  return typeof maybeId === "string" && maybeId.length > 0 ? maybeId : undefined;
+  return typeof maybeId === "string" && maybeId.length > 0
+    ? maybeId
+    : undefined;
 }
 
 export function parseRequest(line: string): ParseSuccess | ParseFailure {
@@ -171,7 +180,7 @@ export function parseRequest(line: string): ParseSuccess | ParseFailure {
     return {
       success: false,
       error: describeZodError(result.error),
-      ...(id !== undefined ? { id } : {}),
+      ...(id === undefined ? {} : { id }),
     };
   }
 

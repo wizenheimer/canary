@@ -11,8 +11,8 @@ import { QuickJSSandbox } from "../quickjs-sandbox.js";
 const browserName = "named-pages";
 
 interface CapturedOutput {
-  stdout: string[];
   stderr: string[];
+  stdout: string[];
 }
 
 function pageNames(pages: Array<{ name: string | null }>): string[] {
@@ -46,7 +46,9 @@ function createOutput(): CapturedOutput & {
 }
 
 function outputLines(output: CapturedOutput): string[] {
-  return output.stdout.map((line) => line.trim()).filter((line) => line.length > 0);
+  return output.stdout
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
 }
 
 describe.sequential("QuickJS named page management", () => {
@@ -54,7 +56,9 @@ describe.sequential("QuickJS named page management", () => {
   let manager: BrowserManager;
 
   beforeAll(async () => {
-    browserRootDir = await mkdtemp(path.join(os.tmpdir(), "dev-browser-quickjs-named-pages-"));
+    browserRootDir = await mkdtemp(
+      path.join(os.tmpdir(), "dev-browser-quickjs-named-pages-")
+    );
     manager = new BrowserManager(path.join(browserRootDir, "browsers"));
   }, 180_000);
 
@@ -67,7 +71,9 @@ describe.sequential("QuickJS named page management", () => {
     await removeDirectoryWithRetries(browserRootDir);
   }, 180_000);
 
-  async function createSandbox(output: ReturnType<typeof createOutput>): Promise<QuickJSSandbox> {
+  async function createSandbox(
+    output: ReturnType<typeof createOutput>
+  ): Promise<QuickJSSandbox> {
     await manager.ensureBrowser(browserName, {
       headless: true,
     });
@@ -83,7 +89,10 @@ describe.sequential("QuickJS named page management", () => {
     return sandbox;
   }
 
-  async function runUserScript(sandbox: QuickJSSandbox, script: string): Promise<void> {
+  async function runUserScript(
+    sandbox: QuickJSSandbox,
+    script: string
+  ): Promise<void> {
     await sandbox.executeScript(`(async () => {\n${script}\n})()`);
   }
 
@@ -121,7 +130,9 @@ describe.sequential("QuickJS named page management", () => {
     expect(outputLines(output)).toContain("https://example.com/");
     expect(outputLines(output)).toContain("Example Domain");
     expect(outputLines(output)).toContain("persisted-state");
-    expect(pageNames(await manager.listPages(browserName))).toEqual(["persist"]);
+    expect(pageNames(await manager.listPages(browserName))).toEqual([
+      "persist",
+    ]);
   }, 120_000);
 
   it("cleans up anonymous pages after each script execution", async () => {
@@ -130,7 +141,9 @@ describe.sequential("QuickJS named page management", () => {
       headless: true,
     });
     const entry = await manager.ensureBrowser(browserName);
-    const baselinePageCount = entry.context.pages().filter((page) => !page.isClosed()).length;
+    const baselinePageCount = entry.context
+      .pages()
+      .filter((page) => !page.isClosed()).length;
     const sandbox = await createSandbox(output);
 
     try {
@@ -151,7 +164,9 @@ describe.sequential("QuickJS named page management", () => {
     expect(output.stderr).toEqual([]);
     expect(outputLines(output)).toContain("Example Domain");
     expect(livePages).toHaveLength(baselinePageCount);
-    expect(livePages.map((page) => page.url())).not.toContain("https://example.com/");
+    expect(livePages.map((page) => page.url())).not.toContain(
+      "https://example.com/"
+    );
     expect(pageNames(await manager.listPages(browserName))).toEqual([]);
   }, 120_000);
 
@@ -173,7 +188,9 @@ describe.sequential("QuickJS named page management", () => {
     }
 
     expect(output.stderr).toEqual([]);
-    const listedPages = JSON.parse(outputLines(output).at(-1) ?? "[]") as Array<{
+    const listedPages = JSON.parse(
+      outputLines(output).at(-1) ?? "[]"
+    ) as Array<{
       id: string;
       title: string;
       url: string;
@@ -197,7 +214,10 @@ describe.sequential("QuickJS named page management", () => {
       ])
     );
     expect(pageNames(listedPages)).toEqual(["alpha", "beta"]);
-    expect(pageNames(await manager.listPages(browserName))).toEqual(["alpha", "beta"]);
+    expect(pageNames(await manager.listPages(browserName))).toEqual([
+      "alpha",
+      "beta",
+    ]);
   }, 120_000);
 
   it("closes named pages by name", async () => {
@@ -224,10 +244,14 @@ describe.sequential("QuickJS named page management", () => {
     }
 
     expect(output.stderr).toEqual([]);
-    const listedBeforeClose = JSON.parse(outputLines(output).at(0) ?? "[]") as Array<{
+    const listedBeforeClose = JSON.parse(
+      outputLines(output).at(0) ?? "[]"
+    ) as Array<{
       name: string | null;
     }>;
-    const listedAfterClose = JSON.parse(outputLines(output).at(1) ?? "[]") as Array<{
+    const listedAfterClose = JSON.parse(
+      outputLines(output).at(1) ?? "[]"
+    ) as Array<{
       name: string | null;
     }>;
 

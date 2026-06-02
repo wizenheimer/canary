@@ -17,7 +17,9 @@
 const OPTIONAL_VALUE_FLAGS = new Set(["--connect"]);
 
 export function preprocessArgs(argv: readonly string[]): string[] {
-  if (argv.length <= 1) return argv.slice();
+  if (argv.length <= 1) {
+    return argv.slice();
+  }
   const out: string[] = [argv[0] as string];
   for (let i = 1; i < argv.length; i += 1) {
     const cur = argv[i] as string;

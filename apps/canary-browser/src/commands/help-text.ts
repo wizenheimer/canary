@@ -113,7 +113,8 @@ export const STOP_LONG_ABOUT =
 // Subcommand short descriptions (cobra's "Short" / clap's "about").
 export const RUN_SHORT = "Run a script file against the browser";
 export const INSTALL_SHORT = "Install Playwright browsers (Chromium)";
-export const INSTALL_SKILL_SHORT = "Install the dev-browser skill into agent skill directories";
+export const INSTALL_SKILL_SHORT =
+  "Install the dev-browser skill into agent skill directories";
 export const BROWSERS_SHORT = "List all managed browser instances";
 export const STATUS_SHORT = "Show daemon status";
 export const STOP_SHORT = "Stop the daemon and all browsers";

@@ -17,11 +17,19 @@ describe("parseInjectScriptEnv", () => {
   });
 
   it("splits on commas, trims, drops empties", () => {
-    expect(parseInjectScriptEnv("a.js, b.js ,,c.js")).toEqual(["a.js", "b.js", "c.js"]);
+    expect(parseInjectScriptEnv("a.js, b.js ,,c.js")).toEqual([
+      "a.js",
+      "b.js",
+      "c.js",
+    ]);
   });
 
   it("splits on newlines as well", () => {
-    expect(parseInjectScriptEnv("a.js\nb.js\n\nc.js")).toEqual(["a.js", "b.js", "c.js"]);
+    expect(parseInjectScriptEnv("a.js\nb.js\n\nc.js")).toEqual([
+      "a.js",
+      "b.js",
+      "c.js",
+    ]);
   });
 
   it("drops whitespace-only entries", () => {
@@ -31,12 +39,9 @@ describe("parseInjectScriptEnv", () => {
 
 describe("collectInjectScriptPaths", () => {
   it("returns env entries first, then flag entries in argv order", () => {
-    expect(collectInjectScriptPaths("env-a.js,env-b.js", ["flag-a.js", "flag-b.js"])).toEqual([
-      "env-a.js",
-      "env-b.js",
-      "flag-a.js",
-      "flag-b.js",
-    ]);
+    expect(
+      collectInjectScriptPaths("env-a.js,env-b.js", ["flag-a.js", "flag-b.js"])
+    ).toEqual(["env-a.js", "env-b.js", "flag-a.js", "flag-b.js"]);
   });
 
   it("works with only flags", () => {
@@ -52,7 +57,10 @@ describe("collectInjectScriptPaths", () => {
   });
 
   it("does not de-dupe — the daemon hashes content and dedupes server-side", () => {
-    expect(collectInjectScriptPaths("a.js", ["a.js"])).toEqual(["a.js", "a.js"]);
+    expect(collectInjectScriptPaths("a.js", ["a.js"])).toEqual([
+      "a.js",
+      "a.js",
+    ]);
   });
 });
 
@@ -102,8 +110,8 @@ describe("readInjectScripts", () => {
   });
 
   it("throws with the offending path on read failure", async () => {
-    await expect(readInjectScripts(["does-not-exist.js"], workdir)).rejects.toThrow(
-      /--inject-script: failed to read does-not-exist\.js/
-    );
+    await expect(
+      readInjectScripts(["does-not-exist.js"], workdir)
+    ).rejects.toThrow(/--inject-script: failed to read does-not-exist\.js/);
   });
 });

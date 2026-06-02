@@ -1,11 +1,18 @@
 import { HostBridge, type HostBridgeOptions } from "./host-bridge.js";
-import { SandboxTransport, type SandboxTransportOptions } from "./sandbox-transport.js";
-import type { ClientConnectionLike, PlaywrightClientLike } from "./playwright-internals.js";
+import type {
+  ClientConnectionLike,
+  PlaywrightClientLike,
+} from "./playwright-internals.js";
+import {
+  SandboxTransport,
+  type SandboxTransportOptions,
+} from "./sandbox-transport.js";
 
 type DeliveryScheduler = (task: () => void) => void;
 
 export interface ProtocolBridgeOptions
-  extends Omit<HostBridgeOptions, "sendToSandbox">, Omit<SandboxTransportOptions, "sendToHost"> {
+  extends Omit<HostBridgeOptions, "sendToSandbox">,
+    Omit<SandboxTransportOptions, "sendToHost"> {
   schedule?: DeliveryScheduler;
 }
 
@@ -13,7 +20,10 @@ function defaultSchedule(task: () => void): void {
   setImmediate(task);
 }
 
-function scheduleDelivery(schedule: DeliveryScheduler, deliver: () => void | Promise<void>): void {
+function scheduleDelivery(
+  schedule: DeliveryScheduler,
+  deliver: () => void | Promise<void>
+): void {
   schedule(() => {
     Promise.resolve(deliver()).catch((error: unknown) => {
       queueMicrotask(() => {
@@ -42,14 +52,18 @@ export class ProtocolBridge {
       denyLaunch: options.denyLaunch,
       sdkLanguage: options.sdkLanguage,
       sendToSandbox: (json) => {
-        scheduleDelivery(this.schedule, () => sandboxTransport.receiveFromHost(json));
+        scheduleDelivery(this.schedule, () =>
+          sandboxTransport.receiveFromHost(json)
+        );
       },
     });
 
     sandboxTransport = new SandboxTransport({
       connection: options.connection,
       sendToHost: (json) => {
-        scheduleDelivery(this.schedule, () => this.hostBridge.receiveFromSandbox(json));
+        scheduleDelivery(this.schedule, () =>
+          this.hostBridge.receiveFromSandbox(json)
+        );
       },
     });
 
@@ -72,6 +86,8 @@ export class ProtocolBridge {
   }
 }
 
-export function createProtocolBridge(options: ProtocolBridgeOptions = {}): ProtocolBridge {
+export function createProtocolBridge(
+  options: ProtocolBridgeOptions = {}
+): ProtocolBridge {
   return new ProtocolBridge(options);
 }

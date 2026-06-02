@@ -1,10 +1,10 @@
 import net from "node:net";
 import { createInterface } from "node:readline";
+import type { Request, Response } from "@canary/protocol";
 import { daemonEndpoint } from "../paths.js";
-import type { Request, Response, BrowserSummary, StatusSummary } from "@canary/protocol";
 
 // 5s write timeout — parity with cli/src/connection.rs:70 set_write_timeout.
-const WRITE_TIMEOUT_MS = 5_000;
+const WRITE_TIMEOUT_MS = 5000;
 // Match cli-go's generous frame ceiling so large screenshots / result
 // payloads don't truncate.
 const MAX_LINE_BYTES = 64 * 1024 * 1024;
@@ -17,8 +17,8 @@ export class DaemonConnectionClosed extends Error {
 }
 
 export interface DaemonConnection {
-  socket: net.Socket;
   reader: AsyncIterableIterator<string>;
+  socket: net.Socket;
 }
 
 export async function connectToDaemon(): Promise<DaemonConnection> {
@@ -55,7 +55,10 @@ export async function isDaemonRunning(): Promise<boolean> {
 }
 
 // Newline-delimited JSON. Mirrors cli/src/connection.rs send_message.
-export async function sendMessage(socket: net.Socket, message: Request): Promise<void> {
+export async function sendMessage(
+  socket: net.Socket,
+  message: Request
+): Promise<void> {
   const json = JSON.stringify(message);
   await write(socket, json);
   await write(socket, "\n");
@@ -64,14 +67,20 @@ export async function sendMessage(socket: net.Socket, message: Request): Promise
 function write(socket: net.Socket, data: string): Promise<void> {
   return new Promise((resolve, reject) => {
     socket.write(data, (err) => {
-      if (err) reject(err);
-      else resolve();
+      if (err) {
+        reject(err);
+      } else {
+        resolve();
+      }
     });
   });
 }
 
 async function* readLines(socket: net.Socket): AsyncIterableIterator<string> {
-  const rl = createInterface({ input: socket, crlfDelay: Infinity });
+  const rl = createInterface({
+    input: socket,
+    crlfDelay: Number.POSITIVE_INFINITY,
+  });
   let bytes = 0;
   try {
     for await (const line of rl) {
@@ -88,12 +97,15 @@ async function* readLines(socket: net.Socket): AsyncIterableIterator<string> {
 
 // Renderer for the daemon's `result` payload — supplied by callers so the
 // IPC layer doesn't need to know about result formatting.
-export type ResultRenderer = (data: unknown, stdout: NodeJS.WritableStream) => void;
+export type ResultRenderer = (
+  data: unknown,
+  stdout: NodeJS.WritableStream
+) => void;
 
 export interface StreamHandlers {
-  stdout: NodeJS.WritableStream;
-  stderr: NodeJS.WritableStream;
   renderResult?: ResultRenderer;
+  stderr: NodeJS.WritableStream;
+  stdout: NodeJS.WritableStream;
 }
 
 // Stream responses until `complete` or `error`. Returns the process exit
@@ -127,7 +139,9 @@ export async function streamResponses(
           return 0;
         case "error": {
           sawTerminal = true;
-          handlers.stderr.write(`${message.message ?? "Unknown daemon error"}\n`);
+          handlers.stderr.write(
+            `${message.message ?? "Unknown daemon error"}\n`
+          );
           return 1;
         }
         default:
@@ -166,4 +180,4 @@ function describe(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
-export type { BrowserSummary, StatusSummary };
+export type { BrowserSummary, StatusSummary } from "@canary/protocol";

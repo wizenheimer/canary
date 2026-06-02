@@ -1,5 +1,5 @@
-import { isDaemonRunning, sendRequest } from "../ipc/connect.js";
 import { currentDaemonPid, waitForDaemonExit } from "../daemon/lifecycle.js";
+import { isDaemonRunning, sendRequest } from "../ipc/connect.js";
 import { requestId } from "../util/request-id.js";
 
 export async function stopCommand(): Promise<number> {
@@ -8,7 +8,10 @@ export async function stopCommand(): Promise<number> {
     return 0;
   }
   const pid = await currentDaemonPid();
-  const code = await sendRequest({ id: requestId("stop"), type: "stop" }, undefined);
+  const code = await sendRequest(
+    { id: requestId("stop"), type: "stop" },
+    undefined
+  );
   if (code === 0) {
     if (pid !== null) {
       await waitForDaemonExit(pid, 10_000);

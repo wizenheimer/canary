@@ -14,12 +14,18 @@ describe("local endpoint helpers", () => {
   it("builds filesystem-backed daemon paths on unix-like platforms", () => {
     const homedir = "/Users/tester";
 
-    expect(getDevBrowserBaseDir(homedir)).toBe(path.join(homedir, ".dev-browser"));
+    expect(getDevBrowserBaseDir(homedir)).toBe(
+      path.join(homedir, ".dev-browser")
+    );
     expect(getDaemonEndpoint({ homedir, platform: "darwin" })).toBe(
       path.join(homedir, ".dev-browser", "daemon.sock")
     );
-    expect(getPidPath(homedir)).toBe(path.join(homedir, ".dev-browser", "daemon.pid"));
-    expect(getBrowsersDir(homedir)).toBe(path.join(homedir, ".dev-browser", "browsers"));
+    expect(getPidPath(homedir)).toBe(
+      path.join(homedir, ".dev-browser", "daemon.pid")
+    );
+    expect(getBrowsersDir(homedir)).toBe(
+      path.join(homedir, ".dev-browser", "browsers")
+    );
     expect(requiresDaemonEndpointCleanup("linux")).toBe(true);
   });
 

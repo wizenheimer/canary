@@ -4,7 +4,10 @@ import { dirname, resolve } from "node:path";
 import { build } from "esbuild";
 
 const daemonDir = resolve(import.meta.dirname, "..");
-const entryPoint = resolve(daemonDir, "src/sandbox/forked-client/bundle-entry.ts");
+const entryPoint = resolve(
+  daemonDir,
+  "src/sandbox/forked-client/bundle-entry.ts"
+);
 const outfile = resolve(daemonDir, "dist/sandbox-client.js");
 
 await mkdir(dirname(outfile), { recursive: true });

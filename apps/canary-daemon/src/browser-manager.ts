@@ -2,30 +2,35 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { chromium, type Browser, type BrowserContext, type Page } from "playwright";
 import type { BrowserSummary } from "@canary/protocol";
+import {
+  type Browser,
+  type BrowserContext,
+  chromium,
+  type Page,
+} from "playwright";
 
 export interface BrowserEntry {
-  name: string;
-  type: "launched" | "connected";
+  appliedInitScripts: Set<string>;
   browser: Browser;
   context: BrowserContext;
-  pages: Map<string, Page>;
-  profileDir?: string;
   endpoint?: string;
   headless: boolean;
   ignoreHTTPSErrors: boolean;
-  appliedInitScripts: Set<string>;
+  name: string;
+  pages: Map<string, Page>;
+  profileDir?: string;
+  type: "launched" | "connected";
 }
 
 interface BrowserPageSummary {
   id: string;
-  url: string;
-  title: string;
   name: string | null;
+  title: string;
+  url: string;
 }
 
-type BrowserManagerDependencies = {
+interface BrowserManagerDependencies {
   connectOverCDP: typeof chromium.connectOverCDP;
   fetch: typeof globalThis.fetch;
   homedir: () => string;
@@ -33,7 +38,7 @@ type BrowserManagerDependencies = {
   mkdir: typeof mkdir;
   platform: NodeJS.Platform;
   readFile: typeof readFile;
-};
+}
 
 type DebuggerWebSocketLookupResult =
   | {
@@ -46,8 +51,8 @@ type DebuggerWebSocketLookupResult =
 
 const DISCOVERY_PORTS = [9222, 9223, 9224, 9225, 9226, 9227, 9228, 9229];
 const PROBE_TIMEOUT_MS = 750;
-const MANUAL_CONNECT_TIMEOUT_MS = 5_000;
-const PAGE_TITLE_TIMEOUT_MS = 1_500;
+const MANUAL_CONNECT_TIMEOUT_MS = 5000;
+const PAGE_TITLE_TIMEOUT_MS = 1500;
 const TARGET_ID_PATTERN = /^[a-f0-9]{16,}$/i;
 
 function isIgnorableFileError(error: unknown): boolean {
@@ -70,7 +75,9 @@ export class BrowserManager {
   ) {
     this.baseDir = baseDir;
     this.dependencies = {
-      connectOverCDP: chromium.connectOverCDP.bind(chromium) as typeof chromium.connectOverCDP,
+      connectOverCDP: chromium.connectOverCDP.bind(
+        chromium
+      ) as typeof chromium.connectOverCDP,
       fetch: globalThis.fetch,
       homedir: os.homedir,
       launchPersistentContext: chromium.launchPersistentContext.bind(
@@ -100,7 +107,8 @@ export class BrowserManager {
       const needsRelaunch =
         existing.type !== "launched" ||
         !existing.browser.isConnected() ||
-        (options.headless !== undefined && existing.headless !== requestedHeadless) ||
+        (options.headless !== undefined &&
+          existing.headless !== requestedHeadless) ||
         (options.ignoreHTTPSErrors !== undefined &&
           existing.ignoreHTTPSErrors !== requestedIgnoreHTTPSErrors);
 
@@ -111,7 +119,11 @@ export class BrowserManager {
       await this.stopBrowser(name);
     }
 
-    return this.launchBrowser(name, requestedHeadless, requestedIgnoreHTTPSErrors);
+    return this.launchBrowser(
+      name,
+      requestedHeadless,
+      requestedIgnoreHTTPSErrors
+    );
   }
 
   async autoConnect(name: string): Promise<BrowserEntry> {
@@ -129,7 +141,9 @@ export class BrowserManager {
     const attemptedEndpoints = new Set<string>();
     let lastError: unknown;
 
-    const tryEndpoint = async (endpoint: string | null): Promise<BrowserEntry | null> => {
+    const tryEndpoint = async (
+      endpoint: string | null
+    ): Promise<BrowserEntry | null> => {
       if (!endpoint || attemptedEndpoints.has(endpoint)) {
         return null;
       }
@@ -188,8 +202,8 @@ export class BrowserManager {
 
   getBrowser(name: string): BrowserEntry | undefined {
     const entry = this.browsers.get(name);
-    if (!entry || !entry.browser.isConnected()) {
-      return undefined;
+    if (!entry?.browser.isConnected()) {
+      return;
     }
 
     return entry;
@@ -217,7 +231,7 @@ export class BrowserManager {
     return page;
   }
 
-  async newPage(browserName: string): Promise<Page> {
+  newPage(browserName: string): Promise<Page> {
     const entry = this.getBrowserEntry(browserName);
     return entry.context.newPage();
   }
@@ -227,7 +241,10 @@ export class BrowserManager {
   // does not re-register the script on the context. Hashing is byte-exact:
   // editing a script file (even just whitespace) yields a new hash and a new
   // addInitScript call. Stop the browser to clear all applied scripts.
-  async applyInitScripts(browserName: string, scripts: readonly string[]): Promise<void> {
+  async applyInitScripts(
+    browserName: string,
+    scripts: readonly string[]
+  ): Promise<void> {
     if (scripts.length === 0) {
       return;
     }
@@ -245,7 +262,7 @@ export class BrowserManager {
 
   async listPages(browserName: string): Promise<BrowserPageSummary[]> {
     const entry = this.browsers.get(browserName);
-    if (!entry || !entry.browser.isConnected()) {
+    if (!entry?.browser.isConnected()) {
       return [];
     }
 
@@ -302,14 +319,13 @@ export class BrowserManager {
       .map((entry) => {
         this.pruneClosedPages(entry);
 
-        const status: BrowserSummary["status"] =
-          entry.type === "connected"
-            ? entry.browser.isConnected()
-              ? "connected"
-              : "disconnected"
-            : entry.browser.isConnected()
-              ? "running"
-              : "disconnected";
+        const connected = entry.browser.isConnected();
+        let status: BrowserSummary["status"];
+        if (entry.type === "connected") {
+          status = connected ? "connected" : "disconnected";
+        } else {
+          status = connected ? "running" : "disconnected";
+        }
 
         return {
           name: entry.name,
@@ -356,7 +372,7 @@ export class BrowserManager {
 
   private getBrowserEntry(name: string): BrowserEntry {
     const entry = this.browsers.get(name);
-    if (!entry || !entry.browser.isConnected()) {
+    if (!entry?.browser.isConnected()) {
       throw new Error(`Browser "${name}" is not running`);
     }
 
@@ -371,19 +387,24 @@ export class BrowserManager {
     const profileDir = path.join(this.baseDir, name, "chromium-profile");
     await this.dependencies.mkdir(profileDir, { recursive: true });
 
-    const context = await this.dependencies.launchPersistentContext(profileDir, {
-      headless,
-      viewport: headless ? undefined : null,
-      ignoreHTTPSErrors,
-      handleSIGINT: false,
-      handleSIGTERM: false,
-      handleSIGHUP: false,
-    });
+    const context = await this.dependencies.launchPersistentContext(
+      profileDir,
+      {
+        headless,
+        viewport: headless ? undefined : null,
+        ignoreHTTPSErrors,
+        handleSIGINT: false,
+        handleSIGTERM: false,
+        handleSIGHUP: false,
+      }
+    );
     const browser = context.browser();
 
     if (!browser) {
       await context.close();
-      throw new Error(`Playwright did not expose a browser handle for "${name}"`);
+      throw new Error(
+        `Playwright did not expose a browser handle for "${name}"`
+      );
     }
 
     const entry: BrowserEntry = {
@@ -403,7 +424,10 @@ export class BrowserManager {
     return entry;
   }
 
-  private async openConnectedBrowser(name: string, endpoint: string): Promise<BrowserEntry> {
+  private async openConnectedBrowser(
+    name: string,
+    endpoint: string
+  ): Promise<BrowserEntry> {
     const browser = await this.dependencies.connectOverCDP(endpoint);
     const contexts = browser.contexts();
 
@@ -472,7 +496,9 @@ export class BrowserManager {
     return null;
   }
 
-  private async readDevToolsActivePort(expectedPort?: number): Promise<string | null> {
+  private async readDevToolsActivePort(
+    expectedPort?: number
+  ): Promise<string | null> {
     for (const candidate of this.getDevToolsActivePortCandidates()) {
       let contents: string;
 
@@ -497,7 +523,10 @@ export class BrowserManager {
 
   private async probePort(port: number): Promise<string | null> {
     const endpoint = `http://127.0.0.1:${port}`;
-    const result = await this.fetchDebuggerWebSocketUrl(endpoint, PROBE_TIMEOUT_MS);
+    const result = await this.fetchDebuggerWebSocketUrl(
+      endpoint,
+      PROBE_TIMEOUT_MS
+    );
 
     if (result.status === "ok") {
       return result.webSocketDebuggerUrl;
@@ -532,7 +561,13 @@ export class BrowserManager {
             "Chrome Canary",
             "DevToolsActivePort"
           ),
-          path.join(homeDir, "Library", "Application Support", "Chromium", "DevToolsActivePort"),
+          path.join(
+            homeDir,
+            "Library",
+            "Application Support",
+            "Chromium",
+            "DevToolsActivePort"
+          ),
           path.join(
             homeDir,
             "Library",
@@ -546,9 +581,25 @@ export class BrowserManager {
         return [
           path.join(homeDir, ".config", "google-chrome", "DevToolsActivePort"),
           path.join(homeDir, ".config", "chromium", "DevToolsActivePort"),
-          path.join(homeDir, ".config", "google-chrome-beta", "DevToolsActivePort"),
-          path.join(homeDir, ".config", "google-chrome-unstable", "DevToolsActivePort"),
-          path.join(homeDir, ".config", "BraveSoftware", "Brave-Browser", "DevToolsActivePort"),
+          path.join(
+            homeDir,
+            ".config",
+            "google-chrome-beta",
+            "DevToolsActivePort"
+          ),
+          path.join(
+            homeDir,
+            ".config",
+            "google-chrome-unstable",
+            "DevToolsActivePort"
+          ),
+          path.join(
+            homeDir,
+            ".config",
+            "BraveSoftware",
+            "Brave-Browser",
+            "DevToolsActivePort"
+          ),
         ];
       case "win32":
         return [
@@ -579,7 +630,14 @@ export class BrowserManager {
             "User Data",
             "DevToolsActivePort"
           ),
-          path.join(homeDir, "AppData", "Local", "Chromium", "User Data", "DevToolsActivePort"),
+          path.join(
+            homeDir,
+            "AppData",
+            "Local",
+            "Chromium",
+            "User Data",
+            "DevToolsActivePort"
+          ),
           path.join(
             homeDir,
             "AppData",
@@ -628,12 +686,15 @@ export class BrowserManager {
     let response: Response;
 
     try {
-      response = await this.dependencies.fetch(this.toJsonVersionUrl(endpoint), {
-        headers: {
-          accept: "application/json",
-        },
-        signal: AbortSignal.timeout(timeoutMs),
-      });
+      response = await this.dependencies.fetch(
+        this.toJsonVersionUrl(endpoint),
+        {
+          headers: {
+            accept: "application/json",
+          },
+          signal: AbortSignal.timeout(timeoutMs),
+        }
+      );
     } catch {
       return { status: "unavailable" };
     }
@@ -659,7 +720,8 @@ export class BrowserManager {
         ? (payload as { webSocketDebuggerUrl?: unknown }).webSocketDebuggerUrl
         : undefined;
 
-    return typeof webSocketDebuggerUrl === "string" && webSocketDebuggerUrl.length > 0
+    return typeof webSocketDebuggerUrl === "string" &&
+      webSocketDebuggerUrl.length > 0
       ? {
           status: "ok",
           webSocketDebuggerUrl,
@@ -679,24 +741,25 @@ export class BrowserManager {
   }
 
   private buildAutoConnectError(lastError?: unknown): string {
-    const launchCommand =
-      this.dependencies.platform === "darwin"
-        ? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome --remote-debugging-port=9222"
-        : this.dependencies.platform === "win32"
-          ? "chrome.exe --remote-debugging-port=9222"
-          : "google-chrome --remote-debugging-port=9222";
+    let launchCommand = "google-chrome --remote-debugging-port=9222";
+    if (this.dependencies.platform === "darwin") {
+      launchCommand =
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome --remote-debugging-port=9222";
+    } else if (this.dependencies.platform === "win32") {
+      launchCommand = "chrome.exe --remote-debugging-port=9222";
+    }
 
     const details = [
       "Could not auto-discover a running Chrome instance with remote debugging enabled.",
       "Enable Chrome remote debugging at chrome://inspect/#remote-debugging",
       `or launch Chrome with: ${launchCommand}`,
     ];
-    const lastErrorMessage =
-      lastError instanceof Error
-        ? lastError.message
-        : typeof lastError === "string" && lastError.length > 0
-          ? lastError
-          : null;
+    let lastErrorMessage: string | null = null;
+    if (lastError instanceof Error) {
+      lastErrorMessage = lastError.message;
+    } else if (typeof lastError === "string" && lastError.length > 0) {
+      lastErrorMessage = lastError;
+    }
 
     if (lastErrorMessage) {
       details.push(`Last connection error: ${lastErrorMessage}`);
@@ -705,7 +768,10 @@ export class BrowserManager {
     return details.join("\n");
   }
 
-  private async resolveHttpEndpoint(endpoint: string, timeoutMs: number): Promise<string | null> {
+  private async resolveHttpEndpoint(
+    endpoint: string,
+    timeoutMs: number
+  ): Promise<string | null> {
     const result = await this.fetchDebuggerWebSocketUrl(endpoint, timeoutMs);
     if (result.status === "ok") {
       return result.webSocketDebuggerUrl;
@@ -721,7 +787,10 @@ export class BrowserManager {
     return null;
   }
 
-  private parseDevToolsActivePort(contents: string, expectedPort?: number): string | null {
+  private parseDevToolsActivePort(
+    contents: string,
+    expectedPort?: number
+  ): string | null {
     const lines = contents
       .split(/\r?\n/)
       .map((line) => line.trim())
@@ -753,8 +822,13 @@ export class BrowserManager {
       return null;
     }
 
-    const rawPort =
-      url.port || (url.protocol === "https:" ? "443" : url.protocol === "http:" ? "80" : "");
+    let defaultPort = "";
+    if (url.protocol === "https:") {
+      defaultPort = "443";
+    } else if (url.protocol === "http:") {
+      defaultPort = "80";
+    }
+    const rawPort = url.port || defaultPort;
     const port = Number.parseInt(rawPort, 10);
 
     return Number.isInteger(port) && port > 0 && port <= 65_535 ? port : null;
@@ -768,7 +842,11 @@ export class BrowserManager {
     ].join("\n");
   }
 
-  private registerNamedPage(entry: BrowserEntry, pageName: string, page: Page): void {
+  private registerNamedPage(
+    entry: BrowserEntry,
+    pageName: string,
+    page: Page
+  ): void {
     entry.pages.set(pageName, page);
 
     page.on("close", () => {
@@ -800,7 +878,7 @@ export class BrowserManager {
     const namesByPage = new Map<Page, string>();
 
     for (const [name, page] of entry.pages.entries()) {
-      if (!page.isClosed() && !namesByPage.has(page)) {
+      if (!(page.isClosed() || namesByPage.has(page))) {
         namesByPage.set(page, name);
       }
     }
@@ -812,7 +890,9 @@ export class BrowserManager {
     return [...new Set([entry.context, ...entry.browser.contexts()])];
   }
 
-  private getContextPages(entry: BrowserEntry): Array<{ context: BrowserContext; page: Page }> {
+  private getContextPages(
+    entry: BrowserEntry
+  ): Array<{ context: BrowserContext; page: Page }> {
     const pages: Array<{ context: BrowserContext; page: Page }> = [];
 
     for (const context of this.getBrowserContexts(entry)) {
@@ -843,7 +923,10 @@ export class BrowserManager {
     }
   }
 
-  private async findPageByTargetId(entry: BrowserEntry, targetId: string): Promise<Page | null> {
+  private async findPageByTargetId(
+    entry: BrowserEntry,
+    targetId: string
+  ): Promise<Page | null> {
     for (const { context, page } of this.getContextPages(entry)) {
       const pageTargetId = await this.getPageTargetId(context, page);
       if (pageTargetId === targetId) {
@@ -854,8 +937,13 @@ export class BrowserManager {
     return null;
   }
 
-  private async getPageTargetId(context: BrowserContext, page: Page): Promise<string | null> {
-    let session: Awaited<ReturnType<BrowserContext["newCDPSession"]>> | undefined;
+  private async getPageTargetId(
+    context: BrowserContext,
+    page: Page
+  ): Promise<string | null> {
+    let session:
+      | Awaited<ReturnType<BrowserContext["newCDPSession"]>>
+      | undefined;
 
     try {
       session = await context.newCDPSession(page);
