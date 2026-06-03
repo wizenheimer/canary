@@ -1,5 +1,5 @@
 {
-  "name": "@canary/daemon-client",
+  "name": "@usecanary/daemon-client",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -21,12 +21,12 @@
     "clean": "rm -rf coverage .turbo src/assets/embedded.generated.ts"
   },
   "dependencies": {
-    "@canary/logger": "workspace:*",
-    "@canary/protocol": "workspace:*"
+    "@usecanary/logger": "workspace:*",
+    "@usecanary/protocol": "workspace:*"
   },
   "devDependencies": {
-    "@canary/config": "workspace:*",
-    "@canary/daemon": "workspace:*",
+    "@usecanary/config": "workspace:*",
+    "@usecanary/daemon": "workspace:*",
     "@types/node": "^20.17.10",
     "typescript": "^5.8.0",
     "vitest": "^4.1.0"

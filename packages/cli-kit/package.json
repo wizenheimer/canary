@@ -1,5 +1,5 @@
 {
-  "name": "@canary/cli-kit",
+  "name": "@usecanary/cli-kit",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -14,14 +14,14 @@
   },
   "scripts": {
     "compile": "tsc --noEmit",
-    "test": "echo \"(no tests for @canary/cli-kit)\""
+    "test": "echo \"(no tests for @usecanary/cli-kit)\""
   },
   "dependencies": {
-    "@canary/logger": "workspace:*",
+    "@usecanary/logger": "workspace:*",
     "pino-pretty": "^13.0.0"
   },
   "devDependencies": {
-    "@canary/config": "workspace:*",
+    "@usecanary/config": "workspace:*",
     "@types/node": "^20.17.10",
     "typescript": "^5.8.0"
   }

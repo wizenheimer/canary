@@ -1,5 +1,5 @@
 {
-  "name": "@canary/logger",
+  "name": "@usecanary/logger",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -19,7 +19,7 @@
     "pino": "^9.5.0"
   },
   "devDependencies": {
-    "@canary/config": "workspace:*",
+    "@usecanary/config": "workspace:*",
     "typescript": "^5.7.2"
   }
 }

@@ -1,10 +1,24 @@
 {
-  "name": "@canary/browser",
+  "name": "@usecanary/browser",
   "version": "0.1.0",
-  "private": true,
   "type": "module",
   "description": "Browser-automation CLI. Supervises the embedded canary-daemon and exposes a scriptable API over named-page persistent browsers.",
   "license": "MIT",
+  "keywords": [
+    "browser-automation",
+    "playwright",
+    "ai-agent",
+    "scripting",
+    "cli",
+    "headless"
+  ],
+  "homepage": "https://github.com/usecanary/canary#readme",
+  "bugs": "https://github.com/usecanary/canary/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/usecanary/canary.git",
+    "directory": "apps/canary-browser"
+  },
   "engines": {
     "node": ">=20"
   },
@@ -14,6 +28,9 @@
   "files": [
     "dist/"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "prebuild": "node scripts/embed-assets.mjs",
     "build": "pnpm prebuild && node scripts/build.mjs",
@@ -21,23 +38,22 @@
     "compile": "pnpm prebuild && tsc --noEmit",
     "test": "pnpm build && vitest run",
     "test:watch": "pnpm build && vitest",
-    "clean": "rm -rf dist coverage .turbo src/assets/embedded.generated.ts"
-  },
-  "dependencies": {
-    "@canary/cli-kit": "workspace:*",
-    "@canary/daemon-client": "workspace:*",
-    "@canary/logger": "workspace:*",
-    "@canary/protocol": "workspace:*",
-    "@inquirer/checkbox": "^5.1.5",
-    "@inquirer/prompts": "^7.2.1",
-    "commander": "^12.1.0",
-    "pino": "^9.5.0",
-    "pino-pretty": "^13.0.0"
+    "clean": "rm -rf dist coverage .turbo src/assets/embedded.generated.ts",
+    "prepack": "pnpm build"
   },
   "devDependencies": {
-    "@canary/config": "workspace:*",
+    "@usecanary/cli-kit": "workspace:*",
+    "@usecanary/config": "workspace:*",
+    "@usecanary/daemon-client": "workspace:*",
+    "@usecanary/logger": "workspace:*",
+    "@usecanary/protocol": "workspace:*",
+    "@inquirer/checkbox": "^5.1.5",
+    "@inquirer/prompts": "^7.2.1",
     "@types/node": "^20.17.10",
+    "commander": "^12.1.0",
     "esbuild": "^0.27.4",
+    "pino": "^9.5.0",
+    "pino-pretty": "^13.0.0",
     "tsx": "^4.19.2",
     "typescript": "^5.8.0",
     "vitest": "^4.1.0"

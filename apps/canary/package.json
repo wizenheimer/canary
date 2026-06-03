@@ -1,10 +1,26 @@
 {
-  "name": "@canary/cli",
+  "name": "@usecanary/cli",
   "version": "0.1.0",
-  "private": true,
   "type": "module",
   "description": "Canary session orchestrator CLI. Drives the daemon to run capture-enabled QA sessions (trace/video/HAR/console) and renders self-contained verification reports.",
   "license": "MIT",
+  "keywords": [
+    "browser-automation",
+    "qa",
+    "playwright",
+    "ai-agent",
+    "testing",
+    "claude",
+    "cli",
+    "session-recording"
+  ],
+  "homepage": "https://github.com/usecanary/canary#readme",
+  "bugs": "https://github.com/usecanary/canary/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/usecanary/canary.git",
+    "directory": "apps/canary"
+  },
   "engines": {
     "node": ">=20"
   },
@@ -14,28 +30,30 @@
   "files": [
     "dist/"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "node scripts/build.mjs",
     "dev": "tsx src/cli.ts",
     "compile": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "clean": "rm -rf dist coverage .turbo"
-  },
-  "dependencies": {
-    "@canary/cli-kit": "workspace:*",
-    "@canary/daemon-client": "workspace:*",
-    "@canary/logger": "workspace:*",
-    "@canary/protocol": "workspace:*",
-    "commander": "^12.1.0",
-    "fflate": "^0.8.2",
-    "pino": "^9.5.0",
-    "pino-pretty": "^13.0.0"
+    "clean": "rm -rf dist coverage .turbo",
+    "prepack": "node scripts/build.mjs"
   },
   "devDependencies": {
-    "@canary/config": "workspace:*",
+    "@usecanary/cli-kit": "workspace:*",
+    "@usecanary/config": "workspace:*",
+    "@usecanary/daemon-client": "workspace:*",
+    "@usecanary/logger": "workspace:*",
+    "@usecanary/protocol": "workspace:*",
     "@types/node": "^20.17.10",
+    "commander": "^12.1.0",
     "esbuild": "^0.27.4",
+    "fflate": "^0.8.2",
+    "pino": "^9.5.0",
+    "pino-pretty": "^13.0.0",
     "tsx": "^4.19.2",
     "typescript": "^5.8.0",
     "vitest": "^4.1.0"
