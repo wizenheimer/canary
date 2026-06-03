@@ -1,0 +1,43 @@
+{
+  "name": "@canary/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Canary session orchestrator CLI. Drives the daemon to run capture-enabled QA sessions (trace/video/HAR/console) and renders self-contained verification reports.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "canary": "./dist/cli.js"
+  },
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "dev": "tsx src/cli.ts",
+    "compile": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "clean": "rm -rf dist coverage .turbo"
+  },
+  "dependencies": {
+    "@canary/cli-kit": "workspace:*",
+    "@canary/daemon-client": "workspace:*",
+    "@canary/logger": "workspace:*",
+    "@canary/protocol": "workspace:*",
+    "commander": "^12.1.0",
+    "fflate": "^0.8.2",
+    "pino": "^9.5.0",
+    "pino-pretty": "^13.0.0"
+  },
+  "devDependencies": {
+    "@canary/config": "workspace:*",
+    "@types/node": "^20.17.10",
+    "esbuild": "^0.27.4",
+    "tsx": "^4.19.2",
+    "typescript": "^5.8.0",
+    "vitest": "^4.1.0"
+  }
+}
