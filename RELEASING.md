@@ -29,12 +29,29 @@ so a plain `npm i -g @usecanary/cli` stays small.
 
 ## Cutting a release
 
+The guided way — `make release` (wraps `scripts/release.sh`): it refuses a dirty/stale tree,
+prompts for the bump (patch/minor/major or a custom version), bumps every package in lockstep,
+refreshes the lockfile, validates the build + npm packaging (dry-run), creates the
+`chore(release): vX.Y.Z` commit and the annotated tag — then **stops and hands you the push**:
+
+```bash
+make release                  # interactive: pick patch / minor / major
+make release BUMP=minor        # non-interactive bump
+make release VERSION=1.4.0      # explicit version
+# env knobs: YES=1 (skip confirm) · NO_VERIFY=1 (skip build+dry-run) · ALLOW_DIRTY=1
+```
+
+It prints the exact push to run last. Pushing the tag is intentionally manual — that push is what
+publishes to npm.
+
+The manual equivalent, if you'd rather run the steps yourself:
+
 ```bash
 node scripts/sync-version.mjs 0.2.0   # one version across every package.json + .claude-plugin/*
 pnpm install                          # refresh the lockfile
-git commit -am "release: v0.2.0"
+git commit -am "chore(release): v0.2.0"  # NB: "release:" alone fails commitlint — use a conventional type
 git tag v0.2.0
-git push origin main --tags
+git push origin main --follow-tags
 ```
 
 Pushing the tag triggers `.github/workflows/release.yml`, which verifies the tag matches the
