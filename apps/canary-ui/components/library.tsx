@@ -1,20 +1,23 @@
 "use client";
 
 import {
-  Check,
-  ChevronDown,
+  ArrowUpDown,
+  Film,
   Folder,
-  FolderPlus,
   Inbox,
-  Layers,
-  LayoutGrid,
+  Monitor,
   MoreHorizontal,
-  Plus,
   Search,
-  Table as TableIcon,
+  SearchX,
   Trash2,
 } from "lucide-react";
 import Link from "next/link";
+import {
+  parseAsArrayOf,
+  parseAsString,
+  parseAsStringLiteral,
+  useQueryState,
+} from "nuqs";
 import {
   type ReactNode,
   useCallback,
@@ -25,9 +28,14 @@ import {
 import { fmtMs, fmtRelative } from "@/lib/format";
 import type { SessionCard } from "@/lib/sessions";
 import { cn } from "@/lib/utils";
+import { AppSidebar } from "./app-sidebar";
+import {
+  MultiSelect,
+  type MultiSelectOption,
+  SingleSelect,
+} from "./multi-select";
 import { Pager, usePaged } from "./pager";
-import { TopBar } from "./top-bar";
-import { Notice, Spinner, StatusBadge } from "./ui";
+import { EmptyState, Notice, Spinner, StatusBadge } from "./ui";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
@@ -42,29 +50,14 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { Input } from "./ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "./ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "./ui/table";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "./ui/sidebar";
 import { Textarea } from "./ui/textarea";
 
-interface Root {
+export interface Root {
   id: string;
   isDefault?: boolean;
   label: string;
@@ -78,7 +71,7 @@ interface ListResponse {
   trashCount: number;
 }
 
-type Selection =
+export type Selection =
   | { kind: "all" }
   | { kind: "unfiled" }
   | { kind: "folder"; path: string }
@@ -92,7 +85,9 @@ type DialogState =
   | { type: "tags"; id: string; tags: string[]; name: string }
   | { type: "note"; id: string; note: string; name: string };
 
-type StatusFilter = "all" | "passed" | "failed" | "aborted";
+type StatusValue = "passed" | "failed" | "aborted";
+
+type SortKey = "newest" | "oldest" | "name" | "duration";
 
 function postJson(url: string, body: unknown): Promise<Response> {
   return fetch(url, {
@@ -100,6 +95,11 @@ function postJson(url: string, body: unknown): Promise<Response> {
     headers: { "content-type": "application/json" },
     method: "POST",
   });
+}
+
+function artifactSrc(rootId: string, id: string, rel: string): string {
+  const params = new URLSearchParams({ id, path: rel, root: rootId });
+  return `/api/artifact?${params}`;
 }
 
 function inFolder(card: SessionCard, path: string): boolean {
@@ -129,17 +129,107 @@ function matchesSearch(card: SessionCard, q: string): boolean {
   return hay.includes(q.toLowerCase());
 }
 
+function sortComparator(sort: SortKey) {
+  return (a: SessionCard, b: SessionCard) => {
+    switch (sort) {
+      case "oldest":
+        return a.createdAt.localeCompare(b.createdAt);
+      case "name":
+        return a.name.localeCompare(b.name);
+      case "duration":
+        return b.durationMs - a.durationMs;
+      default:
+        return b.createdAt.localeCompare(a.createdAt);
+    }
+  };
+}
+
+// ?sel encoding: "all" is the default (omitted), "unfiled"/"trash" map to those
+// views, and anything else is a folder path stored verbatim.
+function toSelection(sel: string): Selection {
+  switch (sel) {
+    case "unfiled":
+      return { kind: "unfiled" };
+    case "trash":
+      return { kind: "trash" };
+    case "all":
+      return { kind: "all" };
+    default:
+      return { kind: "folder", path: sel };
+  }
+}
+
+function fromSelection(s: Selection): string | null {
+  if (s.kind === "folder") {
+    return s.path;
+  }
+  if (s.kind === "all") {
+    return null;
+  }
+  return s.kind;
+}
+
+// Filters + the active selection live in the URL (?q, ?status, ?tags, ?sort,
+// ?sel) so any view of the dashboard is shareable; transient UI stays local.
+const STATUS_OPTIONS: MultiSelectOption[] = [
+  {
+    value: "passed",
+    label: "Passed",
+    icon: <span className="block size-2 rounded-full bg-primary" />,
+  },
+  {
+    value: "failed",
+    label: "Failed",
+    icon: <span className="block size-2 rounded-full bg-fail" />,
+  },
+  {
+    value: "aborted",
+    label: "Aborted",
+    icon: <span className="block size-2 rounded-full bg-warn" />,
+  },
+];
+const STATUS_PARSER = parseAsArrayOf(
+  parseAsStringLiteral(["passed", "failed", "aborted"] as const)
+).withDefault([]);
+const TAGS_PARSER = parseAsArrayOf(parseAsString).withDefault([]);
+const SORT_PARSER = parseAsStringLiteral([
+  "newest",
+  "oldest",
+  "name",
+  "duration",
+] as const).withDefault("newest");
+const SORT_OPTIONS: MultiSelectOption[] = [
+  { label: "Newest first", value: "newest" },
+  { label: "Oldest first", value: "oldest" },
+  { label: "Name (A–Z)", value: "name" },
+  { label: "Longest first", value: "duration" },
+];
+// Compact status indicator for the mobile card (the full badge is hidden there).
+const STATUS_DOT: Record<string, string> = {
+  aborted: "bg-warn",
+  failed: "bg-fail",
+  passed: "bg-primary",
+};
+
 export default function Library() {
   const [roots, setRoots] = useState<Root[]>([]);
   const [currentRootId, setCurrentRootId] = useState<string | null>(null);
   const [list, setList] = useState<ListResponse | null>(null);
   const [trash, setTrash] = useState<SessionCard[]>([]);
-  const [selection, setSelection] = useState<Selection>({ kind: "all" });
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [sel, setSel] = useQueryState("sel", parseAsString.withDefault("all"));
+  const selection = toSelection(sel);
+  const setSelection = useCallback(
+    (s: Selection) => {
+      void setSel(fromSelection(s));
+    },
+    [setSel]
+  );
+  const [search, setSearch] = useQueryState("q", parseAsString.withDefault(""));
+  const [statuses, setStatuses] = useQueryState("status", STATUS_PARSER);
+  const [tags, setTags] = useQueryState("tags", TAGS_PARSER);
   const [error, setError] = useState<string | null>(null);
   const [dialog, setDialog] = useState<DialogState | null>(null);
-  const [view, setView] = useState<"card" | "table">("table");
+  const [sort, setSort] = useQueryState("sort", SORT_PARSER);
 
   // Monotonic token so an out-of-order loadList response (after a rapid root
   // switch) can't overwrite the current root's list.
@@ -212,19 +302,6 @@ export default function Library() {
     loadRoots();
   }, [loadRoots]);
 
-  // Restore the persisted list view (defaults to table for first-time users).
-  useEffect(() => {
-    const saved = window.localStorage.getItem("canary.sessionView");
-    if (saved === "card" || saved === "table") {
-      setView(saved);
-    }
-  }, []);
-
-  const changeView = (v: "card" | "table") => {
-    setView(v);
-    window.localStorage.setItem("canary.sessionView", v);
-  };
-
   useEffect(() => {
     if (currentRootId) {
       loadList(currentRootId);
@@ -276,11 +353,39 @@ export default function Library() {
 
   const folders = list?.folders ?? [];
   const sessions = list?.sessions ?? [];
+  const allTags = [...new Set(sessions.flatMap((c) => c.tags))].sort();
   const visible = sessions
     .filter((c) => matchesSelection(c, selection))
-    .filter((c) => statusFilter === "all" || c.status === statusFilter)
-    .filter((c) => matchesSearch(c, search));
+    .filter((c) => statuses.length === 0 || statuses.includes(c.status))
+    .filter((c) => tags.length === 0 || c.tags.some((t) => tags.includes(t)))
+    .filter((c) => matchesSearch(c, search))
+    .sort(sortComparator(sort));
   const paged = usePaged(visible, 24);
+  const hasFilters =
+    search.trim().length > 0 || statuses.length > 0 || tags.length > 0;
+  const clearFilters = () => {
+    void setSearch("");
+    void setStatuses([]);
+    void setTags([]);
+  };
+  const emptySessions = hasFilters ? (
+    <EmptyState
+      action={
+        <Button onClick={clearFilters} size="sm" variant="outline">
+          Clear filters
+        </Button>
+      }
+      description="No sessions match your current search and filters."
+      icon={SearchX}
+      title="No matching sessions"
+    />
+  ) : (
+    <EmptyState
+      description="Sessions are recorded by the canary CLI. Run a capture and it’ll show up here."
+      icon={Inbox}
+      title="No sessions yet"
+    />
+  );
 
   const countFor = (sel: Selection) =>
     sessions.filter((c) => matchesSelection(c, sel)).length;
@@ -307,225 +412,145 @@ export default function Library() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <TopBar />
+    <SidebarProvider>
+      <AppSidebar
+        countForFolder={(path) => countFor({ kind: "folder", path })}
+        currentRootId={currentRootId}
+        folders={folders}
+        isDefaultRoot={list?.root.isDefault ?? false}
+        onAddSource={() => setDialog({ type: "addRoot" })}
+        onDeleteFolder={async (path) => {
+          await overlayOp({ op: "deleteFolder", path });
+          setSelection({ kind: "all" });
+        }}
+        onNewFolder={() => setDialog({ type: "newFolder" })}
+        onRefresh={() => {
+          loadList(currentRootId);
+          if (viewingTrash) {
+            loadTrashList(currentRootId);
+          }
+        }}
+        onRemoveRoot={removeRoot}
+        onRenameFolder={(path) => setDialog({ path, type: "renameFolder" })}
+        onSelect={setSelection}
+        onSwitchRoot={switchRoot}
+        roots={roots}
+        selection={selection}
+        sessionsCount={sessions.length}
+        trashCount={list?.trashCount ?? 0}
+        unfiledCount={countFor({ kind: "unfiled" })}
+      />
+      <SidebarInset>
+        <header className="flex h-14 shrink-0 items-center gap-2 border-border border-b px-4">
+          <SidebarTrigger className="-ml-1" />
+          <h1 className="truncate font-bold text-lg tracking-tight">
+            {selectionTitle}
+          </h1>
+        </header>
 
-      <main className="mx-auto w-full max-w-[1200px] flex-1 px-6 pt-10 pb-20">
-        <div className="mb-5 flex flex-wrap items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                className="group flex items-center gap-2 rounded-md font-bold text-2xl tracking-tight outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                type="button"
-              >
-                <span className="max-w-[60vw] truncate">{selectionTitle}</span>
-                <ChevronDown className="size-5 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="start"
-              className="max-h-[70vh] min-w-64 overflow-y-auto"
-            >
-              <DropdownMenuLabel>Source</DropdownMenuLabel>
-              {roots.map((r) => (
-                <DropdownMenuItem key={r.id} onSelect={() => switchRoot(r.id)}>
-                  <span className="truncate">
-                    {r.label}
-                    {r.isDefault ? " (default)" : ""}
-                  </span>
-                  {r.id === currentRootId ? (
-                    <Check className="ml-auto size-4 text-muted-foreground" />
-                  ) : null}
-                </DropdownMenuItem>
-              ))}
-              <DropdownMenuItem onSelect={() => setDialog({ type: "addRoot" })}>
-                <Plus /> Add source…
-              </DropdownMenuItem>
-              {list?.root.isDefault ? null : (
-                <DropdownMenuItem onSelect={removeRoot} variant="destructive">
-                  <Trash2 /> Remove source
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuSeparator />
-              <DropdownMenuLabel>Folders</DropdownMenuLabel>
-              <FolderItem
-                active={selection.kind === "all"}
-                count={sessions.length}
-                icon={<Layers className="size-3.5" />}
-                label="All sessions"
-                onSelect={() => setSelection({ kind: "all" })}
+        <div className="w-full flex-1 px-4 pt-4 pb-20">
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+            <div className="relative w-full sm:w-64">
+              <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                className="h-8 w-full pl-8"
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search name, id, tag, note…"
+                type="search"
+                value={search}
               />
-              <FolderItem
-                active={selection.kind === "unfiled"}
-                count={countFor({ kind: "unfiled" })}
-                icon={<Inbox className="size-3.5" />}
-                label="Unfiled"
-                onSelect={() => setSelection({ kind: "unfiled" })}
+            </div>
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              <MultiSelect
+                label="Status"
+                onChange={(next) => void setStatuses(next as StatusValue[])}
+                options={STATUS_OPTIONS}
+                selected={statuses}
               />
-              {folders.map((path) => {
-                const depth = path.split("/").length - 1;
-                const label = path.split("/").at(-1) ?? path;
-                return (
-                  <FolderItem
-                    active={
-                      selection.kind === "folder" && selection.path === path
-                    }
-                    count={countFor({ kind: "folder", path })}
-                    depth={depth}
-                    icon={<Folder className="size-3.5" />}
-                    key={path}
-                    label={label}
-                    onSelect={() => setSelection({ kind: "folder", path })}
-                  />
-                );
-              })}
-              <FolderItem
-                active={selection.kind === "trash"}
-                count={list?.trashCount ?? 0}
-                icon={<Trash2 className="size-3.5" />}
-                label="Trash"
-                onSelect={() => setSelection({ kind: "trash" })}
-              />
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onSelect={() => setDialog({ type: "newFolder" })}
-              >
-                <FolderPlus /> New folder…
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {selection.kind === "folder" && (
-            <>
-              <Button
-                onClick={() =>
-                  setDialog({ path: selection.path, type: "renameFolder" })
+              {allTags.length > 0 ? (
+                <MultiSelect
+                  label="Tags"
+                  onChange={(next) => void setTags(next)}
+                  options={allTags.map((t) => ({ label: t, value: t }))}
+                  selected={tags}
+                />
+              ) : null}
+              <SingleSelect
+                ariaLabel="Sort sessions"
+                onChange={(v) => void setSort(v as SortKey)}
+                options={SORT_OPTIONS}
+                triggerIcon={
+                  <ArrowUpDown className="size-3.5 text-muted-foreground" />
                 }
-                size="sm"
-                variant="outline"
-              >
-                Rename
-              </Button>
+                value={sort}
+              />
+            </div>
+            <div className="hidden sm:block sm:flex-1" />
+            {viewingTrash && trash.length > 0 ? (
               <Button
-                onClick={async () => {
-                  await overlayOp({ op: "deleteFolder", path: selection.path });
-                  setSelection({ kind: "all" });
-                }}
+                onClick={() => trashOp({ action: "empty" })}
                 size="sm"
                 variant="destructive"
               >
-                Delete folder
+                Empty trash
               </Button>
-            </>
-          )}
-          {selection.kind === "trash" && trash.length > 0 && (
-            <Button
-              onClick={() => trashOp({ action: "empty" })}
-              size="sm"
-              variant="destructive"
-            >
-              Empty trash
-            </Button>
-          )}
-        </div>
-
-        <div className="mb-4 flex flex-wrap items-center gap-3">
-          <div className="relative">
-            <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              className="h-8 w-64 pl-8"
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search name, id, tag, note…"
-              type="search"
-              value={search}
-            />
+            ) : null}
           </div>
-          <Select
-            onValueChange={(v) => setStatusFilter(v as StatusFilter)}
-            value={statusFilter}
-          >
-            <SelectTrigger className="w-[150px]" size="sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All statuses</SelectItem>
-              <SelectItem value="passed">Passed</SelectItem>
-              <SelectItem value="failed">Failed</SelectItem>
-              <SelectItem value="aborted">Aborted</SelectItem>
-            </SelectContent>
-          </Select>
-          <div className="flex-1" />
-          {viewingTrash ? null : (
-            <div className="inline-flex overflow-hidden rounded-md border border-border">
-              <button
-                className={cn(
-                  "flex items-center gap-1.5 px-2.5 py-1.5 text-[13px]",
-                  view === "table"
-                    ? "bg-primary/15 text-foreground"
-                    : "text-muted-foreground hover:bg-well"
-                )}
-                onClick={() => changeView("table")}
-                type="button"
-              >
-                <TableIcon className="size-4" /> Table
-              </button>
-              <button
-                className={cn(
-                  "flex items-center gap-1.5 border-border border-l px-2.5 py-1.5 text-[13px]",
-                  view === "card"
-                    ? "bg-primary/15 text-foreground"
-                    : "text-muted-foreground hover:bg-well"
-                )}
-                onClick={() => changeView("card")}
-                type="button"
-              >
-                <LayoutGrid className="size-4" /> Cards
-              </button>
+
+          {error ? <Notice error>{error}</Notice> : null}
+
+          {viewingTrash ? (
+            <TrashGrid
+              emptyState={
+                <EmptyState
+                  description="Deleted sessions land here. Restore one, or empty the trash to remove it for good."
+                  icon={Trash2}
+                  title="Trash is empty"
+                />
+              }
+              onDelete={(id) => trashOp({ action: "delete", id })}
+              onRestore={(id) => trashOp({ action: "restore", id })}
+              sessions={trash}
+            />
+          ) : (
+            <SessionGrid
+              emptyState={emptySessions}
+              onMove={(c) =>
+                setDialog({
+                  current: c.folder,
+                  id: c.id,
+                  name: c.name,
+                  type: "move",
+                })
+              }
+              onNote={(c) =>
+                setDialog({
+                  id: c.id,
+                  name: c.name,
+                  note: c.note ?? "",
+                  type: "note",
+                })
+              }
+              onTags={(c) =>
+                setDialog({
+                  id: c.id,
+                  name: c.name,
+                  tags: c.tags,
+                  type: "tags",
+                })
+              }
+              onTrash={(id) => trashOp({ action: "trash", id })}
+              rootId={currentRootId}
+              sessions={paged.slice}
+            />
+          )}
+          {viewingTrash || visible.length === 0 ? null : (
+            <div className="mt-4">
+              <Pager paged={paged} />
             </div>
           )}
         </div>
-
-        {error ? <Notice error>{error}</Notice> : null}
-
-        {viewingTrash ? (
-          <TrashGrid
-            onDelete={(id) => trashOp({ action: "delete", id })}
-            onRestore={(id) => trashOp({ action: "restore", id })}
-            sessions={trash}
-          />
-        ) : (
-          <SessionList
-            onMove={(c) =>
-              setDialog({
-                current: c.folder,
-                id: c.id,
-                name: c.name,
-                type: "move",
-              })
-            }
-            onNote={(c) =>
-              setDialog({
-                id: c.id,
-                name: c.name,
-                note: c.note ?? "",
-                type: "note",
-              })
-            }
-            onTags={(c) =>
-              setDialog({ id: c.id, name: c.name, tags: c.tags, type: "tags" })
-            }
-            onTrash={(id) => trashOp({ action: "trash", id })}
-            rootId={currentRootId}
-            sessions={paged.slice}
-            view={view}
-          />
-        )}
-        {viewingTrash ? null : (
-          <div className="mt-4">
-            <Pager paged={paged} />
-          </div>
-        )}
-      </main>
+      </SidebarInset>
 
       {dialog ? (
         <Dialogs
@@ -572,37 +597,7 @@ export default function Library() {
           }}
         />
       ) : null}
-    </div>
-  );
-}
-
-function FolderItem({
-  active,
-  count,
-  depth = 0,
-  icon,
-  label,
-  onSelect,
-}: {
-  active: boolean;
-  count: number;
-  depth?: number;
-  icon?: ReactNode;
-  label: string;
-  onSelect: () => void;
-}) {
-  return (
-    <DropdownMenuItem
-      className={cn(active && "bg-primary/15 font-medium")}
-      onSelect={onSelect}
-      style={{ paddingLeft: `${8 + depth * 14}px` }}
-    >
-      <span className="flex w-4 justify-center text-faint">{icon}</span>
-      <span className="truncate">{label}</span>
-      <span className="ml-auto pl-3 text-faint text-xs tabular-nums">
-        {count}
-      </span>
-    </DropdownMenuItem>
+    </SidebarProvider>
   );
 }
 
@@ -648,203 +643,142 @@ function SessionActionsMenu({
   );
 }
 
-function SessionList({
-  view,
-  ...props
-}: SessionListProps & { view: "card" | "table" }) {
-  return view === "table" ? (
-    <SessionTable {...props} />
-  ) : (
-    <SessionGrid {...props} />
+function SessionThumb({
+  alt,
+  hasVideo,
+  src,
+}: {
+  alt: string;
+  hasVideo: boolean;
+  src: string | null;
+}) {
+  const [failed, setFailed] = useState(false);
+  return (
+    <div className="relative flex h-16 w-28 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-well text-faint">
+      {hasVideo ? <Film className="size-5" /> : <Monitor className="size-5" />}
+      {src && !failed ? (
+        // biome-ignore lint/a11y/noNoninteractiveElementInteractions: <img onError> is the standard broken-thumbnail fallback, not a user interaction
+        <img
+          alt={alt}
+          className="absolute inset-0 size-full object-cover"
+          loading="lazy"
+          onError={() => setFailed(true)}
+          src={src}
+        />
+      ) : null}
+    </div>
   );
 }
 
 function SessionGrid({
+  emptyState,
   onMove,
   onNote,
   onTags,
   onTrash,
   rootId,
   sessions,
-}: SessionListProps) {
+}: SessionListProps & { emptyState: ReactNode }) {
   if (sessions.length === 0) {
-    return <Notice>No sessions here yet.</Notice>;
+    return <>{emptyState}</>;
   }
   return (
-    <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4">
+    <div className="flex flex-col gap-2.5">
       {sessions.map((c) => (
-        <Card
-          className="gap-3 p-5 shadow-none transition-colors hover:border-ink-strong"
+        <div
+          className="group flex items-center gap-3 rounded-xl border border-border bg-card transition-colors hover:border-ink-strong"
           key={c.id}
         >
-          <div className="flex items-start gap-2.5">
-            <StatusBadge small status={c.status} />
-            <Link
-              className="min-w-0 break-words font-semibold text-base tracking-tight hover:underline"
-              href={`/s/${rootId}/${c.id}`}
-            >
-              {c.name}
-            </Link>
-            <div className="ml-auto">
-              <SessionActionsMenu
-                c={c}
-                onMove={onMove}
-                onNote={onNote}
-                onTags={onTags}
-                onTrash={onTrash}
-              />
+          <Link
+            className="flex min-w-0 flex-1 items-center gap-4 rounded-l-xl py-3 pl-3 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            href={`/s/${rootId}/${c.id}`}
+          >
+            <SessionThumb
+              alt={`Preview of ${c.name}`}
+              hasVideo={c.hasVideo}
+              src={c.thumbnail ? artifactSrc(rootId, c.id, c.thumbnail) : null}
+            />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <span
+                  className={cn(
+                    "size-2 shrink-0 rounded-full sm:hidden",
+                    STATUS_DOT[c.status]
+                  )}
+                />
+                <span className="hidden sm:inline-flex">
+                  <StatusBadge small status={c.status} />
+                </span>
+                <span className="truncate font-semibold text-[15px] tracking-tight">
+                  {c.name}
+                </span>
+              </div>
+              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-muted-foreground tabular-nums">
+                <span>{fmtRelative(c.createdAt)}</span>
+                <span aria-hidden="true">·</span>
+                <span>{fmtMs(c.durationMs)}</span>
+                <span className="hidden flex-wrap items-center gap-x-2 gap-y-1 sm:flex">
+                  <span aria-hidden="true">·</span>
+                  <span>
+                    {c.stepsPassed}/{c.stepsTotal} steps
+                  </span>
+                  {c.consoleErrors > 0 ? (
+                    <span className="font-semibold text-fail">
+                      {c.consoleErrors} console
+                    </span>
+                  ) : null}
+                  {c.networkFailures > 0 ? (
+                    <span className="font-semibold text-fail">
+                      {c.networkFailures} network
+                    </span>
+                  ) : null}
+                  {c.folder ? (
+                    <span className="flex items-center gap-1">
+                      <Folder className="size-3.5" /> {c.folder}
+                    </span>
+                  ) : null}
+                </span>
+              </div>
             </div>
-          </div>
-          <div className="text-[13px] text-muted-foreground">
-            {fmtRelative(c.createdAt)} · {fmtMs(c.durationMs)}
-          </div>
-          <div className="flex flex-wrap gap-3.5 text-[13px] text-muted-foreground tabular-nums">
-            <span>
-              {c.stepsPassed}/{c.stepsTotal} steps
-            </span>
-            {c.consoleErrors > 0 ? (
-              <span className="font-semibold text-fail">
-                {c.consoleErrors} console
-              </span>
-            ) : null}
-            {c.networkFailures > 0 ? (
-              <span className="font-semibold text-fail">
-                {c.networkFailures} network
-              </span>
-            ) : null}
-            {c.folder ? (
-              <span className="flex items-center gap-1">
-                <Folder className="size-3.5" /> {c.folder}
-              </span>
-            ) : null}
-          </div>
-          {c.tags.length > 0 ? (
-            <div className="flex flex-wrap gap-1.5">
-              {c.tags.map((t) => (
+          </Link>
+          <div className="flex shrink-0 items-center gap-2 py-3 pr-3">
+            <span className="hidden items-center gap-2 sm:flex">
+              {c.tags.slice(0, 2).map((t) => (
                 <Badge key={t} variant="secondary">
                   {t}
                 </Badge>
               ))}
-            </div>
-          ) : null}
-        </Card>
+              {c.tags.length > 2 ? (
+                <Badge variant="secondary">+{c.tags.length - 2}</Badge>
+              ) : null}
+            </span>
+            <SessionActionsMenu
+              c={c}
+              onMove={onMove}
+              onNote={onNote}
+              onTags={onTags}
+              onTrash={onTrash}
+            />
+          </div>
+        </div>
       ))}
     </div>
   );
 }
 
-function SessionTable({
-  onMove,
-  onNote,
-  onTags,
-  onTrash,
-  rootId,
-  sessions,
-}: SessionListProps) {
-  if (sessions.length === 0) {
-    return <Notice>No sessions here yet.</Notice>;
-  }
-  return (
-    <div className="overflow-x-auto rounded-lg border border-border bg-card">
-      <Table className="[&_td]:whitespace-nowrap [&_td]:px-4 [&_td]:py-2.5 [&_td]:align-middle [&_th]:whitespace-nowrap [&_th]:px-4 [&_th]:py-2.5 [&_th]:font-semibold [&_th]:text-[11px] [&_th]:text-faint [&_th]:uppercase [&_th]:tracking-wide">
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[84px]">Status</TableHead>
-            <TableHead>Name</TableHead>
-            <TableHead>Folder</TableHead>
-            <TableHead className="text-right">Steps</TableHead>
-            <TableHead className="text-right">Console</TableHead>
-            <TableHead className="text-right">Network</TableHead>
-            <TableHead className="text-right">Duration</TableHead>
-            <TableHead>Created</TableHead>
-            <TableHead className="text-right">Tags</TableHead>
-            <TableHead className="w-10" />
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {sessions.map((c) => (
-            <TableRow key={c.id}>
-              <TableCell>
-                <StatusBadge small status={c.status} />
-              </TableCell>
-              <TableCell className="max-w-[280px]">
-                <Link
-                  className="block truncate font-medium hover:underline"
-                  href={`/s/${rootId}/${c.id}`}
-                >
-                  {c.name}
-                </Link>
-              </TableCell>
-              <TableCell className="max-w-[160px] truncate text-muted-foreground">
-                {c.folder ?? "—"}
-              </TableCell>
-              <TableCell className="text-right text-muted-foreground tabular-nums">
-                {c.stepsPassed}/{c.stepsTotal}
-              </TableCell>
-              <TableCell
-                className={cn(
-                  "text-right tabular-nums",
-                  c.consoleErrors > 0 ? "font-semibold text-fail" : "text-faint"
-                )}
-              >
-                {c.consoleErrors}
-              </TableCell>
-              <TableCell
-                className={cn(
-                  "text-right tabular-nums",
-                  c.networkFailures > 0
-                    ? "font-semibold text-fail"
-                    : "text-faint"
-                )}
-              >
-                {c.networkFailures}
-              </TableCell>
-              <TableCell className="text-right text-muted-foreground tabular-nums">
-                {fmtMs(c.durationMs)}
-              </TableCell>
-              <TableCell className="text-muted-foreground">
-                {fmtRelative(c.createdAt)}
-              </TableCell>
-              <TableCell>
-                <div className="flex flex-wrap justify-end gap-1">
-                  {c.tags.slice(0, 3).map((t) => (
-                    <Badge key={t} variant="secondary">
-                      {t}
-                    </Badge>
-                  ))}
-                  {c.tags.length > 3 ? (
-                    <Badge variant="secondary">+{c.tags.length - 3}</Badge>
-                  ) : null}
-                </div>
-              </TableCell>
-              <TableCell className="text-right">
-                <SessionActionsMenu
-                  c={c}
-                  onMove={onMove}
-                  onNote={onNote}
-                  onTags={onTags}
-                  onTrash={onTrash}
-                />
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
-  );
-}
-
 function TrashGrid({
+  emptyState,
   onDelete,
   onRestore,
   sessions,
 }: {
+  emptyState: ReactNode;
   onDelete: (id: string) => void;
   onRestore: (id: string) => void;
   sessions: SessionCard[];
 }) {
   if (sessions.length === 0) {
-    return <Notice>Trash is empty.</Notice>;
+    return <>{emptyState}</>;
   }
   return (
     <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4">
@@ -1030,19 +964,16 @@ function Dialogs({
             <DialogTitle>Move &ldquo;{dialog.name}&rdquo;</DialogTitle>
           </DialogHeader>
           <DialogLabel htmlFor="d-move">Folder</DialogLabel>
-          <Select onValueChange={setMoveTarget} value={moveTarget}>
-            <SelectTrigger className="w-full" id="d-move">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__unfiled__">Unfiled</SelectItem>
-              {folders.map((f) => (
-                <SelectItem key={f} value={f}>
-                  {f}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <SingleSelect
+            ariaLabel="Move to folder"
+            className="w-full justify-between"
+            onChange={setMoveTarget}
+            options={[
+              { label: "Unfiled", value: "__unfiled__" },
+              ...folders.map((f) => ({ label: f, value: f })),
+            ]}
+            value={moveTarget}
+          />
           <DialogLabel htmlFor="d-move-new">…or a new folder path</DialogLabel>
           <Input
             id="d-move-new"

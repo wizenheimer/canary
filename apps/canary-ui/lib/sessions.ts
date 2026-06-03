@@ -44,6 +44,7 @@ export interface SessionCard {
   stepsPassed: number;
   stepsTotal: number;
   tags: string[];
+  thumbnail: string | null;
 }
 
 async function scanDir(
@@ -77,6 +78,19 @@ async function scanDir(
   return out;
 }
 
+// A representative still for the card-view preview: the final step's screenshot
+// (the end state), falling back to any captured screenshot. Returns the path
+// relative to the session dir, served via /api/artifact; null when none exist.
+function pickThumbnail(m: SessionManifest): string | null {
+  for (let i = m.steps.length - 1; i >= 0; i -= 1) {
+    const shot = m.steps[i]?.screenshot;
+    if (shot) {
+      return shot;
+    }
+  }
+  return Object.values(m.artifacts.screenshots)[0]?.path ?? null;
+}
+
 function toCard(id: string, m: SessionManifest, overlay: Overlay): SessionCard {
   const card: SessionCard = {
     consoleErrors: m.summary.consoleErrors,
@@ -94,6 +108,7 @@ function toCard(id: string, m: SessionManifest, overlay: Overlay): SessionCard {
     stepsPassed: m.summary.stepsPassed,
     stepsTotal: m.summary.stepsTotal,
     tags: overlay.tags[id] ?? [],
+    thumbnail: pickThumbnail(m),
   };
   const note = overlay.notes[id];
   if (note) {

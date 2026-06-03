@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleAlert, Loader2 } from "lucide-react";
+import { CircleAlert, Loader2, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { Alert, AlertDescription } from "./ui/alert";
@@ -129,4 +129,39 @@ export function Notice({
     );
   }
   return <div className="p-10 text-center text-faint italic">{children}</div>;
+}
+
+// A designed empty state: a tonal icon medallion over a title + description and
+// an optional call to action. Reused for empty lists, filtered-to-nothing, and
+// the empty trash.
+export function EmptyState({
+  action,
+  description,
+  icon: Icon,
+  title,
+}: {
+  action?: ReactNode;
+  description?: string;
+  icon: LucideIcon;
+  title: string;
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center px-6 py-20 text-center">
+      <div className="relative mb-4 flex size-16 items-center justify-center">
+        <span className="absolute inset-0 rounded-full bg-primary/10" />
+        <span className="flex size-12 items-center justify-center rounded-full border border-line-2 bg-card text-faint">
+          <Icon className="size-6" strokeWidth={1.5} />
+        </span>
+      </div>
+      <h3 className="font-semibold text-foreground text-sm tracking-tight">
+        {title}
+      </h3>
+      {description ? (
+        <p className="mt-1.5 max-w-xs text-[13px] text-muted-foreground leading-relaxed">
+          {description}
+        </p>
+      ) : null}
+      {action ? <div className="mt-5">{action}</div> : null}
+    </div>
+  );
 }
