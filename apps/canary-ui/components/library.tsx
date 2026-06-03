@@ -7,9 +7,11 @@ import {
   FolderPlus,
   Inbox,
   Layers,
+  LayoutGrid,
   MoreHorizontal,
   Plus,
   Search,
+  Table as TableIcon,
   Trash2,
 } from "lucide-react";
 import Link from "next/link";
@@ -23,7 +25,8 @@ import {
 import { fmtMs, fmtRelative } from "@/lib/format";
 import type { SessionCard } from "@/lib/sessions";
 import { cn } from "@/lib/utils";
-import { Logo } from "./logo";
+import { Pager, usePaged } from "./pager";
+import { TopBar } from "./top-bar";
 import { Notice, Spinner, StatusBadge } from "./ui";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
@@ -51,7 +54,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import { Separator } from "./ui/separator";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "./ui/table";
 import { Textarea } from "./ui/textarea";
 
 interface Root {
@@ -129,6 +139,7 @@ export default function Library() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [error, setError] = useState<string | null>(null);
   const [dialog, setDialog] = useState<DialogState | null>(null);
+  const [view, setView] = useState<"card" | "table">("table");
 
   // Monotonic token so an out-of-order loadList response (after a rapid root
   // switch) can't overwrite the current root's list.
@@ -201,6 +212,19 @@ export default function Library() {
     loadRoots();
   }, [loadRoots]);
 
+  // Restore the persisted list view (defaults to table for first-time users).
+  useEffect(() => {
+    const saved = window.localStorage.getItem("canary.sessionView");
+    if (saved === "card" || saved === "table") {
+      setView(saved);
+    }
+  }, []);
+
+  const changeView = (v: "card" | "table") => {
+    setView(v);
+    window.localStorage.setItem("canary.sessionView", v);
+  };
+
   useEffect(() => {
     if (currentRootId) {
       loadList(currentRootId);
@@ -250,20 +274,13 @@ export default function Library() {
     }
   };
 
-  if (!currentRootId) {
-    return (
-      <main className="flex min-h-screen items-center justify-center p-10">
-        {error ? <Notice error>Could not load: {error}</Notice> : <Spinner />}
-      </main>
-    );
-  }
-
   const folders = list?.folders ?? [];
   const sessions = list?.sessions ?? [];
   const visible = sessions
     .filter((c) => matchesSelection(c, selection))
     .filter((c) => statusFilter === "all" || c.status === statusFilter)
     .filter((c) => matchesSearch(c, search));
+  const paged = usePaged(visible, 24);
 
   const countFor = (sel: Selection) =>
     sessions.filter((c) => matchesSelection(c, sel)).length;
@@ -281,148 +298,103 @@ export default function Library() {
     }
   })();
 
-  const currentRoot = roots.find((r) => r.id === currentRootId);
+  if (!currentRootId) {
+    return (
+      <main className="flex min-h-screen items-center justify-center p-10">
+        {error ? <Notice error>Could not load: {error}</Notice> : <Spinner />}
+      </main>
+    );
+  }
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-30 flex flex-wrap items-center gap-2 border-border border-b bg-card/85 px-6 py-3 backdrop-blur">
-        <Link
-          className="rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          href="/"
-        >
-          <Logo />
-        </Link>
+      <TopBar />
 
-        <Separator className="!h-6 mx-1" orientation="vertical" />
-
-        {/* Source root selector */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button size="sm" variant="outline">
-              <span className="text-muted-foreground">Source:</span>
-              <span className="max-w-[14rem] truncate">
-                {currentRoot?.label ?? "—"}
-              </span>
-              <ChevronDown className="opacity-60" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="min-w-56">
-            <DropdownMenuLabel>Source folder</DropdownMenuLabel>
-            {roots.map((r) => (
-              <DropdownMenuItem key={r.id} onSelect={() => switchRoot(r.id)}>
-                <span className="truncate">
-                  {r.label}
-                  {r.isDefault ? " (default)" : ""}
-                </span>
-                {r.id === currentRootId ? (
-                  <Check className="ml-auto size-4 text-muted-foreground" />
-                ) : null}
+      <main className="mx-auto w-full max-w-[1200px] flex-1 px-6 pt-10 pb-20">
+        <div className="mb-5 flex flex-wrap items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="group flex items-center gap-2 rounded-md font-bold text-2xl tracking-tight outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                type="button"
+              >
+                <span className="max-w-[60vw] truncate">{selectionTitle}</span>
+                <ChevronDown className="size-5 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="start"
+              className="max-h-[70vh] min-w-64 overflow-y-auto"
+            >
+              <DropdownMenuLabel>Source</DropdownMenuLabel>
+              {roots.map((r) => (
+                <DropdownMenuItem key={r.id} onSelect={() => switchRoot(r.id)}>
+                  <span className="truncate">
+                    {r.label}
+                    {r.isDefault ? " (default)" : ""}
+                  </span>
+                  {r.id === currentRootId ? (
+                    <Check className="ml-auto size-4 text-muted-foreground" />
+                  ) : null}
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuItem onSelect={() => setDialog({ type: "addRoot" })}>
+                <Plus /> Add source…
               </DropdownMenuItem>
-            ))}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={() => setDialog({ type: "addRoot" })}>
-              <Plus /> Add source…
-            </DropdownMenuItem>
-            {list?.root.isDefault ? null : (
-              <DropdownMenuItem onSelect={removeRoot} variant="destructive">
-                <Trash2 /> Remove source
+              {list?.root.isDefault ? null : (
+                <DropdownMenuItem onSelect={removeRoot} variant="destructive">
+                  <Trash2 /> Remove source
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>Folders</DropdownMenuLabel>
+              <FolderItem
+                active={selection.kind === "all"}
+                count={sessions.length}
+                icon={<Layers className="size-3.5" />}
+                label="All sessions"
+                onSelect={() => setSelection({ kind: "all" })}
+              />
+              <FolderItem
+                active={selection.kind === "unfiled"}
+                count={countFor({ kind: "unfiled" })}
+                icon={<Inbox className="size-3.5" />}
+                label="Unfiled"
+                onSelect={() => setSelection({ kind: "unfiled" })}
+              />
+              {folders.map((path) => {
+                const depth = path.split("/").length - 1;
+                const label = path.split("/").at(-1) ?? path;
+                return (
+                  <FolderItem
+                    active={
+                      selection.kind === "folder" && selection.path === path
+                    }
+                    count={countFor({ kind: "folder", path })}
+                    depth={depth}
+                    icon={<Folder className="size-3.5" />}
+                    key={path}
+                    label={label}
+                    onSelect={() => setSelection({ kind: "folder", path })}
+                  />
+                );
+              })}
+              <FolderItem
+                active={selection.kind === "trash"}
+                count={list?.trashCount ?? 0}
+                icon={<Trash2 className="size-3.5" />}
+                label="Trash"
+                onSelect={() => setSelection({ kind: "trash" })}
+              />
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onSelect={() => setDialog({ type: "newFolder" })}
+              >
+                <FolderPlus /> New folder…
               </DropdownMenuItem>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
-        {/* Folder navigation */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button size="sm" variant="outline">
-              <Folder className="opacity-70" />
-              <span className="max-w-[16rem] truncate">{selectionTitle}</span>
-              <ChevronDown className="opacity-60" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="max-h-[70vh] min-w-64 overflow-y-auto">
-            <FolderItem
-              active={selection.kind === "all"}
-              count={sessions.length}
-              icon={<Layers className="size-3.5" />}
-              label="All sessions"
-              onSelect={() => setSelection({ kind: "all" })}
-            />
-            <FolderItem
-              active={selection.kind === "unfiled"}
-              count={countFor({ kind: "unfiled" })}
-              icon={<Inbox className="size-3.5" />}
-              label="Unfiled"
-              onSelect={() => setSelection({ kind: "unfiled" })}
-            />
-            {folders.map((path) => {
-              const depth = path.split("/").length - 1;
-              const label = path.split("/").at(-1) ?? path;
-              return (
-                <FolderItem
-                  active={
-                    selection.kind === "folder" && selection.path === path
-                  }
-                  count={countFor({ kind: "folder", path })}
-                  depth={depth}
-                  icon={<Folder className="size-3.5" />}
-                  key={path}
-                  label={label}
-                  onSelect={() => setSelection({ kind: "folder", path })}
-                />
-              );
-            })}
-            <DropdownMenuSeparator />
-            <FolderItem
-              active={selection.kind === "trash"}
-              count={list?.trashCount ?? 0}
-              icon={<Trash2 className="size-3.5" />}
-              label="Trash"
-              onSelect={() => setSelection({ kind: "trash" })}
-            />
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={() => setDialog({ type: "newFolder" })}>
-              <FolderPlus /> New folder…
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        <div className="flex-1" />
-
-        {/* Search */}
-        <div className="relative">
-          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            className="h-8 w-56 pl-8"
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search name, id, tag, note…"
-            type="search"
-            value={search}
-          />
-        </div>
-
-        {/* Status filter */}
-        <Select
-          onValueChange={(v) => setStatusFilter(v as StatusFilter)}
-          value={statusFilter}
-        >
-          <SelectTrigger className="w-[150px]" size="sm">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All statuses</SelectItem>
-            <SelectItem value="passed">Passed</SelectItem>
-            <SelectItem value="failed">Failed</SelectItem>
-            <SelectItem value="aborted">Aborted</SelectItem>
-          </SelectContent>
-        </Select>
-      </header>
-
-      <main className="mx-auto w-full max-w-[1400px] flex-1 px-6 pt-7 pb-20">
-        <div className="mb-6 flex flex-wrap items-center gap-3">
-          <h1 className="font-bold text-[22px] tracking-tight">
-            {selectionTitle}
-          </h1>
           {selection.kind === "folder" && (
             <>
               <Button
@@ -457,6 +429,62 @@ export default function Library() {
           )}
         </div>
 
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <div className="relative">
+            <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              className="h-8 w-64 pl-8"
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search name, id, tag, note…"
+              type="search"
+              value={search}
+            />
+          </div>
+          <Select
+            onValueChange={(v) => setStatusFilter(v as StatusFilter)}
+            value={statusFilter}
+          >
+            <SelectTrigger className="w-[150px]" size="sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All statuses</SelectItem>
+              <SelectItem value="passed">Passed</SelectItem>
+              <SelectItem value="failed">Failed</SelectItem>
+              <SelectItem value="aborted">Aborted</SelectItem>
+            </SelectContent>
+          </Select>
+          <div className="flex-1" />
+          {viewingTrash ? null : (
+            <div className="inline-flex overflow-hidden rounded-md border border-border">
+              <button
+                className={cn(
+                  "flex items-center gap-1.5 px-2.5 py-1.5 text-[13px]",
+                  view === "table"
+                    ? "bg-primary/15 text-foreground"
+                    : "text-muted-foreground hover:bg-well"
+                )}
+                onClick={() => changeView("table")}
+                type="button"
+              >
+                <TableIcon className="size-4" /> Table
+              </button>
+              <button
+                className={cn(
+                  "flex items-center gap-1.5 border-border border-l px-2.5 py-1.5 text-[13px]",
+                  view === "card"
+                    ? "bg-primary/15 text-foreground"
+                    : "text-muted-foreground hover:bg-well"
+                )}
+                onClick={() => changeView("card")}
+                type="button"
+              >
+                <LayoutGrid className="size-4" /> Cards
+              </button>
+            </div>
+          )}
+        </div>
+
         {error ? <Notice error>{error}</Notice> : null}
 
         {viewingTrash ? (
@@ -466,7 +494,7 @@ export default function Library() {
             sessions={trash}
           />
         ) : (
-          <SessionGrid
+          <SessionList
             onMove={(c) =>
               setDialog({
                 current: c.folder,
@@ -488,8 +516,14 @@ export default function Library() {
             }
             onTrash={(id) => trashOp({ action: "trash", id })}
             rootId={currentRootId}
-            sessions={visible}
+            sessions={paged.slice}
+            view={view}
           />
+        )}
+        {viewingTrash ? null : (
+          <div className="mt-4">
+            <Pager paged={paged} />
+          </div>
         )}
       </main>
 
@@ -572,6 +606,59 @@ function FolderItem({
   );
 }
 
+interface SessionListProps {
+  onMove: (c: SessionCard) => void;
+  onNote: (c: SessionCard) => void;
+  onTags: (c: SessionCard) => void;
+  onTrash: (id: string) => void;
+  rootId: string;
+  sessions: SessionCard[];
+}
+
+function SessionActionsMenu({
+  c,
+  onMove,
+  onNote,
+  onTags,
+  onTrash,
+}: { c: SessionCard } & Omit<SessionListProps, "rootId" | "sessions">) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button aria-label="Session actions" size="icon-sm" variant="ghost">
+          <MoreHorizontal />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onSelect={() => onMove(c)}>
+          Move to folder…
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => onTags(c)}>
+          Edit tags…
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => onNote(c)}>
+          Edit note…
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={() => onTrash(c.id)} variant="destructive">
+          Delete
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function SessionList({
+  view,
+  ...props
+}: SessionListProps & { view: "card" | "table" }) {
+  return view === "table" ? (
+    <SessionTable {...props} />
+  ) : (
+    <SessionGrid {...props} />
+  );
+}
+
 function SessionGrid({
   onMove,
   onNote,
@@ -579,14 +666,7 @@ function SessionGrid({
   onTrash,
   rootId,
   sessions,
-}: {
-  onMove: (c: SessionCard) => void;
-  onNote: (c: SessionCard) => void;
-  onTags: (c: SessionCard) => void;
-  onTrash: (id: string) => void;
-  rootId: string;
-  sessions: SessionCard[];
-}) {
+}: SessionListProps) {
   if (sessions.length === 0) {
     return <Notice>No sessions here yet.</Notice>;
   }
@@ -606,35 +686,13 @@ function SessionGrid({
               {c.name}
             </Link>
             <div className="ml-auto">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    aria-label="Session actions"
-                    size="icon-sm"
-                    variant="ghost"
-                  >
-                    <MoreHorizontal />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onSelect={() => onMove(c)}>
-                    Move to folder…
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => onTags(c)}>
-                    Edit tags…
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => onNote(c)}>
-                    Edit note…
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onSelect={() => onTrash(c.id)}
-                    variant="destructive"
-                  >
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <SessionActionsMenu
+                c={c}
+                onMove={onMove}
+                onNote={onNote}
+                onTags={onTags}
+                onTrash={onTrash}
+              />
             </div>
           </div>
           <div className="text-[13px] text-muted-foreground">
@@ -671,6 +729,107 @@ function SessionGrid({
           ) : null}
         </Card>
       ))}
+    </div>
+  );
+}
+
+function SessionTable({
+  onMove,
+  onNote,
+  onTags,
+  onTrash,
+  rootId,
+  sessions,
+}: SessionListProps) {
+  if (sessions.length === 0) {
+    return <Notice>No sessions here yet.</Notice>;
+  }
+  return (
+    <div className="overflow-x-auto rounded-lg border border-border bg-card">
+      <Table className="[&_td]:whitespace-nowrap [&_td]:px-4 [&_td]:py-2.5 [&_td]:align-middle [&_th]:whitespace-nowrap [&_th]:px-4 [&_th]:py-2.5 [&_th]:font-semibold [&_th]:text-[11px] [&_th]:text-faint [&_th]:uppercase [&_th]:tracking-wide">
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-[84px]">Status</TableHead>
+            <TableHead>Name</TableHead>
+            <TableHead>Folder</TableHead>
+            <TableHead className="text-right">Steps</TableHead>
+            <TableHead className="text-right">Console</TableHead>
+            <TableHead className="text-right">Network</TableHead>
+            <TableHead className="text-right">Duration</TableHead>
+            <TableHead>Created</TableHead>
+            <TableHead className="text-right">Tags</TableHead>
+            <TableHead className="w-10" />
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {sessions.map((c) => (
+            <TableRow key={c.id}>
+              <TableCell>
+                <StatusBadge small status={c.status} />
+              </TableCell>
+              <TableCell className="max-w-[280px]">
+                <Link
+                  className="block truncate font-medium hover:underline"
+                  href={`/s/${rootId}/${c.id}`}
+                >
+                  {c.name}
+                </Link>
+              </TableCell>
+              <TableCell className="max-w-[160px] truncate text-muted-foreground">
+                {c.folder ?? "—"}
+              </TableCell>
+              <TableCell className="text-right text-muted-foreground tabular-nums">
+                {c.stepsPassed}/{c.stepsTotal}
+              </TableCell>
+              <TableCell
+                className={cn(
+                  "text-right tabular-nums",
+                  c.consoleErrors > 0 ? "font-semibold text-fail" : "text-faint"
+                )}
+              >
+                {c.consoleErrors}
+              </TableCell>
+              <TableCell
+                className={cn(
+                  "text-right tabular-nums",
+                  c.networkFailures > 0
+                    ? "font-semibold text-fail"
+                    : "text-faint"
+                )}
+              >
+                {c.networkFailures}
+              </TableCell>
+              <TableCell className="text-right text-muted-foreground tabular-nums">
+                {fmtMs(c.durationMs)}
+              </TableCell>
+              <TableCell className="text-muted-foreground">
+                {fmtRelative(c.createdAt)}
+              </TableCell>
+              <TableCell>
+                <div className="flex flex-wrap justify-end gap-1">
+                  {c.tags.slice(0, 3).map((t) => (
+                    <Badge key={t} variant="secondary">
+                      {t}
+                    </Badge>
+                  ))}
+                  {c.tags.length > 3 ? (
+                    <Badge variant="secondary">+{c.tags.length - 3}</Badge>
+                  ) : null}
+                </div>
+              </TableCell>
+              <TableCell className="text-right">
+                <SessionActionsMenu
+                  c={c}
+                  onMove={onMove}
+                  onNote={onNote}
+                  onTags={onTags}
+                  onTrash={onTrash}
+                />
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 }

@@ -1,17 +1,38 @@
 "use client";
 
-import { ArrowLeft, ChevronRight } from "lucide-react";
+import {
+  Activity,
+  ArrowLeft,
+  Braces,
+  ChevronRight,
+  Download,
+  FileText,
+  Network,
+  Terminal,
+} from "lucide-react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
-import { type ReactNode, useEffect, useState } from "react";
+import { type ComponentType, type ReactNode, useEffect, useState } from "react";
 import { artifactUrl, fmtBytes, fmtClock, fmtMs } from "@/lib/format";
 import type { SessionManifest } from "@/lib/manifest";
+import type { NetworkRequest } from "@/lib/network";
 import type { ConsoleEntry } from "@/lib/parse-console";
 import type { HarSummary } from "@/lib/parse-har";
 import { cn } from "@/lib/utils";
+import { ConsoleTab } from "./console-tab";
+import { NetworkTab } from "./network-tab";
+import { TopBar } from "./top-bar";
 import { Notice, Spinner, StatusBadge } from "./ui";
 import { Badge } from "./ui/badge";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "./ui/breadcrumb";
 import { Button } from "./ui/button";
-import { Card } from "./ui/card";
 import {
   Collapsible,
   CollapsibleContent,
@@ -27,11 +48,22 @@ import {
 } from "./ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 
+// Both are heavy / client-only; load them only when their tab is opened.
+const VideoPlayer = dynamic(
+  () => import("./video-player").then((m) => m.VideoPlayer),
+  { ssr: false }
+);
+const CodeBlock = dynamic(
+  () => import("./code-block").then((m) => m.CodeBlock),
+  { ssr: false }
+);
+
 interface DetailResponse {
   console: ConsoleEntry[];
   folder: string | null;
   har: HarSummary;
   manifest: SessionManifest;
+  network: NetworkRequest[];
   note: string;
   rootId: string;
   tags: string[];
@@ -41,7 +73,6 @@ const TABS = [
   ["summary", "Summary"],
   ["steps", "Steps"],
   ["screenshots", "Screenshots"],
-  ["execution", "Execution"],
   ["commands", "Commands"],
   ["videos", "Videos"],
   ["console", "Console"],
@@ -53,11 +84,13 @@ type TabId = (typeof TABS)[number][0];
 
 const MIN_BAR_W = 1.5;
 
-// Shared cell styling so the data tables keep the report's generous padding and
-// uppercase column heads.
 const TABLE_CLASS =
   "[&_th]:px-6 [&_th]:py-3 [&_th]:text-[11px] [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-wide [&_th]:text-faint [&_td]:px-6 [&_td]:py-3 [&_td]:align-top";
 
+const SHELL = "mx-auto w-full max-w-[1200px] flex-1 px-6 pt-10 pb-20";
+
+// A labelled section: the heading sits above a subtle bordered region (cleaner
+// than wrapping every block in a title-bar card).
 function Panel({
   children,
   count,
@@ -68,21 +101,19 @@ function Panel({
   title?: string;
 }) {
   return (
-    <div className="mb-6 overflow-hidden rounded-lg border border-border bg-card">
+    <section className="mb-8">
       {title ? (
-        <div className="flex items-center gap-2.5 border-border border-b px-6 py-4">
-          <h2 className="font-bold text-[13px] text-muted-foreground uppercase tracking-wider">
-            {title}
-          </h2>
+        <div className="mb-3 flex items-baseline gap-3">
+          <h2 className="font-semibold text-sm tracking-tight">{title}</h2>
           {count == null ? null : (
-            <span className="ml-auto text-[13px] text-faint tabular-nums">
-              {count}
-            </span>
+            <span className="text-[13px] text-faint tabular-nums">{count}</span>
           )}
         </div>
       ) : null}
-      {children}
-    </div>
+      <div className="overflow-hidden rounded-lg border border-border bg-card">
+        {children}
+      </div>
+    </section>
   );
 }
 
@@ -133,102 +164,132 @@ export default function SessionView({
 
   if (error) {
     return (
-      <main className="mx-auto max-w-[1200px] px-4 pt-12 pb-24 sm:px-8 lg:px-16">
-        <Notice error>
-          Could not load session: {error}.{" "}
-          <Link className="inline-flex items-center gap-1" href="/">
-            <ArrowLeft className="size-4" /> Back to sessions
-          </Link>
-        </Notice>
-      </main>
+      <div className="flex min-h-screen flex-col">
+        <TopBar />
+        <main className={SHELL}>
+          <Notice error>
+            Could not load session: {error}.{" "}
+            <Link className="inline-flex items-center gap-1" href="/">
+              <ArrowLeft className="size-4" /> Back to sessions
+            </Link>
+          </Notice>
+        </main>
+      </div>
     );
   }
   if (!data) {
     return (
-      <main className="mx-auto max-w-[1200px] px-4 pt-12 pb-24 sm:px-8 lg:px-16">
-        <Spinner label="Loading session…" />
-      </main>
+      <div className="flex min-h-screen flex-col">
+        <TopBar />
+        <main className={SHELL}>
+          <Spinner label="Loading session…" />
+        </main>
+      </div>
     );
   }
 
   const m = data.manifest;
   return (
-    <main className="mx-auto max-w-[1200px] px-4 pt-12 pb-24 sm:px-8 lg:px-16">
-      <header className="mb-8 text-center">
-        <div className="font-medium text-muted-foreground text-sm">
-          <Link className="hover:text-foreground" href="/">
-            Canary
-          </Link>{" "}
-          <span className="mx-2 text-faint">›</span> {m.id}
-        </div>
-        <h1 className="mt-3.5 mb-5 break-words font-bold text-[clamp(28px,5vw,48px)] leading-[1.08] tracking-tight">
-          {m.name ?? m.id}
-        </h1>
-        <div className="flex flex-wrap items-center justify-center gap-3.5">
-          <StatusBadge status={m.status} />
-          <span className="text-base text-muted-foreground">
-            {fmtMs(m.durationMs)} duration
-          </span>
-        </div>
-        {data.tags.length > 0 ? (
-          <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-            {data.tags.map((t) => (
-              <Badge key={t} variant="secondary">
-                {t}
-              </Badge>
-            ))}
+    <div className="flex min-h-screen flex-col">
+      <TopBar>
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link href="/">Sessions</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            {data.folder ? (
+              <>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem className="hidden sm:inline-flex">
+                  {data.folder}
+                </BreadcrumbItem>
+              </>
+            ) : null}
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage className="max-w-[44vw] truncate">
+                {m.name ?? m.id}
+              </BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      </TopBar>
+      <main className={SHELL}>
+        <header className="mb-8">
+          <h1 className="break-words font-bold text-3xl tracking-tight">
+            {m.name ?? m.id}
+          </h1>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <StatusBadge status={m.status} />
+            <span className="text-muted-foreground">
+              {fmtMs(m.durationMs)} duration
+            </span>
           </div>
-        ) : null}
-        {data.note ? (
-          <p className="mt-3 text-[13px] text-muted-foreground">{data.note}</p>
-        ) : null}
-      </header>
+          {data.tags.length > 0 ? (
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              {data.tags.map((t) => (
+                <Badge key={t} variant="secondary">
+                  {t}
+                </Badge>
+              ))}
+            </div>
+          ) : null}
+          {data.note ? (
+            <p className="mt-3 max-w-[70ch] text-[13px] text-muted-foreground">
+              {data.note}
+            </p>
+          ) : null}
+        </header>
 
-      <Tabs onValueChange={(v) => setTab(v as TabId)} value={tab}>
-        <TabsList
-          className="mb-8 h-auto w-full flex-wrap justify-center gap-x-7 gap-y-1 rounded-none border-border border-b pb-0"
-          variant="line"
-        >
-          {TABS.map(([tid, label]) => (
-            <TabsTrigger
-              className="flex-none rounded-none px-0.5 pb-3.5 font-semibold text-[15px] text-muted-foreground after:bottom-[-1px] after:h-[3px] after:bg-primary data-active:text-foreground"
-              key={tid}
-              value={tid}
-            >
-              {label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+        <Tabs onValueChange={(v) => setTab(v as TabId)} value={tab}>
+          <TabsList
+            className="mb-8 h-auto w-full flex-wrap justify-start gap-x-7 gap-y-1 rounded-none border-border border-b pb-0"
+            variant="line"
+          >
+            {TABS.map(([tid, label]) => (
+              <TabsTrigger
+                className="flex-none rounded-none px-0.5 pb-3.5 font-semibold text-[15px] text-muted-foreground after:bottom-[-1px] after:h-[3px] after:bg-primary data-active:text-foreground"
+                key={tid}
+                value={tid}
+              >
+                {label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
 
-        <TabsContent value="summary">
-          <Summary m={m} />
-        </TabsContent>
-        <TabsContent value="steps">
-          <Steps m={m} />
-        </TabsContent>
-        <TabsContent value="screenshots">
-          <Screenshots m={m} rootId={rootId} />
-        </TabsContent>
-        <TabsContent value="execution">
-          <Execution m={m} />
-        </TabsContent>
-        <TabsContent value="commands">
-          <Commands m={m} />
-        </TabsContent>
-        <TabsContent value="videos">
-          <Videos m={m} rootId={rootId} />
-        </TabsContent>
-        <TabsContent value="console">
-          <ConsoleTab entries={data.console} />
-        </TabsContent>
-        <TabsContent value="network">
-          <NetworkTab har={data.har} />
-        </TabsContent>
-        <TabsContent value="artifacts">
-          <Artifacts m={m} rootId={rootId} />
-        </TabsContent>
-      </Tabs>
-    </main>
+          <TabsContent value="summary">
+            <Summary m={m} />
+          </TabsContent>
+          <TabsContent value="steps">
+            <Steps m={m} />
+          </TabsContent>
+          <TabsContent value="screenshots">
+            <Screenshots m={m} rootId={rootId} />
+          </TabsContent>
+          <TabsContent value="commands">
+            <Commands m={m} />
+          </TabsContent>
+          <TabsContent value="videos">
+            <Videos m={m} rootId={rootId} />
+          </TabsContent>
+          <TabsContent value="console">
+            <ConsoleTab entries={data.console} />
+          </TabsContent>
+          <TabsContent value="network">
+            <NetworkTab
+              failed={data.har.failed}
+              requests={data.network}
+              total={data.har.total}
+            />
+          </TabsContent>
+          <TabsContent value="artifacts">
+            <Artifacts m={m} rootId={rootId} />
+          </TabsContent>
+        </Tabs>
+      </main>
+    </div>
   );
 }
 
@@ -251,23 +312,29 @@ function Summary({ m }: { m: SessionManifest }) {
     },
   ];
   return (
-    <section className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-      {cells.map((c) => (
-        <Card className="gap-1 p-6 shadow-none" key={c.label}>
-          <div
-            className={cn(
-              "font-bold text-3xl tabular-nums leading-tight tracking-tight",
-              c.bad && "text-fail"
-            )}
-          >
-            {c.value}
-          </div>
-          <div className="font-medium text-muted-foreground text-sm">
-            {c.label}
-          </div>
-        </Card>
-      ))}
-    </section>
+    <>
+      <section className="mb-8">
+        <div className="grid grid-cols-2 divide-x divide-y divide-border overflow-hidden rounded-lg border border-border bg-card sm:grid-cols-3">
+          {cells.map((c) => (
+            <div className="p-5" key={c.label}>
+              <div
+                className={cn(
+                  "font-bold text-2xl tabular-nums leading-tight tracking-tight",
+                  c.bad && "text-fail"
+                )}
+              >
+                {c.value}
+              </div>
+              <div className="mt-1 text-[13px] text-muted-foreground">
+                {c.label}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+      <Timeline m={m} />
+      <Environment m={m} />
+    </>
   );
 }
 
@@ -336,8 +403,15 @@ function Screenshots({ m, rootId }: { m: SessionManifest; rootId: string }) {
           src={cur.src}
         />
       </div>
-      <figcaption className="my-3.5 break-words text-center font-medium text-muted-foreground text-sm">
-        {cur.cap}
+      <figcaption className="my-3.5 flex items-center justify-between gap-3">
+        <span className="break-words font-medium text-muted-foreground text-sm">
+          {cur.cap}
+        </span>
+        <Button asChild size="sm" variant="outline">
+          <a download href={cur.src}>
+            <Download /> Download
+          </a>
+        </Button>
       </figcaption>
       <div className="flex flex-wrap justify-center gap-3">
         {items.map((it, i) => (
@@ -362,7 +436,7 @@ function Screenshots({ m, rootId }: { m: SessionManifest; rootId: string }) {
   );
 }
 
-function Execution({ m }: { m: SessionManifest }) {
+function Timeline({ m }: { m: SessionManifest }) {
   const t0 = Date.parse(m.createdAt);
   const span = Math.max(m.durationMs, 1);
   let cursor = 0;
@@ -384,115 +458,104 @@ function Execution({ m }: { m: SessionManifest }) {
     }
     return { off, step, w };
   });
+  return (
+    <Panel count={`${fmtMs(m.durationMs)} total`} title="Timeline">
+      <div className="px-6 py-4">
+        {rows.length === 0 ? (
+          <Empty>No steps recorded.</Empty>
+        ) : (
+          rows.map(({ off, step, w }, i) => (
+            <div
+              className="flex items-center gap-4 py-1.5"
+              key={`${i}-${step.name}`}
+            >
+              <span className="w-[200px] shrink-0 truncate font-semibold text-sm">
+                {step.name}
+              </span>
+              <span className="relative h-3.5 flex-1 rounded-full bg-well">
+                <span
+                  className={cn(
+                    "absolute top-0 h-3.5 min-w-1 rounded-full",
+                    step.status === "fail" ? "bg-fail" : "bg-primary"
+                  )}
+                  style={{
+                    left: `${off.toFixed(2)}%`,
+                    width: `${w.toFixed(2)}%`,
+                  }}
+                />
+              </span>
+              <span className="w-16 shrink-0 text-right text-[13px] text-faint tabular-nums">
+                {fmtMs(step.durationMs)}
+              </span>
+            </div>
+          ))
+        )}
+      </div>
+    </Panel>
+  );
+}
+
+function Environment({ m }: { m: SessionManifest }) {
   const flags = Object.entries(m.capture)
     .filter(([, on]) => on)
     .map(([k]) => k)
     .join(" · ");
+  const label =
+    "font-semibold text-[11px] text-muted-foreground uppercase tracking-wide";
   return (
-    <>
-      <Panel count={`${fmtMs(m.durationMs)} total`} title="Timeline">
-        <div className="px-6 py-4">
-          {rows.length === 0 ? (
-            <Empty>No steps recorded.</Empty>
-          ) : (
-            rows.map(({ off, step, w }, i) => (
-              <div
-                className="flex items-center gap-4 py-1.5"
-                key={`${i}-${step.name}`}
-              >
-                <span className="w-[200px] shrink-0 truncate font-semibold text-sm">
-                  {step.name}
-                </span>
-                <span className="relative h-3.5 flex-1 rounded-full bg-well">
-                  <span
-                    className={cn(
-                      "absolute top-0 h-3.5 min-w-1 rounded-full",
-                      step.status === "fail" ? "bg-fail" : "bg-primary"
-                    )}
-                    style={{
-                      left: `${off.toFixed(2)}%`,
-                      width: `${w.toFixed(2)}%`,
-                    }}
-                  />
-                </span>
-                <span className="w-16 shrink-0 text-right text-[13px] text-faint tabular-nums">
-                  {fmtMs(step.durationMs)}
-                </span>
-              </div>
-            ))
-          )}
-        </div>
-      </Panel>
-      <Panel title="Environment">
-        <Table className={TABLE_CLASS}>
-          <TableBody>
-            <TableRow>
-              <TableCell className="w-[150px] font-semibold text-[11px] text-muted-foreground uppercase tracking-wide">
-                Status
-              </TableCell>
-              <TableCell>
-                <StatusBadge small status={m.status} />
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell className="font-semibold text-[11px] text-muted-foreground uppercase tracking-wide">
-                Browser
-              </TableCell>
-              <TableCell>
-                {m.environment.browser} ·{" "}
-                {m.environment.headless ? "headless" : "headed"}
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell className="font-semibold text-[11px] text-muted-foreground uppercase tracking-wide">
-                Playwright
-              </TableCell>
-              <TableCell className="font-mono">
-                {m.environment.playwrightVersion}
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell className="font-semibold text-[11px] text-muted-foreground uppercase tracking-wide">
-                Platform
-              </TableCell>
-              <TableCell className="font-mono">
-                {m.environment.platform}
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell className="font-semibold text-[11px] text-muted-foreground uppercase tracking-wide">
-                Captured
-              </TableCell>
-              <TableCell>{flags || "none"}</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell className="font-semibold text-[11px] text-muted-foreground uppercase tracking-wide">
-                Started
-              </TableCell>
-              <TableCell className="tabular-nums">
-                {fmtClock(m.createdAt)}
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell className="font-semibold text-[11px] text-muted-foreground uppercase tracking-wide">
-                Ended
-              </TableCell>
-              <TableCell className="tabular-nums">
-                {fmtClock(m.endedAt)}
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell className="font-semibold text-[11px] text-muted-foreground uppercase tracking-wide">
-                Duration
-              </TableCell>
-              <TableCell className="tabular-nums">
-                {fmtMs(m.durationMs)}
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </Panel>
-    </>
+    <Panel title="Environment">
+      <Table className={TABLE_CLASS}>
+        <TableBody>
+          <TableRow>
+            <TableCell className={cn("w-[150px]", label)}>Status</TableCell>
+            <TableCell>
+              <StatusBadge small status={m.status} />
+            </TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell className={label}>Browser</TableCell>
+            <TableCell>
+              {m.environment.browser} ·{" "}
+              {m.environment.headless ? "headless" : "headed"}
+            </TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell className={label}>Playwright</TableCell>
+            <TableCell className="font-mono">
+              {m.environment.playwrightVersion}
+            </TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell className={label}>Platform</TableCell>
+            <TableCell className="font-mono">
+              {m.environment.platform}
+            </TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell className={label}>Captured</TableCell>
+            <TableCell>{flags || "none"}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell className={label}>Started</TableCell>
+            <TableCell className="tabular-nums">
+              {fmtClock(m.createdAt)}
+            </TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell className={label}>Ended</TableCell>
+            <TableCell className="tabular-nums">
+              {fmtClock(m.endedAt)}
+            </TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell className={label}>Duration</TableCell>
+            <TableCell className="tabular-nums">
+              {fmtMs(m.durationMs)}
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
+    </Panel>
   );
 }
 
@@ -527,9 +590,9 @@ function Commands({ m }: { m: SessionManifest }) {
                 Script
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <pre className="mx-6 mt-1 mb-3.5 overflow-auto whitespace-pre-wrap rounded border border-border bg-well-2 p-3.5 font-mono text-xs leading-relaxed">
-                  {step.script}
-                </pre>
+                <div className="px-6 pb-4">
+                  <CodeBlock code={step.script} />
+                </div>
               </CollapsibleContent>
             </Collapsible>
           ) : null}
@@ -579,164 +642,81 @@ function Commands({ m }: { m: SessionManifest }) {
 
 function Videos({ m, rootId }: { m: SessionManifest; rootId: string }) {
   const vids = m.artifacts.videos;
-  return (
-    <Panel
-      count={`${vids.length} file${vids.length === 1 ? "" : "s"}`}
-      title="Videos"
-    >
-      {vids.length === 0 ? (
+  if (vids.length === 0) {
+    return (
+      <Panel title="Videos">
         <Empty>No video captured.</Empty>
-      ) : (
-        <div className="flex flex-col gap-6 px-6 py-4">
-          {vids.map((v) => (
-            <div key={v.path}>
-              <video
-                className="block w-full max-w-[760px] rounded-md border border-border bg-black"
-                controls
-                preload="metadata"
-                src={artifactUrl(rootId, m.id, v.path)}
-              >
-                <track kind="captions" />
-              </video>
-              <div className="mt-2 flex items-center gap-3 text-[13px]">
-                <span className="break-all text-muted-foreground">
-                  {v.path}
-                </span>
-                <span className="text-faint text-xs tabular-nums">
-                  {fmtBytes(v.bytes)}
-                </span>
-              </div>
+      </Panel>
+    );
+  }
+  return (
+    <section className="mb-8">
+      <h2 className="mb-3 font-semibold text-sm tracking-tight">
+        Videos <span className="text-faint tabular-nums">{vids.length}</span>
+      </h2>
+      <div className="flex flex-col gap-8">
+        {vids.map((v, i) => (
+          <div key={v.path}>
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <span className="font-medium text-[13px] text-muted-foreground tabular-nums">
+                {vids.length > 1 ? `${i + 1} / ${vids.length}` : "Recording"}
+              </span>
+              <Button asChild size="sm" variant="outline">
+                <a download href={artifactUrl(rootId, m.id, v.path)}>
+                  <Download /> Download
+                </a>
+              </Button>
             </div>
-          ))}
-        </div>
-      )}
-    </Panel>
-  );
-}
-
-function ConsoleTab({ entries }: { entries: ConsoleEntry[] }) {
-  return (
-    <Panel
-      count={`${entries.length} message${entries.length === 1 ? "" : "s"}`}
-      title="Console"
-    >
-      {entries.length === 0 ? (
-        <Empty>No console output captured.</Empty>
-      ) : (
-        <Table className={TABLE_CLASS}>
-          <TableHeader>
-            <TableRow>
-              <TableHead style={{ width: "120px" }}>Type</TableHead>
-              <TableHead>Message</TableHead>
-              <TableHead style={{ width: "220px" }}>Source</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {entries.map((e, i) => {
-              const isErr = e.kind === "pageerror" || e.type === "error";
-              const label =
-                e.kind === "pageerror" ? "pageerror" : (e.type ?? "log");
-              const text = e.message ?? e.text ?? "";
-              const src = e.url ? `${e.url}${e.line ? `:${e.line}` : ""}` : "";
-              return (
-                <TableRow
-                  className={isErr ? "bg-fail-bg hover:bg-fail-bg" : undefined}
-                  key={i}
-                >
-                  <TableCell>
-                    <Badge variant="secondary">{label}</Badge>
-                  </TableCell>
-                  <TableCell className="break-words font-mono">
-                    {text}
-                  </TableCell>
-                  <TableCell className="max-w-[220px] truncate text-muted-foreground">
-                    {src}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      )}
-    </Panel>
-  );
-}
-
-function NetworkTab({ har }: { har: HarSummary }) {
-  const list = har.entries.length > 0 ? har.entries : har.slowest;
-  return (
-    <Panel
-      count={`${har.total} request${har.total === 1 ? "" : "s"} · ${
-        har.failed
-      } failed`}
-      title="Network"
-    >
-      {list.length === 0 ? (
-        <Empty>No network activity captured.</Empty>
-      ) : (
-        <Table className={TABLE_CLASS}>
-          <TableHeader>
-            <TableRow>
-              <TableHead style={{ width: "72px" }}>Status</TableHead>
-              <TableHead style={{ width: "96px" }}>Method</TableHead>
-              <TableHead style={{ width: "88px" }}>Time</TableHead>
-              <TableHead>URL</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {list.map((r, i) => (
-              <TableRow
-                className={
-                  r.status === 0 || r.status >= 400
-                    ? "bg-fail-bg hover:bg-fail-bg"
-                    : undefined
-                }
-                key={i}
-              >
-                <TableCell className="tabular-nums">
-                  {r.status || "—"}
-                </TableCell>
-                <TableCell>
-                  <Badge variant="secondary">{r.method}</Badge>
-                </TableCell>
-                <TableCell className="tabular-nums">
-                  {fmtMs(r.durationMs)}
-                </TableCell>
-                <TableCell className="max-w-[420px] truncate text-muted-foreground">
-                  {r.url}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      )}
-    </Panel>
-  );
-}
-
-function ArtifactRow({
-  children,
-  hint,
-  label,
-  size,
-}: {
-  children: ReactNode;
-  hint?: ReactNode;
-  label: string;
-  size?: string;
-}) {
-  return (
-    <div className="border-border border-b px-6 py-4 last:border-0">
-      <div className="flex flex-wrap items-center gap-3.5">
-        <span className="min-w-[120px] font-semibold">{label}</span>
-        {children}
-        {size ? (
-          <span className="text-faint text-xs tabular-nums">{size}</span>
-        ) : null}
+            <VideoPlayer
+              src={artifactUrl(rootId, m.id, v.path)}
+              type={v.path.endsWith(".mp4") ? "video/mp4" : "video/webm"}
+            />
+          </div>
+        ))}
       </div>
+    </section>
+  );
+}
+
+interface ArtifactItem {
+  hint?: ReactNode;
+  href: string;
+  icon: ComponentType<{ className?: string }>;
+  label: string;
+  path: string;
+  size?: string;
+}
+
+function ArtifactCard({
+  hint,
+  href,
+  icon: Icon,
+  label,
+  path,
+  size,
+}: ArtifactItem) {
+  return (
+    <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4">
+      <div className="flex items-center gap-2.5">
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-well text-muted-foreground">
+          <Icon className="size-4" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="font-semibold text-sm">{label}</div>
+          {size ? (
+            <div className="text-[12px] text-faint tabular-nums">{size}</div>
+          ) : null}
+        </div>
+      </div>
+      <div className="truncate font-mono text-[12px] text-faint">{path}</div>
       {hint ? (
-        <div className="mt-2 text-[13px] text-muted-foreground">{hint}</div>
+        <div className="text-[12px] text-muted-foreground">{hint}</div>
       ) : null}
+      <Button asChild className="mt-auto" size="sm" variant="outline">
+        <a download href={href}>
+          <Download /> Download
+        </a>
+      </Button>
     </div>
   );
 }
@@ -744,59 +724,96 @@ function ArtifactRow({
 function Artifacts({ m, rootId }: { m: SessionManifest; rootId: string }) {
   const url = (p: string) => artifactUrl(rootId, m.id, p);
   const { trace, har, console: consoleRef } = m.artifacts;
+  const groups: { items: ArtifactItem[]; title: string }[] = [
+    {
+      items: trace
+        ? [
+            {
+              hint: (
+                <>
+                  View with{" "}
+                  <code className="rounded-sm border border-border bg-well-2 px-1.5 py-0.5 font-mono text-xs">
+                    npx playwright show-trace
+                  </code>
+                  .
+                </>
+              ),
+              href: url(trace.path),
+              icon: Activity,
+              label: "Playwright trace",
+              path: trace.path,
+              size: fmtBytes(trace.bytes),
+            },
+          ]
+        : [],
+      title: "Trace",
+    },
+    {
+      items: [
+        ...(har
+          ? [
+              {
+                href: url(har.path),
+                icon: Network,
+                label: "Network HAR",
+                path: har.path,
+                size: fmtBytes(har.bytes),
+              },
+            ]
+          : []),
+        ...(consoleRef
+          ? [
+              {
+                href: url(consoleRef.path),
+                icon: Terminal,
+                label: "Console log",
+                path: consoleRef.path,
+                size: fmtBytes(consoleRef.bytes),
+              },
+            ]
+          : []),
+      ],
+      title: "Network & logs",
+    },
+    {
+      items: [
+        {
+          hint: "Machine-readable record referencing every artifact.",
+          href: url("results.json"),
+          icon: Braces,
+          label: "Results index",
+          path: "results.json",
+        },
+        ...(m.report
+          ? [
+              {
+                hint: "The self-contained HTML report.",
+                href: url(m.report.path),
+                icon: FileText,
+                label: "Original report",
+                path: m.report.path,
+              },
+            ]
+          : []),
+      ],
+      title: "Report & data",
+    },
+  ].filter((g) => g.items.length > 0);
+
   return (
-    <Panel title="Artifacts">
-      {trace ? (
-        <ArtifactRow
-          hint={
-            <>
-              Download, then view with{" "}
-              <code className="rounded-sm border border-border bg-well-2 px-1.5 py-0.5 font-mono text-xs">
-                npx playwright show-trace
-              </code>
-              .
-            </>
-          }
-          label="Trace"
-          size={fmtBytes(trace.bytes)}
-        >
-          <Button asChild size="sm" variant="outline">
-            <a href={url(trace.path)}>{trace.path}</a>
-          </Button>
-        </ArtifactRow>
-      ) : null}
-      {har ? (
-        <ArtifactRow label="Network HAR" size={fmtBytes(har.bytes)}>
-          <Button asChild size="sm" variant="outline">
-            <a href={url(har.path)}>{har.path}</a>
-          </Button>
-        </ArtifactRow>
-      ) : null}
-      {consoleRef ? (
-        <ArtifactRow label="Console log" size={fmtBytes(consoleRef.bytes)}>
-          <Button asChild size="sm" variant="outline">
-            <a href={url(consoleRef.path)}>{consoleRef.path}</a>
-          </Button>
-        </ArtifactRow>
-      ) : null}
-      <ArtifactRow
-        hint="Machine-readable record referencing every artifact."
-        label="Results index"
-      >
-        <Button asChild size="sm" variant="outline">
-          <a href={url("results.json")}>results.json</a>
-        </Button>
-      </ArtifactRow>
-      {m.report ? (
-        <ArtifactRow
-          hint="The self-contained HTML report."
-          label="Original report"
-        >
-          <Button asChild size="sm" variant="outline">
-            <a href={url(m.report.path)}>{m.report.path}</a>
-          </Button>
-        </ArtifactRow>
-      ) : null}
-    </Panel>
+    <>
+      {groups.map((g) => (
+        <section className="mb-8" key={g.title}>
+          <h2 className="mb-3 font-semibold text-sm tracking-tight">
+            {g.title}
+          </h2>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {g.items.map((it) => (
+              <ArtifactCard key={it.label} {...it} />
+            ))}
+          </div>
+        </section>
+      ))}
+    </>
   );
 }

@@ -25,6 +25,7 @@ export async function GET(request: Request) {
     folder: overlay.assignments[id] ?? null,
     har: detail.har,
     manifest: detail.manifest,
+    network: detail.network,
     note: overlay.notes[id] ?? "",
     rootId: root.id,
     tags: overlay.tags[id] ?? [],
