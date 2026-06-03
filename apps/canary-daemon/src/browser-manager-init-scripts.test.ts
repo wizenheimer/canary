@@ -27,6 +27,9 @@ function createFakeContext(): FakeContext {
   const context = {
     browser: () => browser,
     addInitScript,
+    // A real persistent context always exposes pages(); launchBrowser reads
+    // pages()[0] to capture the initial about:blank tab.
+    pages: () => [],
     close: vi.fn().mockResolvedValue(undefined),
   } as unknown as BrowserContext;
 

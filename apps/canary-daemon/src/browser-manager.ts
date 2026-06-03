@@ -17,6 +17,11 @@ export interface BrowserEntry {
   endpoint?: string;
   headless: boolean;
   ignoreHTTPSErrors: boolean;
+  // The page Playwright opens with a persistent context (always about:blank).
+  // The first getPage/newPage adopts it instead of opening a fresh tab, so a
+  // session never leaves an idle blank tab behind — which Playwright would
+  // otherwise record as an empty video. Consumed once, then undefined.
+  initialBlankPage?: Page;
   // Session contexts are launched with recordVideo/recordHar + tracing and must
   // never be relaunched by a later execute (that would drop the recording).
   isSession: boolean;
@@ -263,14 +268,16 @@ export class BrowserManager {
       }
     }
 
-    const page = await entry.context.newPage();
+    const page =
+      this.takeInitialBlankPage(entry) ?? (await entry.context.newPage());
     this.registerNamedPage(entry, pageNameOrId, page);
     return page;
   }
 
   newPage(browserName: string): Promise<Page> {
     const entry = this.getBrowserEntry(browserName);
-    return entry.context.newPage();
+    const initial = this.takeInitialBlankPage(entry);
+    return initial ? Promise.resolve(initial) : entry.context.newPage();
   }
 
   // Scripts dedupe by content (SHA-256). Already-applied scripts are no-ops, so
@@ -506,6 +513,9 @@ export class BrowserManager {
       type: "launched",
       browser,
       context,
+      // A persistent context comes up with one about:blank page; reuse it for
+      // the first page acquisition rather than orphaning it (see getPage).
+      initialBlankPage: context.pages()[0],
       pages: new Map(),
       profileDir,
       headless: options.headless,
@@ -947,6 +957,20 @@ export class BrowserManager {
       "If Chrome is using built-in remote debugging, run `canary-browser --connect` without a URL so DevToolsActivePort can be auto-discovered.",
       "Or connect with the exact ws://127.0.0.1:<port>/devtools/browser/... URL from DevToolsActivePort, or launch Chrome with --remote-debugging-port=9222.",
     ].join("\n");
+  }
+
+  // Hand out the persistent context's initial about:blank page for the first
+  // page acquisition, so a session reuses it instead of leaving an idle blank
+  // tab that Playwright records as an empty video. Consumed at most once;
+  // returns undefined once it has been taken, closed, or navigated away (e.g. a
+  // prior target-id lookup), so callers fall back to opening a fresh tab.
+  private takeInitialBlankPage(entry: BrowserEntry): Page | undefined {
+    const page = entry.initialBlankPage;
+    entry.initialBlankPage = undefined;
+    if (page && !page.isClosed() && page.url() === "about:blank") {
+      return page;
+    }
+    return;
   }
 
   private registerNamedPage(

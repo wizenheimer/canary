@@ -132,6 +132,39 @@ describe.sequential("BrowserManager page discovery", () => {
     ).toHaveLength(1);
   }, 120_000);
 
+  it("reuses the initial blank tab for the first getPage (no orphan tab)", async () => {
+    await ensureBrowser();
+
+    const page = await manager.getPage(browserName, "only");
+    await page.goto(createDataUrl("Only", "<main>only</main>"));
+
+    // The initial about:blank page is adopted as "only", so the context holds
+    // exactly one page — no idle blank tab that a session would record as an
+    // empty video.
+    const pages = await manager.listPages(browserName);
+    expect(pages).toHaveLength(1);
+    expect(pages[0]).toEqual(
+      expect.objectContaining({ name: "only", title: "Only" })
+    );
+  }, 120_000);
+
+  it("adopts the blank tab only once; later pages open fresh tabs", async () => {
+    await ensureBrowser();
+
+    const first = await manager.newPage(browserName);
+    await first.goto(createDataUrl("First", "<p>first</p>"));
+    const second = await manager.newPage(browserName);
+    await second.goto(createDataUrl("Second", "<p>second</p>"));
+
+    expect(second).not.toBe(first);
+    // First adopted the blank tab; second opened a new one. Two pages total,
+    // neither an untouched about:blank.
+    const titles = (await manager.listPages(browserName))
+      .map((entry) => entry.title)
+      .sort();
+    expect(titles).toEqual(["First", "Second"]);
+  }, 120_000);
+
   it("stopBrowser closes launched browser pages before removing the browser", async () => {
     await ensureBrowser();
 
