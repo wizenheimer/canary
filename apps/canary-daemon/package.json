@@ -1,6 +1,6 @@
 {
   "name": "@usecanary/daemon",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "description": "Canary daemon — long-running Playwright host with QuickJS sandbox. Embedded into @usecanary/browser at build time.",
