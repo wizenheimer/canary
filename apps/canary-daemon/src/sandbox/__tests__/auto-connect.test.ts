@@ -1,7 +1,7 @@
 import { EventEmitter } from "node:events";
 import { createServer } from "node:http";
 import path from "node:path";
-import { parseRequest } from "@canary/protocol";
+import { parseRequest } from "@usecanary/protocol";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { BrowserManager } from "../../browser-manager.js";
 

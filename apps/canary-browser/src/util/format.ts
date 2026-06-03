@@ -1,1 +1,1 @@
-export { formatDurationMs } from "@canary/cli-kit";
+export { formatDurationMs } from "@usecanary/cli-kit";

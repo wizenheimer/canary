@@ -1,6 +1,9 @@
-import { requestId } from "@canary/cli-kit";
-import { isDaemonRunning, sendRequest } from "@canary/daemon-client";
-import type { SessionListRequest, SessionListResult } from "@canary/protocol";
+import { requestId } from "@usecanary/cli-kit";
+import { isDaemonRunning, sendRequest } from "@usecanary/daemon-client";
+import type {
+  SessionListRequest,
+  SessionListResult,
+} from "@usecanary/protocol";
 import { listSessions, updateSessionRecord } from "./registry.js";
 
 // The set of sessions the daemon currently tracks, or null if the daemon is

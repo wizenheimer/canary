@@ -3,7 +3,7 @@ import { stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-// How `canary ui` should launch the @canary/ui web app:
+// How `canary ui` should launch the @usecanary/ui web app:
 //  - standalone: a built Next standalone `server.js` (fast path)
 //  - dev: fall back to `next dev` from the workspace when no build exists
 export type ResolvedUiServer =

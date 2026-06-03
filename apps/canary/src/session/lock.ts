@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { open, readFile, rm, stat, utimes } from "node:fs/promises";
 import path from "node:path";
-import { sessionDir } from "@canary/daemon-client";
+import { sessionDir } from "@usecanary/daemon-client";
 
 const LOCK_FILE = "session.lock";
 const RETRY_DELAY_MS = 50;

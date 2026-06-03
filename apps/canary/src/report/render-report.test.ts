@@ -1,4 +1,4 @@
-import { type SessionEndResult, sessionStepSlug } from "@canary/protocol";
+import { type SessionEndResult, sessionStepSlug } from "@usecanary/protocol";
 import { describe, expect, it } from "vitest";
 import type { SessionRecord } from "../session/registry.js";
 import { buildManifest } from "./manifest.js";

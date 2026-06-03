@@ -1,4 +1,4 @@
-import { sessionStepSlug } from "@canary/protocol";
+import { sessionStepSlug } from "@usecanary/protocol";
 import { describe, expect, it } from "vitest";
 
 describe("sessionStepSlug", () => {

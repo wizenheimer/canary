@@ -1,8 +1,8 @@
-import { pad } from "@canary/cli-kit";
-import type { BrowserSummary, StatusSummary } from "@canary/protocol";
+import { pad } from "@usecanary/cli-kit";
+import type { BrowserSummary, StatusSummary } from "@usecanary/protocol";
 import { formatDurationMs } from "../util/format.js";
 
-export { renderJsonResult } from "@canary/cli-kit";
+export { renderJsonResult } from "@usecanary/cli-kit";
 
 // Renders `browsers` result data to the given writer.
 export function renderBrowsersResult(

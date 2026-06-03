@@ -1,7 +1,7 @@
 import os from "node:os";
 import path from "node:path";
 
-// Re-derived locally (instead of importing @canary/daemon-client) so the web app
+// Re-derived locally (instead of importing @usecanary/daemon-client) so the web app
 // stays decoupled from the CLI/daemon package graph. Mirrors the canonical
 // layout in packages/daemon-client/src/paths.ts: ~/.canary/sessions.
 

@@ -1,8 +1,8 @@
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createLogger } from "@canary/logger";
-import type { SessionStartRequest } from "@canary/protocol";
+import { createLogger } from "@usecanary/logger";
+import type { SessionStartRequest } from "@usecanary/protocol";
 import type { ConsoleMessage } from "playwright";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type {

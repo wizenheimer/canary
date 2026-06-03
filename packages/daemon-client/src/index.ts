@@ -1,8 +1,8 @@
-// @canary/daemon-client — shared daemon transport, endpoint/paths resolution,
+// @usecanary/daemon-client — shared daemon transport, endpoint/paths resolution,
 // and daemon lifecycle/extract. Consumed by the `canary` and `canary-browser`
 // CLIs so both drive the same daemon and embed the same daemon bundle.
 
-export type { BrowserSummary, StatusSummary } from "@canary/protocol";
+export type { BrowserSummary, StatusSummary } from "@usecanary/protocol";
 export { findDaemonCommand } from "./daemon/entry.js";
 export {
   embeddedRuntimeInstalled,

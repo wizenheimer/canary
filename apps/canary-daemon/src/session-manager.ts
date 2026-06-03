@@ -1,7 +1,7 @@
 import { createWriteStream, type WriteStream } from "node:fs";
 import { mkdir, readdir, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
-import type { Logger } from "@canary/logger";
+import type { Logger } from "@usecanary/logger";
 import {
   type ArtifactInfo,
   type CaptureOptions,
@@ -16,7 +16,7 @@ import {
   type SessionPhase,
   type SessionStartRequest,
   type SessionSummary,
-} from "@canary/protocol";
+} from "@usecanary/protocol";
 import type { ConsoleMessage, Page, WebError } from "playwright";
 import type { BrowserEntry, BrowserManager } from "./browser-manager.js";
 import { getSessionDir } from "./local-endpoint.js";

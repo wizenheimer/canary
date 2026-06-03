@@ -1,6 +1,6 @@
-import { requestId } from "@canary/cli-kit";
-import { isDaemonRunning, sendRequest } from "@canary/daemon-client";
-import type { SessionEndRequest, SessionEndResult } from "@canary/protocol";
+import { requestId } from "@usecanary/cli-kit";
+import { isDaemonRunning, sendRequest } from "@usecanary/daemon-client";
+import type { SessionEndRequest, SessionEndResult } from "@usecanary/protocol";
 import { logger } from "../logger.js";
 import { writeSessionReport } from "../report/load-and-render.js";
 import { endResultFromDisk } from "../session/artifacts.js";

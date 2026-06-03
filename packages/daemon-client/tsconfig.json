@@ -1,5 +1,5 @@
 {
-  "extends": "@canary/config/node-app.json",
+  "extends": "@usecanary/config/node-app.json",
   "compilerOptions": {
     "noEmit": true,
     "noUnusedLocals": true,

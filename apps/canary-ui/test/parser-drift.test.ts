@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 // canary-ui keeps its OWN copies of these parsers on purpose — importing
-// @canary/* would drag the CLI's deps (zod, etc.) into the web bundle, and the
+// @usecanary/* would drag the CLI's deps (zod, etc.) into the web bundle, and the
 // packages export only a raw-TS condition Next can't resolve. The trade-off is
 // drift risk: a fix to one copy must be mirrored to the other.
 //

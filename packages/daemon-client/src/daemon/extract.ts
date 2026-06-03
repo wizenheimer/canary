@@ -2,7 +2,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import {
   DAEMON_RUNTIME_DEPENDENCIES,
   EMBEDDED_PACKAGE_JSON,
-} from "@canary/protocol";
+} from "@usecanary/protocol";
 import { DAEMON_BUNDLE, SANDBOX_CLIENT } from "../assets/embedded.generated.js";
 import {
   canaryDir,

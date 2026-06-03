@@ -2,7 +2,7 @@ import { type ChildProcess, spawn } from "node:child_process";
 import { createServer } from "node:net";
 import path from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
-import { sessionsRootDir } from "@canary/daemon-client";
+import { sessionsRootDir } from "@usecanary/daemon-client";
 import { logger } from "../logger.js";
 import { openBrowser } from "./ui/open-browser.js";
 import { resolveUiServer } from "./ui/resolve-server.js";
@@ -59,7 +59,7 @@ async function waitForReady(
   return false;
 }
 
-// Launch the @canary/ui web app in the FOREGROUND (unlike the detached daemon):
+// Launch the @usecanary/ui web app in the FOREGROUND (unlike the detached daemon):
 // the user is actively viewing it, expects Ctrl-C to stop it, and shouldn't be
 // left with an orphaned server. Returns the child's exit code.
 export async function uiCommand(args: UiArgs): Promise<number> {
@@ -69,7 +69,7 @@ export async function uiCommand(args: UiArgs): Promise<number> {
   const resolved = await resolveUiServer();
   if (!resolved) {
     process.stderr.write(
-      "canary ui: could not locate the @canary/ui app. Build it with `pnpm --filter @canary/ui build`, or set CANARY_UI_SERVER.\n"
+      "canary ui: could not locate the @usecanary/ui app. Build it with `pnpm --filter @usecanary/ui build`, or set CANARY_UI_SERVER.\n"
     );
     return 1;
   }
@@ -95,7 +95,7 @@ export async function uiCommand(args: UiArgs): Promise<number> {
     });
   } else {
     process.stderr.write(
-      "canary ui: no production build found; starting the dev server (slower first paint). Run `pnpm --filter @canary/ui build` for fast startup.\n"
+      "canary ui: no production build found; starting the dev server (slower first paint). Run `pnpm --filter @usecanary/ui build` for fast startup.\n"
     );
     child = spawn(
       process.execPath,

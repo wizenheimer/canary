@@ -3,7 +3,7 @@ import {
   type DestinationStream,
   type Logger,
   type LogLevel,
-} from "@canary/logger";
+} from "@usecanary/logger";
 import pretty from "pino-pretty";
 
 // `${prefix}-${unix_millis}-${pid}` — correlates a daemon request/response pair.

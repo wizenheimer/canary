@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { sanitizePipeSegment } from "@canary/daemon-client";
+import { sanitizePipeSegment } from "@usecanary/daemon-client";
 
 // Filesystem-safe, collision-resistant session id. Doubles as the on-disk
 // directory name and the reserved `__session__<id>` browser key. The prefix is

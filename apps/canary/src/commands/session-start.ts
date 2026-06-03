@@ -1,11 +1,11 @@
-import { requestId } from "@canary/cli-kit";
-import { ensureDaemonRunning, sendRequest } from "@canary/daemon-client";
+import { requestId } from "@usecanary/cli-kit";
+import { ensureDaemonRunning, sendRequest } from "@usecanary/daemon-client";
 import type {
   CaptureOptions,
   SessionEndRequest,
   SessionStartRequest,
   SessionStartResult,
-} from "@canary/protocol";
+} from "@usecanary/protocol";
 import { logger } from "../logger.js";
 import {
   createSessionRecord,
