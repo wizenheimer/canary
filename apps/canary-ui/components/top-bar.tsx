@@ -6,7 +6,7 @@ import { Logo } from "./logo";
 // the session detail view share one chrome and don't shift layout.
 export function TopBar({ children }: { children?: ReactNode }) {
   return (
-    <header className="border-border border-b">
+    <header>
       <div className="flex h-14 w-full items-center gap-3 px-6">
         <Link
           className="rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
