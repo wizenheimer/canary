@@ -1,6 +1,6 @@
 import { readdir, stat } from "node:fs/promises";
 import path from "node:path";
-import { sessionDir, sessionManifestPath } from "@canary/daemon-client";
+import { sessionDir, sessionManifestPath } from "@usecanary/daemon-client";
 import {
   type ArtifactInfo,
   SESSION_CONSOLE_FILE,
@@ -12,7 +12,7 @@ import {
   SESSION_VIDEO_EXT,
   type SessionEndResult,
   type SessionPhase,
-} from "@canary/protocol";
+} from "@usecanary/protocol";
 import type { SessionRecord } from "./registry.js";
 
 async function statRef(

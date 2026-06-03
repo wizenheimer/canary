@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import type { BrowserSummary } from "@canary/protocol";
+import type { BrowserSummary } from "@usecanary/protocol";
 import {
   type Browser,
   type BrowserContext,

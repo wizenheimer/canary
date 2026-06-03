@@ -26,6 +26,6 @@ jobs:
         run: pnpm lint
 
       - name: Install Playwright browsers (for daemon + canary tests)
-        run: pnpm --filter @canary/daemon exec playwright install --with-deps chromium
+        run: pnpm --filter @usecanary/daemon exec playwright install --with-deps chromium
 
       - run: pnpm check

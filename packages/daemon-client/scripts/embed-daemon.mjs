@@ -34,12 +34,12 @@ const sources = [
   {
     name: "DAEMON_BUNDLE",
     path: resolve(daemonDist, "daemon.bundle.mjs"),
-    hint: "pnpm --filter @canary/daemon build",
+    hint: "pnpm --filter @usecanary/daemon build",
   },
   {
     name: "SANDBOX_CLIENT",
     path: resolve(daemonDist, "sandbox-client.js"),
-    hint: "pnpm --filter @canary/daemon build",
+    hint: "pnpm --filter @usecanary/daemon build",
   },
 ];
 

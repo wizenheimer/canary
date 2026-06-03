@@ -3,7 +3,7 @@ import {
   type CaptureOptions,
   type SessionEndResult,
   sessionStepSlug,
-} from "@canary/protocol";
+} from "@usecanary/protocol";
 import type { SessionRecord } from "../session/registry.js";
 import type { TraceAction } from "./parse-trace.js";
 

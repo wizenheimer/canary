@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
-import { requestId } from "@canary/cli-kit";
-import { ensureDaemonRunning, sendRequest } from "@canary/daemon-client";
-import type { ExecuteRequest } from "@canary/protocol";
+import { requestId } from "@usecanary/cli-kit";
+import { ensureDaemonRunning, sendRequest } from "@usecanary/daemon-client";
+import type { ExecuteRequest } from "@usecanary/protocol";
 import { withSessionLock } from "../session/lock.js";
 import { readSessionRecord, writeSessionRecord } from "../session/registry.js";
 import { renderJsonResult } from "./render.js";

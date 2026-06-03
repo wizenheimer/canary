@@ -1,5 +1,5 @@
-import { formatDurationMs } from "@canary/cli-kit";
-import { sessionStepSlug } from "@canary/protocol";
+import { formatDurationMs } from "@usecanary/cli-kit";
+import { sessionStepSlug } from "@usecanary/protocol";
 import type { SessionManifest } from "./manifest.js";
 import type { ConsoleEntry } from "./parse-console.js";
 import type { HarSummary } from "./parse-har.js";

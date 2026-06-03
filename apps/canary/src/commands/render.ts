@@ -1,8 +1,8 @@
-import { formatDurationMs, pad } from "@canary/cli-kit";
-import type { StatusSummary } from "@canary/protocol";
+import { formatDurationMs, pad } from "@usecanary/cli-kit";
+import type { StatusSummary } from "@usecanary/protocol";
 import type { SessionRecord } from "../session/registry.js";
 
-export { renderJsonResult } from "@canary/cli-kit";
+export { renderJsonResult } from "@usecanary/cli-kit";
 
 export function renderStatusResult(
   raw: unknown,

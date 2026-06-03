@@ -1,10 +1,13 @@
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { sessionReportPath, sessionResultsPath } from "@canary/daemon-client";
+import {
+  sessionReportPath,
+  sessionResultsPath,
+} from "@usecanary/daemon-client";
 import {
   SESSION_SCREENSHOT_EXT,
   type SessionEndResult,
-} from "@canary/protocol";
+} from "@usecanary/protocol";
 import type { SessionRecord } from "../session/registry.js";
 import { buildManifest, type SessionManifest } from "./manifest.js";
 import { countConsoleErrors, parseConsole } from "./parse-console.js";

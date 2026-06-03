@@ -16,10 +16,10 @@ EXEC  := pnpm exec
 TURBO := $(EXEC) turbo
 
 # Workspace filter aliases.
-BROWSER := @canary/browser
-DAEMON  := @canary/daemon
-UI      := @canary/ui
-CLI     := @canary/cli
+BROWSER := @usecanary/browser
+DAEMON  := @usecanary/daemon
+UI      := @usecanary/ui
+CLI     := @usecanary/cli
 
 .PHONY: help install hooks outdated clean reset \
         dev dev-browser dev-daemon dev-ui dev-cli \

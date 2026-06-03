@@ -3,7 +3,7 @@ import {
   isDaemonRunning,
   sendRequest,
   waitForDaemonExit,
-} from "@canary/daemon-client";
+} from "@usecanary/daemon-client";
 import { requestId } from "../util/request-id.js";
 
 export async function stopCommand(): Promise<number> {

@@ -1,6 +1,6 @@
 // Local, structural mirror of the canary `results.json` schema (the
 // `SessionManifest` written by apps/canary/src/report/manifest.ts). The UI owns
-// this copy on purpose: the @canary/* packages export only a raw-TS `source`
+// this copy on purpose: the @usecanary/* packages export only a raw-TS `source`
 // condition that Next can't resolve cleanly, and importing them would drag the
 // CLI's deps (zod, etc.) into the web bundle.
 //

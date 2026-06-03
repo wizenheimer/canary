@@ -1,5 +1,5 @@
-import { requestId } from "@canary/cli-kit";
-import { ensureDaemonRunning, sendRequest } from "@canary/daemon-client";
+import { requestId } from "@usecanary/cli-kit";
+import { ensureDaemonRunning, sendRequest } from "@usecanary/daemon-client";
 import { reconcileStaleActiveSessions } from "../session/reconcile.js";
 import { readSessionRecord } from "../session/registry.js";
 import { renderSessionRecord, renderStatusResult } from "./render.js";

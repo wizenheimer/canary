@@ -1,4 +1,4 @@
-import { createLogger, type Logger } from "@canary/logger";
+import { createLogger, type Logger } from "@usecanary/logger";
 
 // Package-local diagnostics logger. Structured (no pino-pretty) so the package
 // stays free of any app-specific logging concerns and survives esbuild bundling

@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
-import { ensureDaemonRunning, sendRequest } from "@canary/daemon-client";
-import type { ExecuteRequest } from "@canary/protocol";
+import { ensureDaemonRunning, sendRequest } from "@usecanary/daemon-client";
+import type { ExecuteRequest } from "@usecanary/protocol";
 import { readInjectScripts } from "../inject-scripts.js";
 import { requestId } from "../util/request-id.js";
 import type { GlobalFlags } from "./flags.js";

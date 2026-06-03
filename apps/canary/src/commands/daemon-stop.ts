@@ -1,11 +1,11 @@
-import { requestId } from "@canary/cli-kit";
+import { requestId } from "@usecanary/cli-kit";
 import {
   currentDaemonPid,
   isDaemonRunning,
   sendRequest,
   waitForDaemonExit,
-} from "@canary/daemon-client";
-import type { StatusSummary } from "@canary/protocol";
+} from "@usecanary/daemon-client";
+import type { StatusSummary } from "@usecanary/protocol";
 import { logger } from "../logger.js";
 import { listSessions } from "../session/registry.js";
 

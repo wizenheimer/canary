@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => ({
   waitForDaemonExit: vi.fn(),
 }));
 
-vi.mock("@canary/daemon-client", () => ({
+vi.mock("@usecanary/daemon-client", () => ({
   currentDaemonPid: mocks.currentDaemonPid,
   isDaemonRunning: mocks.isDaemonRunning,
   sendRequest: mocks.sendRequest,

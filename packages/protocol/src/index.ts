@@ -233,7 +233,7 @@ export interface SessionListResult {
 }
 
 // Deterministic, content-derived hash so two distinct step names can't map to
-// the same slug. Pure JS (djb2) — no node:crypto — so @canary/protocol stays
+// the same slug. Pure JS (djb2) — no node:crypto — so @usecanary/protocol stays
 // dependency-light. 32-bit, base36; collision across a session's handful of
 // steps is astronomically unlikely.
 function slugHash(value: string): string {

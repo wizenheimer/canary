@@ -1,5 +1,5 @@
 {
-  "extends": "@canary/config/base.json",
+  "extends": "@usecanary/config/base.json",
   "compilerOptions": {
     "baseUrl": ".",
     "rootDir": "./src",

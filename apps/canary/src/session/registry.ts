@@ -3,8 +3,8 @@ import {
   sessionDir,
   sessionRecordPath,
   sessionsRootDir,
-} from "@canary/daemon-client";
-import type { CaptureOptions } from "@canary/protocol";
+} from "@usecanary/daemon-client";
+import type { CaptureOptions } from "@usecanary/protocol";
 import { withSessionLock } from "./lock.js";
 
 export const SESSION_SCHEMA_VERSION = 1;

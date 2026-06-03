@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 import { mkdir, unlink, writeFile } from "node:fs/promises";
 import net from "node:net";
 import path from "node:path";
-import { createLogger } from "@canary/logger";
+import { createLogger } from "@usecanary/logger";
 import {
   EMBEDDED_PACKAGE_JSON,
   type ExecuteRequest,
@@ -10,7 +10,7 @@ import {
   type Response,
   serialize,
   sessionStepSlug,
-} from "@canary/protocol";
+} from "@usecanary/protocol";
 import { BrowserManager } from "./browser-manager.js";
 import {
   getBrowsersDir,
