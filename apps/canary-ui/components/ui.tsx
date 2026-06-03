@@ -1,6 +1,10 @@
 "use client";
 
-import { type ReactNode, useEffect } from "react";
+import { CircleAlert, Loader2 } from "lucide-react";
+import type { ReactNode } from "react";
+import { cn } from "@/lib/utils";
+import { Alert, AlertDescription } from "./ui/alert";
+import { Badge } from "./ui/badge";
 
 // Status pill SVG, ported from the report's statusIcon().
 export function StatusIcon({ status }: { status: string }) {
@@ -8,7 +12,7 @@ export function StatusIcon({ status }: { status: string }) {
     return (
       <svg
         aria-hidden="true"
-        className="ico"
+        className="block shrink-0"
         height="15"
         viewBox="0 0 16 16"
         width="15"
@@ -29,7 +33,7 @@ export function StatusIcon({ status }: { status: string }) {
     return (
       <svg
         aria-hidden="true"
-        className="ico"
+        className="block shrink-0"
         height="15"
         viewBox="0 0 16 16"
         width="15"
@@ -48,7 +52,7 @@ export function StatusIcon({ status }: { status: string }) {
   return (
     <svg
       aria-hidden="true"
-      className="ico"
+      className="block shrink-0"
       height="15"
       viewBox="0 0 16 16"
       width="15"
@@ -65,6 +69,15 @@ export function StatusIcon({ status }: { status: string }) {
   );
 }
 
+// Brand status colors, applied on top of the shadcn Badge base.
+const STATUS_CLASS: Record<string, string> = {
+  aborted: "border-[#ecdcae] bg-warn-bg text-warn",
+  fail: "border-[#f3c4c0] bg-fail-bg text-on-fail",
+  failed: "border-[#f3c4c0] bg-fail-bg text-on-fail",
+  pass: "border-lime-edge bg-primary text-on-primary",
+  passed: "border-lime-edge bg-primary text-on-primary",
+};
+
 export function StatusBadge({
   small,
   status,
@@ -72,19 +85,32 @@ export function StatusBadge({
   small?: boolean;
   status: string;
 }) {
+  const color = STATUS_CLASS[status] ?? "";
   if (small) {
-    return <span className={`badge sm ${status}`}>{status}</span>;
+    return (
+      <Badge className={cn("rounded-full capitalize", color)}>{status}</Badge>
+    );
   }
   return (
-    <span className={`badge ${status}`}>
+    <Badge
+      className={cn(
+        "h-auto gap-2 rounded-full px-4 py-2 font-bold text-[13px] tracking-wide",
+        color
+      )}
+    >
       <StatusIcon status={status} />
       {status.toUpperCase()}
-    </span>
+    </Badge>
   );
 }
 
 export function Spinner({ label }: { label?: string }) {
-  return <div className="notice">{label ?? "Loading…"}</div>;
+  return (
+    <div className="flex items-center justify-center gap-2 p-10 text-faint">
+      <Loader2 className="size-4 animate-spin" />
+      {label ?? "Loading…"}
+    </div>
+  );
 }
 
 export function Notice({
@@ -94,36 +120,13 @@ export function Notice({
   children: ReactNode;
   error?: boolean;
 }) {
-  return <div className={error ? "notice err" : "notice"}>{children}</div>;
-}
-
-// Centered modal. Closes on Escape (window listener) or via its own buttons —
-// no click handlers on non-interactive elements (keeps a11y lint clean).
-export function Modal({
-  children,
-  onClose,
-  title,
-}: {
-  children: ReactNode;
-  onClose: () => void;
-  title: string;
-}) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
-  return (
-    <div className="overlay-back">
-      <div aria-modal="true" className="dialog" role="dialog">
-        <h3>{title}</h3>
-        {children}
-      </div>
-    </div>
-  );
+  if (error) {
+    return (
+      <Alert className="my-2" variant="destructive">
+        <CircleAlert />
+        <AlertDescription>{children}</AlertDescription>
+      </Alert>
+    );
+  }
+  return <div className="p-10 text-center text-faint italic">{children}</div>;
 }

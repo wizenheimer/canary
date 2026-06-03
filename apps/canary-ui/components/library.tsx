@@ -1,10 +1,58 @@
 "use client";
 
+import {
+  Check,
+  ChevronDown,
+  Folder,
+  FolderPlus,
+  Inbox,
+  Layers,
+  MoreHorizontal,
+  Plus,
+  Search,
+  Trash2,
+} from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { fmtMs, fmtRelative } from "@/lib/format";
 import type { SessionCard } from "@/lib/sessions";
-import { Modal, Notice, Spinner, StatusBadge } from "./ui";
+import { cn } from "@/lib/utils";
+import { Logo } from "./logo";
+import { Notice, Spinner, StatusBadge } from "./ui";
+import { Badge } from "./ui/badge";
+import { Button } from "./ui/button";
+import { Card } from "./ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "./ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
+import { Input } from "./ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
+import { Separator } from "./ui/separator";
+import { Textarea } from "./ui/textarea";
 
 interface Root {
   id: string;
@@ -26,7 +74,7 @@ type Selection =
   | { kind: "folder"; path: string }
   | { kind: "trash" };
 
-type Dialog =
+type DialogState =
   | { type: "addRoot" }
   | { type: "newFolder" }
   | { type: "renameFolder"; path: string }
@@ -80,8 +128,7 @@ export default function Library() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [error, setError] = useState<string | null>(null);
-  const [dialog, setDialog] = useState<Dialog | null>(null);
-  const [menuId, setMenuId] = useState<string | null>(null);
+  const [dialog, setDialog] = useState<DialogState | null>(null);
 
   // Monotonic token so an out-of-order loadList response (after a rapid root
   // switch) can't overwrite the current root's list.
@@ -167,21 +214,21 @@ export default function Library() {
     }
   }, [currentRootId, viewingTrash, loadTrashList]);
 
-  // Close any open card menu on an outside click.
-  useEffect(() => {
-    if (!menuId) {
-      return;
-    }
-    const close = () => setMenuId(null);
-    window.addEventListener("click", close);
-    return () => window.removeEventListener("click", close);
-  }, [menuId]);
-
   const switchRoot = (id: string) => {
     setCurrentRootId(id);
     setSelection({ kind: "all" });
     setList(null);
     void postJson("/api/roots", { action: "select", id });
+  };
+
+  const removeRoot = async () => {
+    if (!currentRootId) {
+      return;
+    }
+    await postJson("/api/roots", { action: "remove", id: currentRootId });
+    setCurrentRootId(null);
+    setList(null);
+    await loadRoots();
   };
 
   const overlayOp = async (body: Record<string, unknown>) => {
@@ -205,7 +252,7 @@ export default function Library() {
 
   if (!currentRootId) {
     return (
-      <main className="notice">
+      <main className="flex min-h-screen items-center justify-center p-10">
         {error ? <Notice error>Could not load: {error}</Notice> : <Spinner />}
       </main>
     );
@@ -234,172 +281,180 @@ export default function Library() {
     }
   })();
 
+  const currentRoot = roots.find((r) => r.id === currentRootId);
+
   return (
-    <div className="app">
-      <aside className="sidebar">
-        <div className="brand">
-          <span className="spark" /> Canary
-        </div>
-
-        <div className="side-h">Source</div>
-        <select
-          className="root-switch"
-          onChange={(e) => switchRoot(e.target.value)}
-          value={currentRootId}
+    <div className="flex min-h-screen flex-col">
+      <header className="sticky top-0 z-30 flex flex-wrap items-center gap-2 border-border border-b bg-card/85 px-6 py-3 backdrop-blur">
+        <Link
+          className="rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          href="/"
         >
-          {roots.map((r) => (
-            <option key={r.id} value={r.id}>
-              {r.label}
-              {r.isDefault ? " (default)" : ""}
-            </option>
-          ))}
-        </select>
-        <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
-          <button
-            className="btn"
-            onClick={() => setDialog({ type: "addRoot" })}
-            type="button"
-          >
-            + Add folder
-          </button>
-          {list?.root.isDefault ? null : (
-            <button
-              className="btn"
-              onClick={async () => {
-                await postJson("/api/roots", {
-                  action: "remove",
-                  id: currentRootId,
-                });
-                setCurrentRootId(null);
-                setList(null);
-                await loadRoots();
-              }}
-              type="button"
-            >
-              Remove
-            </button>
-          )}
-        </div>
+          <Logo />
+        </Link>
 
-        <div className="side-h">
-          Folders
-          <button
-            className="add"
-            onClick={() => setDialog({ type: "newFolder" })}
-            title="New folder"
-            type="button"
-          >
-            +
-          </button>
-        </div>
-        <ul className="tree">
-          <li>
-            <button
-              className={`node ${selection.kind === "all" ? "is-active" : ""}`}
-              onClick={() => setSelection({ kind: "all" })}
-              type="button"
-            >
-              <span className="twist" /> All sessions
-              <span className="ct">{sessions.length}</span>
-            </button>
-          </li>
-          <li>
-            <button
-              className={`node ${selection.kind === "unfiled" ? "is-active" : ""}`}
-              onClick={() => setSelection({ kind: "unfiled" })}
-              type="button"
-            >
-              <span className="twist" /> Unfiled
-              <span className="ct">{countFor({ kind: "unfiled" })}</span>
-            </button>
-          </li>
-          {folders.map((path) => {
-            const depth = path.split("/").length - 1;
-            const label = path.split("/").at(-1) ?? path;
-            const isActive =
-              selection.kind === "folder" && selection.path === path;
-            return (
-              <li key={path}>
-                <button
-                  className={`node ${isActive ? "is-active" : ""}`}
-                  onClick={() => setSelection({ kind: "folder", path })}
-                  style={{ paddingLeft: `${8 + depth * 16}px` }}
-                  type="button"
-                >
-                  <span className="twist">📁</span> {label}
-                  <span className="ct">
-                    {countFor({ kind: "folder", path })}
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-          <li>
-            <button
-              className={`node ${selection.kind === "trash" ? "is-active" : ""}`}
-              onClick={() => setSelection({ kind: "trash" })}
-              type="button"
-            >
-              <span className="twist">🗑</span> Trash
-              <span className="ct">{list?.trashCount ?? 0}</span>
-            </button>
-          </li>
-        </ul>
-      </aside>
+        <Separator className="!h-6 mx-1" orientation="vertical" />
 
-      <main className="main">
-        <div className="toolbar">
-          <h1>{selectionTitle}</h1>
-          {selection.kind === "folder" && (
-            <>
-              <button
-                className="btn"
-                onClick={() =>
-                  setDialog({ path: selection.path, type: "renameFolder" })
-                }
-                type="button"
-              >
-                Rename
-              </button>
-              <button
-                className="btn danger"
-                onClick={async () => {
-                  await overlayOp({ op: "deleteFolder", path: selection.path });
-                  setSelection({ kind: "all" });
-                }}
-                type="button"
-              >
-                Delete folder
-              </button>
-            </>
-          )}
-          {selection.kind === "trash" && trash.length > 0 && (
-            <button
-              className="btn danger"
-              onClick={() => trashOp({ action: "empty" })}
-              type="button"
-            >
-              Empty trash
-            </button>
-          )}
-          <span className="grow" />
-          <input
-            className="search"
+        {/* Source root selector */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="sm" variant="outline">
+              <span className="text-muted-foreground">Source:</span>
+              <span className="max-w-[14rem] truncate">
+                {currentRoot?.label ?? "—"}
+              </span>
+              <ChevronDown className="opacity-60" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="min-w-56">
+            <DropdownMenuLabel>Source folder</DropdownMenuLabel>
+            {roots.map((r) => (
+              <DropdownMenuItem key={r.id} onSelect={() => switchRoot(r.id)}>
+                <span className="truncate">
+                  {r.label}
+                  {r.isDefault ? " (default)" : ""}
+                </span>
+                {r.id === currentRootId ? (
+                  <Check className="ml-auto size-4 text-muted-foreground" />
+                ) : null}
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={() => setDialog({ type: "addRoot" })}>
+              <Plus /> Add source…
+            </DropdownMenuItem>
+            {list?.root.isDefault ? null : (
+              <DropdownMenuItem onSelect={removeRoot} variant="destructive">
+                <Trash2 /> Remove source
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* Folder navigation */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="sm" variant="outline">
+              <Folder className="opacity-70" />
+              <span className="max-w-[16rem] truncate">{selectionTitle}</span>
+              <ChevronDown className="opacity-60" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="max-h-[70vh] min-w-64 overflow-y-auto">
+            <FolderItem
+              active={selection.kind === "all"}
+              count={sessions.length}
+              icon={<Layers className="size-3.5" />}
+              label="All sessions"
+              onSelect={() => setSelection({ kind: "all" })}
+            />
+            <FolderItem
+              active={selection.kind === "unfiled"}
+              count={countFor({ kind: "unfiled" })}
+              icon={<Inbox className="size-3.5" />}
+              label="Unfiled"
+              onSelect={() => setSelection({ kind: "unfiled" })}
+            />
+            {folders.map((path) => {
+              const depth = path.split("/").length - 1;
+              const label = path.split("/").at(-1) ?? path;
+              return (
+                <FolderItem
+                  active={
+                    selection.kind === "folder" && selection.path === path
+                  }
+                  count={countFor({ kind: "folder", path })}
+                  depth={depth}
+                  icon={<Folder className="size-3.5" />}
+                  key={path}
+                  label={label}
+                  onSelect={() => setSelection({ kind: "folder", path })}
+                />
+              );
+            })}
+            <DropdownMenuSeparator />
+            <FolderItem
+              active={selection.kind === "trash"}
+              count={list?.trashCount ?? 0}
+              icon={<Trash2 className="size-3.5" />}
+              label="Trash"
+              onSelect={() => setSelection({ kind: "trash" })}
+            />
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={() => setDialog({ type: "newFolder" })}>
+              <FolderPlus /> New folder…
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <div className="flex-1" />
+
+        {/* Search */}
+        <div className="relative">
+          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            className="h-8 w-56 pl-8"
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search name, id, tag, note…"
             type="search"
             value={search}
           />
-          <select
-            className="filter"
-            onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-            value={statusFilter}
-          >
-            <option value="all">All statuses</option>
-            <option value="passed">Passed</option>
-            <option value="failed">Failed</option>
-            <option value="aborted">Aborted</option>
-          </select>
+        </div>
+
+        {/* Status filter */}
+        <Select
+          onValueChange={(v) => setStatusFilter(v as StatusFilter)}
+          value={statusFilter}
+        >
+          <SelectTrigger className="w-[150px]" size="sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All statuses</SelectItem>
+            <SelectItem value="passed">Passed</SelectItem>
+            <SelectItem value="failed">Failed</SelectItem>
+            <SelectItem value="aborted">Aborted</SelectItem>
+          </SelectContent>
+        </Select>
+      </header>
+
+      <main className="mx-auto w-full max-w-[1400px] flex-1 px-6 pt-7 pb-20">
+        <div className="mb-6 flex flex-wrap items-center gap-3">
+          <h1 className="font-bold text-[22px] tracking-tight">
+            {selectionTitle}
+          </h1>
+          {selection.kind === "folder" && (
+            <>
+              <Button
+                onClick={() =>
+                  setDialog({ path: selection.path, type: "renameFolder" })
+                }
+                size="sm"
+                variant="outline"
+              >
+                Rename
+              </Button>
+              <Button
+                onClick={async () => {
+                  await overlayOp({ op: "deleteFolder", path: selection.path });
+                  setSelection({ kind: "all" });
+                }}
+                size="sm"
+                variant="destructive"
+              >
+                Delete folder
+              </Button>
+            </>
+          )}
+          {selection.kind === "trash" && trash.length > 0 && (
+            <Button
+              onClick={() => trashOp({ action: "empty" })}
+              size="sm"
+              variant="destructive"
+            >
+              Empty trash
+            </Button>
+          )}
         </div>
 
         {error ? <Notice error>{error}</Notice> : null}
@@ -412,8 +467,6 @@ export default function Library() {
           />
         ) : (
           <SessionGrid
-            menuId={menuId}
-            onMenu={setMenuId}
             onMove={(c) =>
               setDialog({
                 current: c.folder,
@@ -489,9 +542,37 @@ export default function Library() {
   );
 }
 
+function FolderItem({
+  active,
+  count,
+  depth = 0,
+  icon,
+  label,
+  onSelect,
+}: {
+  active: boolean;
+  count: number;
+  depth?: number;
+  icon?: ReactNode;
+  label: string;
+  onSelect: () => void;
+}) {
+  return (
+    <DropdownMenuItem
+      className={cn(active && "bg-primary/15 font-medium")}
+      onSelect={onSelect}
+      style={{ paddingLeft: `${8 + depth * 14}px` }}
+    >
+      <span className="flex w-4 justify-center text-faint">{icon}</span>
+      <span className="truncate">{label}</span>
+      <span className="ml-auto pl-3 text-faint text-xs tabular-nums">
+        {count}
+      </span>
+    </DropdownMenuItem>
+  );
+}
+
 function SessionGrid({
-  menuId,
-  onMenu,
   onMove,
   onNote,
   onTags,
@@ -499,8 +580,6 @@ function SessionGrid({
   rootId,
   sessions,
 }: {
-  menuId: string | null;
-  onMenu: (id: string | null) => void;
   onMove: (c: SessionCard) => void;
   onNote: (c: SessionCard) => void;
   onTags: (c: SessionCard) => void;
@@ -512,73 +591,85 @@ function SessionGrid({
     return <Notice>No sessions here yet.</Notice>;
   }
   return (
-    <div className="grid">
+    <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4">
       {sessions.map((c) => (
-        <div className="scard" key={c.id}>
-          <div className="scard-top">
+        <Card
+          className="gap-3 p-5 shadow-none transition-colors hover:border-ink-strong"
+          key={c.id}
+        >
+          <div className="flex items-start gap-2.5">
             <StatusBadge small status={c.status} />
-            <Link className="sname2" href={`/s/${rootId}/${c.id}`}>
+            <Link
+              className="min-w-0 break-words font-semibold text-base tracking-tight hover:underline"
+              href={`/s/${rootId}/${c.id}`}
+            >
               {c.name}
             </Link>
-            <div className="menu">
-              <button
-                className="kebab"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onMenu(menuId === c.id ? null : c.id);
-                }}
-                type="button"
-              >
-                ⋯
-              </button>
-              {menuId === c.id ? (
-                <div className="menu-pop">
-                  <button onClick={() => onMove(c)} type="button">
+            <div className="ml-auto">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    aria-label="Session actions"
+                    size="icon-sm"
+                    variant="ghost"
+                  >
+                    <MoreHorizontal />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onSelect={() => onMove(c)}>
                     Move to folder…
-                  </button>
-                  <button onClick={() => onTags(c)} type="button">
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => onTags(c)}>
                     Edit tags…
-                  </button>
-                  <button onClick={() => onNote(c)} type="button">
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => onNote(c)}>
                     Edit note…
-                  </button>
-                  <hr />
-                  <button
-                    className="danger"
-                    onClick={() => onTrash(c.id)}
-                    type="button"
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onSelect={() => onTrash(c.id)}
+                    variant="destructive"
                   >
                     Delete
-                  </button>
-                </div>
-              ) : null}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
-          <div className="when">
+          <div className="text-[13px] text-muted-foreground">
             {fmtRelative(c.createdAt)} · {fmtMs(c.durationMs)}
           </div>
-          <div className="stats">
+          <div className="flex flex-wrap gap-3.5 text-[13px] text-muted-foreground tabular-nums">
             <span>
               {c.stepsPassed}/{c.stepsTotal} steps
             </span>
             {c.consoleErrors > 0 ? (
-              <span className="bad">{c.consoleErrors} console</span>
+              <span className="font-semibold text-fail">
+                {c.consoleErrors} console
+              </span>
             ) : null}
             {c.networkFailures > 0 ? (
-              <span className="bad">{c.networkFailures} network</span>
+              <span className="font-semibold text-fail">
+                {c.networkFailures} network
+              </span>
             ) : null}
-            {c.folder ? <span>📁 {c.folder}</span> : null}
+            {c.folder ? (
+              <span className="flex items-center gap-1">
+                <Folder className="size-3.5" /> {c.folder}
+              </span>
+            ) : null}
           </div>
           {c.tags.length > 0 ? (
-            <div className="tagrow">
+            <div className="flex flex-wrap gap-1.5">
               {c.tags.map((t) => (
-                <span className="chip" key={t}>
+                <Badge key={t} variant="secondary">
                   {t}
-                </span>
+                </Badge>
               ))}
             </div>
           ) : null}
-        </div>
+        </Card>
       ))}
     </div>
   );
@@ -597,33 +688,50 @@ function TrashGrid({
     return <Notice>Trash is empty.</Notice>;
   }
   return (
-    <div className="grid">
+    <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4">
       {sessions.map((c) => (
-        <div className="scard" key={c.id}>
-          <div className="scard-top">
+        <Card className="gap-3 p-5 shadow-none" key={c.id}>
+          <div className="flex items-start gap-2.5">
             <StatusBadge small status={c.status} />
-            <span className="sname2">{c.name}</span>
+            <span className="min-w-0 break-words font-semibold text-base tracking-tight">
+              {c.name}
+            </span>
           </div>
-          <div className="when">{fmtRelative(c.createdAt)}</div>
-          <div className="stats" style={{ marginTop: "auto" }}>
-            <button
-              className="btn"
-              onClick={() => onRestore(c.id)}
-              type="button"
-            >
+          <div className="text-[13px] text-muted-foreground">
+            {fmtRelative(c.createdAt)}
+          </div>
+          <div className="mt-auto flex gap-2">
+            <Button onClick={() => onRestore(c.id)} size="sm" variant="outline">
               Restore
-            </button>
-            <button
-              className="btn danger"
+            </Button>
+            <Button
               onClick={() => onDelete(c.id)}
-              type="button"
+              size="sm"
+              variant="destructive"
             >
               Delete forever
-            </button>
+            </Button>
           </div>
-        </div>
+        </Card>
       ))}
     </div>
+  );
+}
+
+function DialogLabel({
+  children,
+  htmlFor,
+}: {
+  children: ReactNode;
+  htmlFor: string;
+}) {
+  return (
+    <label
+      className="mt-3 mb-1.5 block font-semibold text-muted-foreground text-xs uppercase tracking-wide"
+      htmlFor={htmlFor}
+    >
+      {children}
+    </label>
   );
 }
 
@@ -638,7 +746,7 @@ function Dialogs({
   onRenameFolder,
   onTags,
 }: {
-  dialog: Dialog;
+  dialog: DialogState;
   folders: string[];
   onAddRoot: (dir: string, label: string) => void;
   onClose: () => void;
@@ -666,194 +774,209 @@ function Dialogs({
   );
   const [moveNew, setMoveNew] = useState("");
 
-  if (dialog.type === "addRoot") {
-    return (
-      <Modal onClose={onClose} title="Add a source folder">
-        <label htmlFor="d-path">Folder path</label>
-        <input
-          id="d-path"
-          onChange={(e) => setText(e.target.value)}
-          placeholder="/path/to/sessions"
-          value={text}
-        />
-        <label htmlFor="d-label">Label (optional)</label>
-        <input
-          id="d-label"
-          onChange={(e) => setText2(e.target.value)}
-          placeholder="My archive"
-          value={text2}
-        />
-        <div className="actions">
-          <button className="btn" onClick={onClose} type="button">
-            Cancel
-          </button>
-          <button
-            className="btn"
-            disabled={!text.trim()}
-            onClick={() => onAddRoot(text.trim(), text2.trim())}
-            type="button"
-          >
-            Add
-          </button>
-        </div>
-      </Modal>
-    );
-  }
-
-  if (dialog.type === "newFolder") {
-    return (
-      <Modal onClose={onClose} title="New folder">
-        <label htmlFor="d-folder">Folder path (use / for nesting)</label>
-        <input
-          id="d-folder"
-          onChange={(e) => setText(e.target.value)}
-          placeholder="Work/Checkout"
-          value={text}
-        />
-        <div className="actions">
-          <button className="btn" onClick={onClose} type="button">
-            Cancel
-          </button>
-          <button
-            className="btn"
-            disabled={!text.trim()}
-            onClick={() => onCreateFolder(text.trim())}
-            type="button"
-          >
-            Create
-          </button>
-        </div>
-      </Modal>
-    );
-  }
-
-  if (dialog.type === "renameFolder") {
-    return (
-      <Modal onClose={onClose} title="Rename folder">
-        <label htmlFor="d-rename">New path</label>
-        <input
-          id="d-rename"
-          onChange={(e) => setText(e.target.value)}
-          value={text}
-        />
-        <div className="actions">
-          <button className="btn" onClick={onClose} type="button">
-            Cancel
-          </button>
-          <button
-            className="btn"
-            disabled={!text.trim()}
-            onClick={() => onRenameFolder(dialog.path, text.trim())}
-            type="button"
-          >
-            Rename
-          </button>
-        </div>
-      </Modal>
-    );
-  }
-
-  if (dialog.type === "move") {
-    return (
-      <Modal onClose={onClose} title={`Move "${dialog.name}"`}>
-        <label htmlFor="d-move">Folder</label>
-        <select
-          id="d-move"
-          onChange={(e) => setMoveTarget(e.target.value)}
-          value={moveTarget}
-        >
-          <option value="__unfiled__">Unfiled</option>
-          {folders.map((f) => (
-            <option key={f} value={f}>
-              {f}
-            </option>
-          ))}
-        </select>
-        <label htmlFor="d-move-new">…or a new folder path</label>
-        <input
-          id="d-move-new"
-          onChange={(e) => setMoveNew(e.target.value)}
-          placeholder="Work/Checkout"
-          value={moveNew}
-        />
-        <div className="actions">
-          <button className="btn" onClick={onClose} type="button">
-            Cancel
-          </button>
-          <button
-            className="btn"
-            onClick={() => {
-              if (moveNew.trim()) {
-                onMove(dialog.id, moveNew.trim());
-              } else if (moveTarget === "__unfiled__") {
-                onMove(dialog.id, null);
-              } else {
-                onMove(dialog.id, moveTarget);
+  const body = (() => {
+    if (dialog.type === "addRoot") {
+      return (
+        <>
+          <DialogHeader>
+            <DialogTitle>Add a source folder</DialogTitle>
+          </DialogHeader>
+          <DialogLabel htmlFor="d-path">Folder path</DialogLabel>
+          <Input
+            id="d-path"
+            onChange={(e) => setText(e.target.value)}
+            placeholder="/path/to/sessions"
+            value={text}
+          />
+          <DialogLabel htmlFor="d-label">Label (optional)</DialogLabel>
+          <Input
+            id="d-label"
+            onChange={(e) => setText2(e.target.value)}
+            placeholder="My archive"
+            value={text2}
+          />
+          <DialogFooter>
+            <Button onClick={onClose} variant="outline">
+              Cancel
+            </Button>
+            <Button
+              disabled={!text.trim()}
+              onClick={() => onAddRoot(text.trim(), text2.trim())}
+            >
+              Add
+            </Button>
+          </DialogFooter>
+        </>
+      );
+    }
+    if (dialog.type === "newFolder") {
+      return (
+        <>
+          <DialogHeader>
+            <DialogTitle>New folder</DialogTitle>
+          </DialogHeader>
+          <DialogLabel htmlFor="d-folder">
+            Folder path (use / for nesting)
+          </DialogLabel>
+          <Input
+            id="d-folder"
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Work/Checkout"
+            value={text}
+          />
+          <DialogFooter>
+            <Button onClick={onClose} variant="outline">
+              Cancel
+            </Button>
+            <Button
+              disabled={!text.trim()}
+              onClick={() => onCreateFolder(text.trim())}
+            >
+              Create
+            </Button>
+          </DialogFooter>
+        </>
+      );
+    }
+    if (dialog.type === "renameFolder") {
+      return (
+        <>
+          <DialogHeader>
+            <DialogTitle>Rename folder</DialogTitle>
+          </DialogHeader>
+          <DialogLabel htmlFor="d-rename">New path</DialogLabel>
+          <Input
+            id="d-rename"
+            onChange={(e) => setText(e.target.value)}
+            value={text}
+          />
+          <DialogFooter>
+            <Button onClick={onClose} variant="outline">
+              Cancel
+            </Button>
+            <Button
+              disabled={!text.trim()}
+              onClick={() => onRenameFolder(dialog.path, text.trim())}
+            >
+              Rename
+            </Button>
+          </DialogFooter>
+        </>
+      );
+    }
+    if (dialog.type === "move") {
+      return (
+        <>
+          <DialogHeader>
+            <DialogTitle>Move &ldquo;{dialog.name}&rdquo;</DialogTitle>
+          </DialogHeader>
+          <DialogLabel htmlFor="d-move">Folder</DialogLabel>
+          <Select onValueChange={setMoveTarget} value={moveTarget}>
+            <SelectTrigger className="w-full" id="d-move">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__unfiled__">Unfiled</SelectItem>
+              {folders.map((f) => (
+                <SelectItem key={f} value={f}>
+                  {f}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <DialogLabel htmlFor="d-move-new">…or a new folder path</DialogLabel>
+          <Input
+            id="d-move-new"
+            onChange={(e) => setMoveNew(e.target.value)}
+            placeholder="Work/Checkout"
+            value={moveNew}
+          />
+          <DialogFooter>
+            <Button onClick={onClose} variant="outline">
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (moveNew.trim()) {
+                  onMove(dialog.id, moveNew.trim());
+                } else if (moveTarget === "__unfiled__") {
+                  onMove(dialog.id, null);
+                } else {
+                  onMove(dialog.id, moveTarget);
+                }
+              }}
+            >
+              Move
+            </Button>
+          </DialogFooter>
+        </>
+      );
+    }
+    if (dialog.type === "tags") {
+      return (
+        <>
+          <DialogHeader>
+            <DialogTitle>Tags for &ldquo;{dialog.name}&rdquo;</DialogTitle>
+          </DialogHeader>
+          <DialogLabel htmlFor="d-tags">Comma-separated tags</DialogLabel>
+          <Input
+            id="d-tags"
+            onChange={(e) => setText(e.target.value)}
+            placeholder="smoke, nightly"
+            value={text}
+          />
+          <DialogFooter>
+            <Button onClick={onClose} variant="outline">
+              Cancel
+            </Button>
+            <Button
+              onClick={() =>
+                onTags(
+                  dialog.id,
+                  text
+                    .split(",")
+                    .map((t) => t.trim())
+                    .filter((t) => t.length > 0)
+                )
               }
-            }}
-            type="button"
-          >
-            Move
-          </button>
-        </div>
-      </Modal>
-    );
-  }
-
-  if (dialog.type === "tags") {
+            >
+              Save
+            </Button>
+          </DialogFooter>
+        </>
+      );
+    }
     return (
-      <Modal onClose={onClose} title={`Tags for "${dialog.name}"`}>
-        <label htmlFor="d-tags">Comma-separated tags</label>
-        <input
-          id="d-tags"
+      <>
+        <DialogHeader>
+          <DialogTitle>Note for &ldquo;{dialog.name}&rdquo;</DialogTitle>
+        </DialogHeader>
+        <DialogLabel htmlFor="d-note">Note</DialogLabel>
+        <Textarea
+          id="d-note"
           onChange={(e) => setText(e.target.value)}
-          placeholder="smoke, nightly"
           value={text}
         />
-        <div className="actions">
-          <button className="btn" onClick={onClose} type="button">
+        <DialogFooter>
+          <Button onClick={onClose} variant="outline">
             Cancel
-          </button>
-          <button
-            className="btn"
-            onClick={() =>
-              onTags(
-                dialog.id,
-                text
-                  .split(",")
-                  .map((t) => t.trim())
-                  .filter((t) => t.length > 0)
-              )
-            }
-            type="button"
-          >
-            Save
-          </button>
-        </div>
-      </Modal>
+          </Button>
+          <Button onClick={() => onNote(dialog.id, text)}>Save</Button>
+        </DialogFooter>
+      </>
     );
-  }
+  })();
 
   return (
-    <Modal onClose={onClose} title={`Note for "${dialog.name}"`}>
-      <label htmlFor="d-note">Note</label>
-      <textarea
-        id="d-note"
-        onChange={(e) => setText(e.target.value)}
-        value={text}
-      />
-      <div className="actions">
-        <button className="btn" onClick={onClose} type="button">
-          Cancel
-        </button>
-        <button
-          className="btn"
-          onClick={() => onNote(dialog.id, text)}
-          type="button"
-        >
-          Save
-        </button>
-      </div>
-    </Modal>
+    <Dialog
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose();
+        }
+      }}
+      open
+    >
+      <DialogContent className="sm:max-w-md">{body}</DialogContent>
+    </Dialog>
   );
 }
