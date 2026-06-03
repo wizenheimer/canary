@@ -1,5 +1,4 @@
-import { realpathSync } from "node:fs";
-import { fileURLToPath } from "node:url";
+import { isMainModule } from "@usecanary/cli-kit";
 import type { Command as CommandType } from "commander";
 import * as commander from "commander";
 
@@ -16,6 +15,7 @@ import {
   RUN_LONG_ABOUT,
   SESSION_END_LONG_ABOUT,
   SESSION_START_LONG_ABOUT,
+  STOP_LONG_ABOUT,
   UI_LONG_ABOUT,
   USAGE_GUIDE,
 } from "./commands/help-text.js";
@@ -284,6 +284,17 @@ export function buildProgram(): CommandType {
       throw new ExitCodeError(code);
     });
 
+  program
+    .command("stop")
+    .description(
+      "Stop the daemon and everything it's running in the background"
+    )
+    .addHelpText("before", `${STOP_LONG_ABOUT}\n`)
+    .action(async () => {
+      const code = await daemonStop(isJson(program));
+      throw new ExitCodeError(code);
+    });
+
   const daemon = program
     .command("daemon")
     .description("Manage the shared daemon process");
@@ -327,28 +338,8 @@ export async function execute(argv: readonly string[]): Promise<number> {
   }
 }
 
-// True only when this module is the process entry point. Uses realpath
-// equality rather than loose suffix matching (the monorepo ships more than one
-// `cli.js`, and a suffix match would spuriously fire when this module is merely
-// imported — side-effectfully running the CLI and calling process.exit()).
-const isMain = (() => {
-  try {
-    const here = fileURLToPath(import.meta.url);
-    const argv1 = process.argv[1];
-    if (!argv1) {
-      return false;
-    }
-    try {
-      return realpathSync(here) === realpathSync(argv1);
-    } catch {
-      // realpath can fail (e.g. argv1 doesn't exist); fall back to an exact,
-      // non-fuzzy comparison so we still never match on a mere suffix.
-      return here === argv1;
-    }
-  } catch {
-    return false;
-  }
-})();
+// True only when this module is the process entry point (see isMainModule).
+const isMain = isMainModule(import.meta.url);
 
 if (isMain) {
   execute(process.argv).then(

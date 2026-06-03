@@ -42,10 +42,18 @@ const esm = build({
 });
 
 // CJS variant for Node SEA — `--experimental-sea-config` only accepts CJS.
+// `import.meta.url` isn't available in CJS, so map it to the equivalent derived
+// from `__filename` (used by cli's isMain guard).
 const cjs = build({
   ...common,
   outfile: resolve(dist, "cli.cjs"),
   format: "cjs",
+  define: {
+    "import.meta.url": "__importMetaUrl",
+  },
+  banner: {
+    js: "const __importMetaUrl = require('node:url').pathToFileURL(__filename).href;",
+  },
   sourcemap: false,
 });
 
