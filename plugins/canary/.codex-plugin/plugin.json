@@ -1,0 +1,29 @@
+{
+  "name": "canary",
+  "version": "0.1.0",
+  "description": "Canary browser automation + recorded QA sessions: sandbox scripting skills and automate/session/review workflows for Codex.",
+  "author": {
+    "name": "wizenheimer",
+    "url": "https://github.com/wizenheimer"
+  },
+  "homepage": "https://github.com/usecanary/canary",
+  "repository": "https://github.com/usecanary/canary",
+  "license": "MIT",
+  "keywords": ["canary", "browser-automation", "qa", "codex"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Canary",
+    "shortDescription": "Automate a browser and record verifiable QA sessions.",
+    "longDescription": "Canary gives Codex a sandbox scripting reference plus focused workflows to automate a browser one-off, record a capture-enabled QA session (trace/video/HAR/console) with a report, and review recorded sessions.",
+    "developerName": "Canary",
+    "category": "Developer Tools",
+    "capabilities": ["Interactive", "Read", "Write"],
+    "websiteURL": "https://github.com/usecanary/canary",
+    "defaultPrompt": [
+      "Automate this browser task.",
+      "Record a QA session for this flow.",
+      "Review my last canary session."
+    ],
+    "brandColor": "#111827"
+  }
+}

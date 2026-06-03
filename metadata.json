@@ -1,0 +1,6 @@
+{
+  "version": "0.1.0",
+  "organization": "Canary",
+  "date": "June 2026",
+  "abstract": "Agent skills for Canary browser automation: a sandbox scripting reference plus automate, session (recorded QA + report), and review workflows — packaged for Claude Code, Cursor, Codex, and any Agent Skills tool."
+}

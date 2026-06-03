@@ -1,0 +1,20 @@
+{
+  "name": "canary-marketplace",
+  "interface": {
+    "displayName": "Canary"
+  },
+  "plugins": [
+    {
+      "name": "canary",
+      "source": {
+        "source": "local",
+        "path": "./plugins/canary"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}
