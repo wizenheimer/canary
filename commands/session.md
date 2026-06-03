@@ -1,5 +1,4 @@
 ---
-name: canary-session
 description: Record a verifiable QA session (trace, video, HAR, console) and render a report.
 argument-hint: "<flow to verify>"
 ---

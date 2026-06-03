@@ -1,7 +1,7 @@
 {
   "name": "canary",
   "version": "0.1.0",
-  "description": "Canary browser automation + recorded QA sessions: sandbox scripting skills, JTBD agents, slash commands, and rules for automate, session, and review workflows.",
+  "description": "Canary browser automation + recorded QA sessions: sandbox scripting skills, JTBD agents, slash commands, and rules for verify, automate, session, and review workflows.",
   "author": {
     "name": "wizenheimer"
   },

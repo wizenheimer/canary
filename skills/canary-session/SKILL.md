@@ -42,9 +42,14 @@ One session, a step per phase, `session end` — the report bundles the trace, v
    `npx @usecanary/cli run ./step.js --session "$id" --step "<name>"`
 4. End + render: `npx @usecanary/cli session end "$id"` → `~/.canary/sessions/<id>/report.html`
 5. Offer **canary-review** (or `npx @usecanary/ui`) to browse it.
+6. Done? Leave the daemon running for the next session, or `npx @usecanary/cli stop` to shut it (and
+   every browser) down — or pass `--stop-daemon` to step 4 (`session end --stop-daemon`) to stop it
+   once nothing else needs it.
 
 ## Hard rules
 
 - **One primary named page per step** — keeps each step's report screenshot correct (see canary-scripting).
 - Don't invent API shapes; use the canary-scripting reference.
 - Degrade, don't crash: log a `WARN` on a missing selector so the step still records its evidence.
+- **`end` before `stop`.** `canary stop` aborts any live session and skips its `report.html` — always
+  `session end <id>` first. Use `session abort <id>` only to salvage a broken run.

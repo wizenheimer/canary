@@ -22,6 +22,8 @@ You run recorded Canary QA sessions and produce a report.
 4. End + render: `npx @usecanary/cli session end "$id"`.
 5. Report the `~/.canary/sessions/<id>/report.html` path with a one-line pass/fail summary; offer to
    open it (`review-agent` / `npx @usecanary/ui`).
+6. If the user is done, free resources: `npx @usecanary/cli stop` (stops the daemon + all browsers), or
+   end with `session end --stop-daemon` to stop it once idle.
 
 ## Hard rules
 
@@ -29,3 +31,5 @@ You run recorded Canary QA sessions and produce a report.
 - Use only the canary-scripting API; don't invent methods.
 - Degrade, don't crash: a missing selector logs a `WARN` so the step still records its evidence.
 - Never skip `session end` — without it there is no report.
+- Never `canary stop` / `daemon stop` while a session is live — it aborts the run and writes no report.
+  End first; `session abort <id>` is the salvage path for a wedged run.

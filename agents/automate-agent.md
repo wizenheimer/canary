@@ -27,3 +27,5 @@ You automate one-off browser tasks with Canary and return concrete results. Noth
 - Degrade, don't crash: wrap optional steps so a missing selector logs a `WARN`, not a throw.
 - One-off only — no session. If the user wants a report or evidence, hand off to `session-agent`.
 - Don't add unrelated packages or write files outside the script.
+- One-off runs share a background daemon that stays up for reuse. If the user wants it gone (or a
+  headed window lingers), run `npx @usecanary/browser stop` — it stops the daemon and every browser.

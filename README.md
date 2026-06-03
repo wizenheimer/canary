@@ -19,6 +19,19 @@ Every run lands in a local app — search it, tag it, organize it into folders, 
 
 ![The Canary session browser](docs/media/sessions-list.png)
 
+## Who it's for
+
+You describe the flow in plain language; your agent drives a real browser and hands back **both** a
+report you can just read **and** the exact Playwright script — plus the full trace — behind it. Most
+tools make you pick one: an opaque agent run you can't reproduce, or raw Playwright you write and
+maintain by hand. Canary gives you both.
+
+| You are a…        | Instead of…                                            | Canary gives you…                                                                       |
+| ----------------- | ------------------------------------------------------ | --------------------------------------------------------------------------------------- |
+| **Developer**     | Writing and maintaining Playwright/E2E scripts by hand | A reusable script captured from every run — re-run it in CI, no agent cost on replay    |
+| **QA engineer**   | Clicking through flows manually to repro and verify    | Evidence by default — trace, video, network, console, and a screenshot of every step    |
+| **PM / reviewer** | Waiting on a build or trusting "works on my machine"   | A self-contained `report.html` you open and read — every step, replayable and shareable |
+
 ## Get started
 
 ```bash
@@ -119,6 +132,22 @@ the trace in Playwright's own viewer with `npx playwright show-trace`.
 
 ![Downloadable artifacts: trace, HAR, console log, results, and report](docs/media/session-artifacts.png)
 
+## Claude Code, natively
+
+In [Claude Code](https://claude.com/claude-code), Canary is a first-class plugin — skills, subagents,
+and `/canary:*` slash commands. Tell Claude what you changed or what to check; it plans the QA, drives
+a real browser, and hands back the report.
+
+```
+/canary:verify    # what changed? → a prioritized QA plan, then record it
+/canary:session   # record a flow end to end and render report.html
+/canary:run       # drive the browser once, nothing recorded
+/canary:review    # open the viewer and triage a recorded session
+```
+
+Or skip the slash and just say *"QA the checkout flow and give me a report"* — Canary's subagents pick
+it up. Install the plugin below.
+
 ## Use it with your coding agent
 
 Canary is built for agents — and it explains itself to them. Install it, then **tell your agent to run
@@ -149,8 +178,9 @@ cp -r skills/* ~/.claude/skills/
 ```
 
 You get **`canary-scripting`** (the sandbox API, with `references/REFERENCE.md`) plus the workflow
-skills **`canary-automate`**, **`canary-session`**, and **`canary-review`** — each paired with a
-subagent and a slash command: `/canary:run`, `/canary:session`, `/canary:review`.
+skills **`canary-verify`**, **`canary-automate`**, **`canary-session`**, and **`canary-review`** —
+each paired with a subagent and a slash command: `/canary:verify`, `/canary:run`, `/canary:session`,
+`/canary:review`.
 
 ## Three tools, one runtime
 
@@ -236,9 +266,9 @@ canary/
 │   ├── logger/             # @usecanary/logger           pino-backed structured logger
 │   ├── cli-kit/            # @usecanary/cli-kit          shared CLI helpers
 │   └── daemon-client/      # @usecanary/daemon-client    daemon transport + lifecycle; embeds the daemon bundle
-├── skills/                 # agent skills: canary-scripting (+references), -automate, -session, -review
-├── agents/                 # JTBD subagents: automate-agent, session-agent, review-agent
-├── commands/               # slash commands: /canary:run, :session, :review
+├── skills/                 # agent skills: canary-scripting (+references), -verify, -automate, -session, -review
+├── agents/                 # JTBD subagents: verify-agent, automate-agent, session-agent, review-agent
+├── commands/               # slash commands: /canary:verify, :run, :session, :review
 ├── .claude-plugin/         # Claude Code plugin + marketplace manifests
 ├── .cursor-plugin/         # Cursor plugin manifest (pairs with rules/)
 ├── plugins/canary/         # Codex plugin wrapper (.codex-plugin → canonical skills/)
