@@ -1,33 +1,134 @@
 # Canary
 
-**AI-agent QA toolkit.** Drive a real browser from a CLI, record sessions (Playwright trace, video,
-network HAR, console), and render self-contained verification reports you can browse in a local UI.
+**Browser QA for AI agents.** Let your agent drive a real browser — and see exactly what it did.
+
+Canary runs sandboxed JavaScript against real Chromium and records the entire session: the Playwright
+trace, a video, every network request, the console, and a screenshot of each step. You get back a
+self-contained report you can replay and share — and the exact script the agent ran, ready to run
+again. No instrumentation, no guesswork.
+
+- **See exactly what happened.** Trace, video, network, console, and a screenshot of every step — captured automatically.
+- **Reproducible by default.** Canary turns each run into a real Playwright script. Let your agent discover a flow once; re-run it forever.
+- **One file, zero setup.** Every session is a self-contained `report.html` — open it, commit it, send it. No server, no build.
+- **Built for agents.** Drop-in plugins for Claude Code, Cursor, and Codex, or a generic [Agent Skills](https://agentskills.io) pack for everything else.
+- **Sandboxed.** Scripts run in a QuickJS WASM sandbox with the full Playwright `Page` API — no Node, no host access.
+
+## See it
+
+Every run lands in a local app — search it, tag it, organize it into folders, replay it:
+
+![The Canary session browser](docs/media/sessions-list.png)
 
 ## Get started
 
 ```bash
-npm create canary@latest         # guided setup (Ink wizard)
-
-# …or à la carte (no global install needed):
-npx @usecanary/cli install          # download Chromium + the runtime into ~/.canary
-npx skills add usecanary/canary   # install the agent skills into your agent's skills dir
-npx @usecanary/ui                   # open the session viewer (like `npx playwright show-trace`)
+npm i -g @usecanary/cli @usecanary/ui   # puts `canary` + `canary-viewer` on your PATH
+canary install                          # one-time: Chromium + the runtime into ~/.canary (~150 MB)
 ```
 
-Record a session and view it:
+…or run the guided wizard, which offers to install all of the above for you:
 
 ```bash
-id=$(npx @usecanary/cli session start --name "checkout")
-npx @usecanary/cli run ./step.js --session "$id" --step "open"
-npx @usecanary/cli session end "$id"     # -> ~/.canary/sessions/<id>/report.html
-npx @usecanary/ui                        # browse it
+npm create canary@latest                # guided setup (Ink wizard)
 ```
 
-## Agent integration (skills + plugins)
+Record a session and open the report:
 
-Canary ships as a Claude Code plugin, a Cursor plugin, a Codex plugin, and a generic
+```bash
+id=$(canary session start --name "checkout")
+canary run ./open.js   --session "$id" --step open
+canary run ./submit.js --session "$id" --step submit
+canary session end "$id"                # -> ~/.canary/sessions/<id>/report.html
+
+canary-viewer                           # browse every recorded session
+canary stop                             # shut the background daemon down when you're done
+```
+
+Just need a quick one-off with no recording? Drive the browser engine directly:
+
+```bash
+echo 'const p = await browser.getPage("main");
+await p.goto("https://example.com");
+console.log(await p.title());' | canary-browser
+```
+
+Or attach to a Chrome you already have open — launch it with `--remote-debugging-port=9222`, then
+`canary-browser --connect` (it auto-discovers the port, or pass the URL explicitly). Handy for driving
+a browser that's already logged in:
+
+```bash
+canary-browser --connect http://localhost:9222 <<'EOF'
+const page = await browser.getPage("main");
+console.log(await page.title());
+EOF
+```
+
+> Prefer not to install? Every command also runs one-off via npx, e.g.
+> `npx @usecanary/cli session start …` and `npx @usecanary/ui`.
+
+## Everything your agent does, on the record
+
+Open any session and Canary replays the whole thing — the page, the script, every Playwright call, the
+console, the network, the full trace. Nothing summarized, nothing reconstructed: it's the actual run.
+(Every screenshot below is real output.) Capture is on by default; switch any stream off with
+`--no-trace` / `--no-video` / `--no-har` / `--no-console`.
+
+### The session at a glance
+
+Status, a per-step timeline, the exact environment, and a full **video replay** of the run with a
+filmstrip of per-step screenshots — scrub straight to the moment something happened.
+
+![Session overview: video replay, timeline, and environment](docs/media/session-summary.png)
+
+### Step by step
+
+Each step, pass or fail, with its exit code, duration, and how many Playwright actions it ran.
+
+![Per-step breakdown with status, timing, and action counts](docs/media/session-steps.png)
+
+### Reproducible Playwright scripts
+
+This is the one that matters. Let your agent figure a flow out **once** — Canary keeps the script
+behind every step **and** decodes the full Playwright trace into the exact calls it made (`goto`,
+`waitForSelector`, `evaluate`, `screenshot`), with params and timing. What you get back is a real,
+reusable script. Next time you don't pay an agent to rediscover the page — you just re-run it.
+
+![The step's script, syntax-highlighted](docs/media/session-script.png)
+
+![The Playwright calls decoded from the trace, grouped per step](docs/media/session-commands.png)
+
+### Console and page errors
+
+Every console message and uncaught page error, filterable by level — errors, warnings, info, logs —
+with the source URL. Errors flagged in red.
+
+![Console output, filterable by level](docs/media/session-console.png)
+
+### Network, request by request
+
+Every request with status, type, size, and timing. Filter by kind, then click any row to inspect its
+headers, payload, and response — like a devtools network panel, frozen at the moment it ran.
+
+![Network requests with type filters, sizes, and timing](docs/media/session-network.png)
+
+### The full trace, and every artifact
+
+The raw Playwright `trace.zip`, the network HAR, the console log, the machine-readable `results.json`,
+and the self-contained `report.html` — all under `~/.canary/sessions/<id>/`, all one click away. Open
+the trace in Playwright's own viewer with `npx playwright show-trace`.
+
+![Downloadable artifacts: trace, HAR, console log, results, and report](docs/media/session-artifacts.png)
+
+## Use it with your coding agent
+
+Canary is built for agents — and it explains itself to them. Install it, then **tell your agent to run
+`canary --help` and `canary-browser --help`**: the output is a complete usage guide — sandbox API,
+worked examples, a Playwright cheat sheet — written for an LLM to read. No plugin required.
+
+For deeper integration (slash commands, subagents, and skills), install the plugin pack. Canary ships
+as a Claude Code plugin, a Cursor plugin, a Codex plugin, and a generic
 [Agent Skills](https://agentskills.io) pack — all pointing at the same `skills/` + `agents/` +
-`commands/`. There's no bespoke installer; each agent's plugin/skills mechanism does the work.
+`commands/`. There's no bespoke installer; each agent's own mechanism does the work.
 
 ```bash
 # Claude Code
@@ -47,14 +148,79 @@ npx skills add usecanary/canary
 cp -r skills/* ~/.claude/skills/
 ```
 
-Skills: **`canary-scripting`** (the sandbox API, with `references/REFERENCE.md`) plus the workflow
-skills **`canary-automate`**, **`canary-session`**, and **`canary-review`**. Each workflow pairs with
-a subagent and a slash command — `/canary:run`, `/canary:session`, `/canary:review`.
+You get **`canary-scripting`** (the sandbox API, with `references/REFERENCE.md`) plus the workflow
+skills **`canary-automate`**, **`canary-session`**, and **`canary-review`** — each paired with a
+subagent and a slash command: `/canary:run`, `/canary:session`, `/canary:review`.
 
-## Repo layout
+## Three tools, one runtime
 
-This repository is a pnpm + Turborepo monorepo: five apps and five packages cooperate to make
-agent-driven browser automation reproducible.
+| Tool                            | Command                            | Use it to                                                                          |
+| ------------------------------- | ---------------------------------- | ---------------------------------------------------------------------------------- |
+| **CLI** `@usecanary/cli`        | `canary`                           | Record capture-enabled QA sessions and render reports. The main, user-facing tool. |
+| **Engine** `@usecanary/browser` | `canary-browser`                   | Drive a browser for quick, one-off automation — no recording, no report.           |
+| **Viewer** `@usecanary/ui`      | `canary-viewer` · `npx @usecanary/ui` | Browse, search, organize, and replay every recorded session locally.            |
+
+Both CLIs share one background daemon (Playwright + a QuickJS sandbox) that starts automatically when
+needed. Stop it anytime with **`canary stop`** (alias: `canary daemon stop`, or `canary-browser stop`) —
+it shuts down every browser and session it's running. You can also pass `--stop-daemon` to
+`canary session end` to tear it down as soon as nothing else needs it.
+
+## Scripting
+
+Scripts are plain async JavaScript run in a **QuickJS WASM sandbox** — not Node. There's no `require`,
+`process`, `fs`, or `fetch`; just a pre-connected `browser`, `console`, and a few file helpers.
+Top-level `await` works.
+
+```js
+const page = await browser.getPage("home");          // named, persistent page
+await page.goto("https://example.com", { waitUntil: "domcontentloaded" });
+console.log(await page.title());
+
+await saveScreenshot(await page.screenshot(), "home.png");   // saved under ~/.canary/tmp/
+```
+
+**Browser**
+
+- `browser.getPage(name)` — get a named page (creates it if new), or attach to an existing tab by id
+- `browser.newPage()` — an anonymous page, cleaned up when the script exits
+- `browser.listPages()` — list every tab: `[{ id, url, title, name }]`
+- `browser.closePage(name)` — close and forget a named page
+
+**Files** — sandboxed to `~/.canary/tmp/`, all async:
+
+- `saveScreenshot(buffer, name)` — persist a screenshot buffer; returns the path
+- `writeFile(name, data)` / `readFile(name)` — pass values between steps
+
+**Output**
+
+- `console.log` / `info` → stdout · `console.warn` / `error` → stderr
+
+Pages are full Playwright `Page` objects — `goto`, `click`, `fill`, `locator`, `evaluate`,
+`getByRole`, `waitForSelector`, and the rest. See the
+[Playwright Page API](https://playwright.dev/docs/api/class-page). For element discovery,
+`await page.snapshotForAI()` returns an LLM-friendly snapshot of the page.
+
+## Updating
+
+Already installed? Grab the latest CLIs from npm, then refresh the runtime:
+
+```bash
+npm i -g @usecanary/cli@latest @usecanary/ui@latest   # update canary + canary-viewer
+canary install                                        # refresh the runtime (Chromium + Playwright)
+```
+
+`canary install` is safe to re-run — it pulls the browser/runtime versions the new CLI pins. Running
+via npx instead of a global install? `npx @usecanary/cli@latest …` always fetches the newest release.
+Update the agent integration through your agent's plugin manager, and re-run
+`npx skills add usecanary/canary` to refresh the skills.
+
+## Contributing & development
+
+Canary is a pnpm + Turborepo monorepo: five apps and five packages cooperate to make agent-driven
+browser automation reproducible.
+
+<details>
+<summary><strong>Repo layout</strong></summary>
 
 ```
 canary/
@@ -62,7 +228,7 @@ canary/
 │   ├── canary/             # @usecanary/cli      bin: canary          — session orchestrator (record QA sessions, render reports)
 │   ├── canary-browser/     # @usecanary/browser  bin: canary-browser  — browser-automation engine (one-off runs)
 │   ├── canary-daemon/      # @usecanary/daemon   no bin               — Playwright + QuickJS runtime (embedded into the CLIs)
-│   ├── canary-ui/          # @usecanary/ui       bin: canary-viewer   — local session viewer (Next.js); `npx @usecanary/ui`
+│   ├── canary-ui/          # @usecanary/ui       bin: canary-viewer   — local session viewer (Next.js); `canary-viewer`
 │   └── create-canary/      # create-canary    bin: create-canary   — `npm create canary` setup wizard (Ink)
 ├── packages/
 │   ├── protocol/           # @usecanary/protocol         IPC schemas (Zod), single source of truth
@@ -83,9 +249,13 @@ canary/
 ```
 
 `canary` (the orchestrator) and `canary-browser` (the engine) both embed and supervise
-`canary-daemon` (the long-running Playwright host). The viewer ships standalone and runs via npx.
+`canary-daemon` (the long-running Playwright host). The viewer ships standalone — `canary-viewer`
+(or one-off via `npx @usecanary/ui`).
 
-## Develop
+</details>
+
+<details>
+<summary><strong>Build, test &amp; conventions</strong></summary>
 
 ```bash
 make install   # pnpm install across the workspace
@@ -96,18 +266,18 @@ make check     # compile + lint + test (what CI runs)
 
 Run `make` with no args to see all targets.
 
-## Conventions
-
 - **Conventional Commits** enforced via `commitlint` + a husky `commit-msg` hook.
-- **Linting & formatting** via [Ultracite](https://docs.ultracite.ai/) (Biome) — `pnpm lint` checks, `pnpm format` autofixes.
-- **Pre-commit** runs `lint-staged` → `ultracite fix` (Biome) on staged files.
+- **Linting & formatting** via [Ultracite](https://docs.ultracite.ai/) (Biome) — `pnpm lint` checks, `pnpm format` autofixes; pre-commit runs `lint-staged` → `ultracite fix` on staged files.
 - **Logging** via `@usecanary/logger` (pino, structured). Set `CANARY_LOG_LEVEL` (trace|debug|info|warn|error|silent); the CLI also accepts `--verbose`/`-v`.
 - **Node 20+** and **pnpm 9.15.0** (see `.nvmrc` and `packageManager`).
 - **Turbo** orchestrates builds (`turbo run build`, `dev`, `test`, `compile`); lint/format run via Ultracite at the root.
 
-## More
+</details>
 
-- [`AGENTS.md`](AGENTS.md) — orientation for AI agents working in this repo
-- [`CONTRIBUTING.md`](CONTRIBUTING.md) — contribution flow
-- [`RELEASING.md`](RELEASING.md) — publish pipeline (npm + the Claude Code plugin)
-- [`examples/`](examples/) — runnable demo scripts (dev)
+See [`AGENTS.md`](AGENTS.md) for architecture and orientation, [`CONTRIBUTING.md`](CONTRIBUTING.md)
+for the contribution flow, and [`RELEASING.md`](RELEASING.md) for the publish pipeline.
+
+## License
+
+MIT. Canary's daemon and CLIs are derived in part from MIT-licensed work by
+[Sawyer Hood](https://github.com/SawyerHood) — see [`LICENSE`](LICENSE).
