@@ -7,11 +7,13 @@ per-step screenshots).
 ## Use
 
 ```bash
-npx @usecanary/ui                 # browse ~/.canary/sessions
-npx @usecanary/ui --dir ./artifacts
+npm i -g @usecanary/ui            # adds the `canary-viewer` command
+canary-viewer                     # browse ~/.canary/sessions
+canary-viewer --dir ./artifacts
+# one-off, no install: npx @usecanary/ui
 ```
 
 Like `npx playwright show-trace`, but for canary sessions: it spins up a local server and opens your
-browser. Self-contained — no daemon, no global install, no setup.
+browser. Self-contained — no daemon, no setup.
 
 MIT · [source](https://github.com/usecanary/canary)

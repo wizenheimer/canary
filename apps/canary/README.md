@@ -7,8 +7,8 @@ self-contained `report.html`.
 ## Install
 
 ```bash
-npx @usecanary/cli install        # download Chromium + the runtime into ~/.canary
-# or: npm i -g @usecanary/cli && canary install
+npm i -g @usecanary/cli && canary install   # adds `canary`, then downloads Chromium + the runtime into ~/.canary
+# one-off, no install: npx @usecanary/cli install
 ```
 
 ## Use
@@ -18,7 +18,7 @@ canary init                              # one-shot setup (runtime + agent skill
 id=$(canary session start --name "checkout")
 canary run ./step.js --session "$id" --step "open"
 canary session end "$id"                 # -> ~/.canary/sessions/<id>/report.html
-npx @usecanary/ui                           # browse recorded sessions
+canary-viewer                            # browse recorded sessions (npm i -g @usecanary/ui)
 canary skills                            # install the canary agent skill (~/.claude/skills)
 ```
 

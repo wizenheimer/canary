@@ -9,7 +9,7 @@ Canary is an AI-agent QA toolkit for driving real browsers. The pieces:
 1. **`canary` (orchestrator CLI, `@usecanary/cli`)** — records capture-enabled QA sessions (trace/video/HAR/console) as a series of script steps and renders a self-contained report. The primary, user-facing CLI.
 2. **`canary-browser` (engine CLI, `@usecanary/browser`)** — one-off browser automation: persistent named pages, sandboxed JavaScript, headless or headed. Embeds and supervises the daemon.
 3. **`canary-daemon`** — a long-running Node process owning Playwright + a QuickJS sandbox. Embedded into the CLIs at build time. Speaks line-delimited JSON over a named pipe / Unix socket.
-4. **`canary-ui` (`@usecanary/ui`)** — the local session viewer; ships standalone and runs via `npx @usecanary/ui`.
+4. **`canary-ui` (`@usecanary/ui`)** — the local session viewer; ships standalone. Run it with `canary-viewer` (after `npm i -g @usecanary/ui`), or `canary ui` from a repo checkout, or one-off via `npx @usecanary/ui`.
 
 Both CLIs reach the browser the same way:
 
