@@ -15,12 +15,13 @@ When you run `canary-browser run --script=…`, the path is:
 canary-browser run --browser=… --script=…  →  daemon RPC  →  Playwright
 ```
 
-## Two apps + three packages
+## Apps + packages
 
 | Workspace             | Role                                                                                         |
 | --------------------- | -------------------------------------------------------------------------------------------- |
 | `apps/canary-browser` | Browser automation CLI — owns the daemon lifecycle, ships the embedded daemon bundle         |
 | `apps/canary-daemon`  | Internal Playwright host + QuickJS sandbox. Built standalone, embedded into `canary-browser` |
+| `apps/canary-ui`      | Local web viewer (Next.js). Reads `results.json` to list/organize/search sessions; run via `canary ui` |
 | `packages/protocol`   | Zod IPC schemas. Single source of truth — daemon validates, CLI infers types                 |
 | `packages/config`     | Shared tsconfig bases (`base`, `node-app`)                                                    |
 | `packages/logger`     | Shared pino-backed structured logger (source-distributed)                                    |
@@ -36,7 +37,7 @@ canary-browser run --browser=… --script=…  →  daemon RPC  →  Playwright
 ## Code style & logging
 
 - **Linting/formatting:** [Ultracite](https://docs.ultracite.ai/) over Biome — config in `biome.jsonc` (extends `ultracite/biome/core`). `pnpm lint` checks; `pnpm format` autofixes; the pre-commit hook runs `ultracite fix` on staged files. Don't reintroduce ESLint/Prettier.
-- **Logging:** use `@canary/logger` (`createLogger`, pino-backed, structured) for diagnostics — never `console.*` in app code (Biome's `noConsole` is an error). Reserve `process.stdout` for machine-readable CLI output. Level via `CANARY_LOG_LEVEL` (trace|debug|info|warn|error|silent); the daemon logs to `~/.dev-browser/daemon.log`, the CLI to stderr (raise with `--verbose`).
+- **Logging:** use `@canary/logger` (`createLogger`, pino-backed, structured) for diagnostics — never `console.*` in app code (Biome's `noConsole` is an error). Reserve `process.stdout` for machine-readable CLI output. Level via `CANARY_LOG_LEVEL` (trace|debug|info|warn|error|silent); the daemon logs to `~/.canary/daemon.log`, the CLI to stderr (raise with `--verbose`).
 - The vendored Playwright fork at `apps/canary-daemon/src/sandbox/forked-client/` is excluded from lint/format — keep it diffable against upstream.
 
 ## Validation
@@ -55,6 +56,21 @@ pnpm --filter @canary/daemon test
 pnpm --filter @canary/browser test
 ```
 
+## Viewing sessions
+
+`canary ui` launches a local Next.js web app (`apps/canary-ui`, `@canary/ui`) that reads each
+session's `results.json`, lists every recorded session, and renders it in the same tabbed,
+"High-Contrast Precision" layout as the self-contained HTML report. You can organize sessions
+into **virtual folders**, tag/note/search them, and delete-to-trash. It reads `~/.canary/sessions`
+by default; `canary ui --dir <path>` (or adding roots in the UI) points it elsewhere.
+
+- Organization lives in a per-root `.canary-ui.json` sidecar — **sessions stay flat on disk**;
+  deletes move the dir to `<root>/.trash/` (restorable).
+- The command resolves the built standalone server and spawns it in the foreground (Ctrl-C
+  stops it); with no build present it falls back to `next dev`. Build once for fast startup:
+  `pnpm --filter @canary/ui build`. (Next can't be folded into the esbuild/SEA bundle, so the
+  command always spawns a separate `node` server — `CANARY_UI_SERVER` overrides its location.)
+
 ## Provenance
 
-Canary is forked from the TypeScript portion of [`dev-browser`](https://github.com/SawyerHood/dev-browser) (MIT, Sawyer Hood). The Rust and Go CLI implementations were dropped during migration; the daemon and the TS CLI are the basis for `canary-daemon` and `canary-browser`.
+Canary's daemon and TypeScript CLIs (`canary-daemon`, `canary-browser`, and the `canary` session orchestrator) are the core of the toolkit. Portions are derived from MIT-licensed upstream work by Sawyer Hood (see `LICENSE`).
