@@ -141,9 +141,6 @@ describe.sequential("QuickJS named page management", () => {
       headless: true,
     });
     const entry = await manager.ensureBrowser(browserName);
-    const baselinePageCount = entry.context
-      .pages()
-      .filter((page) => !page.isClosed()).length;
     const sandbox = await createSandbox(output);
 
     try {
@@ -163,7 +160,10 @@ describe.sequential("QuickJS named page management", () => {
 
     expect(output.stderr).toEqual([]);
     expect(outputLines(output)).toContain("Example Domain");
-    expect(livePages).toHaveLength(baselinePageCount);
+    // browser.newPage() adopts the launch-time about:blank page, so once the
+    // sandbox closes its anonymous pages the context has no live pages left —
+    // no leaked example.com tab and no orphaned blank tab either.
+    expect(livePages).toHaveLength(0);
     expect(livePages.map((page) => page.url())).not.toContain(
       "https://example.com/"
     );
