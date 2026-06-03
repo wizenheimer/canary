@@ -11,12 +11,15 @@
     // as-is (82 files carry @ts-nocheck) and must stay diffable against
     // upstream. It is TRACKED, so .gitignore won't skip it; `!!` is a hard
     // ignore that survives config merges (appended to the preset's `**` base).
-    "includes": ["!!**/sandbox/forked-client"]
+    // `examples/` holds sandbox demo scripts that run against injected globals
+    // (`browser`, `saveScreenshot`) and intentionally `console.log`; they're dev
+    // fixtures, not app code, so skip them too.
+    "includes": ["!!**/sandbox/forked-client", "!!examples"]
   },
   "linter": {
     "rules": {
       "suspicious": {
-        // Enforce structured logging: diagnostics go through @canary/logger and
+        // Enforce structured logging: diagnostics go through @usecanary/logger and
         // user-facing CLI output through process.stdout. (Core leaves this off;
         // tests + scripts/*.mjs are already exempt by the preset.)
         "noConsole": "error"
@@ -61,7 +64,7 @@
     },
     {
       // Package public-API barrel + thin re-export shims that re-source shared
-      // helpers from @canary/cli-kit so each CLI's existing import paths and
+      // helpers from @usecanary/cli-kit so each CLI's existing import paths and
       // snapshots stay stable. The rule targets app module graphs, not these.
       "includes": [
         "packages/daemon-client/src/index.ts",
