@@ -21,8 +21,6 @@ import {
   CLI_LONG_ABOUT,
   INSTALL_LONG_ABOUT,
   INSTALL_SHORT,
-  INSTALL_SKILL_LONG_ABOUT,
-  INSTALL_SKILL_SHORT,
   ROOT_SHORT,
   RUN_LONG_ABOUT,
   RUN_SHORT,
@@ -32,7 +30,6 @@ import {
   STOP_SHORT,
 } from "./commands/help-text.js";
 import { installRuntime } from "./commands/install.js";
-import { installSkillCommand } from "./commands/install-skill.js";
 import { preprocessArgs } from "./commands/preprocess.js";
 import { runScript, runScriptFromFile } from "./commands/run.js";
 import { statusCommand } from "./commands/status.js";
@@ -185,27 +182,6 @@ export function buildProgram(): CommandType {
     .addHelpText("before", `${INSTALL_LONG_ABOUT}\n`)
     .action(async () => {
       const code = await installRuntime();
-      throw new ExitCodeError(code);
-    });
-
-  program
-    .command("install-skill")
-    .description(INSTALL_SKILL_SHORT)
-    .summary(INSTALL_SKILL_SHORT)
-    .addHelpText("before", `${INSTALL_SKILL_LONG_ABOUT}\n`)
-    .option(
-      "--claude",
-      "Install the skill into ~/.claude/skills without prompting"
-    )
-    .option(
-      "--agents",
-      "Install the skill into ~/.agents/skills without prompting"
-    )
-    .action(async (opts: { claude?: boolean; agents?: boolean }) => {
-      const code = await installSkillCommand({
-        claude: opts.claude === true,
-        agents: opts.agents === true,
-      });
       throw new ExitCodeError(code);
     });
 

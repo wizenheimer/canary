@@ -90,12 +90,6 @@ export const INSTALL_LONG_ABOUT =
   "Install Playwright browsers (Chromium).\n\n" +
   "Downloads the Chromium build used for daemon-managed browser instances.";
 
-export const INSTALL_SKILL_LONG_ABOUT =
-  "Install the embedded canary skill into agent skill directories.\n\n" +
-  "By default, launches an interactive multi-select prompt for the supported install targets when a TTY is available.\n\n" +
-  "In non-interactive environments, installs to both supported skill directories.\n\n" +
-  "Use `--claude` and/or `--agents` to skip prompting and install to specific targets.";
-
 export const BROWSERS_LONG_ABOUT =
   "List all managed browser instances.\n\n" +
   "Shows the browser name, whether it is daemon-launched or externally connected, its status, and any named pages currently registered.";
@@ -111,8 +105,6 @@ export const STOP_LONG_ABOUT =
 // Subcommand short descriptions.
 export const RUN_SHORT = "Run a script file against the browser";
 export const INSTALL_SHORT = "Install Playwright browsers (Chromium)";
-export const INSTALL_SKILL_SHORT =
-  "Install the canary skill into agent skill directories";
 export const BROWSERS_SHORT = "List all managed browser instances";
 export const STATUS_SHORT = "Show daemon status";
 export const STOP_SHORT = "Stop the daemon and all browsers";

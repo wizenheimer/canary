@@ -20,14 +20,7 @@ describe("--help content", () => {
     expect(out.stdout).toContain("SANDBOX ENVIRONMENT:");
     expect(out.stdout).toContain("Primary invocation styles:");
     expect(out.stdout).toContain("LLM USAGE GUIDE:");
-    for (const sub of [
-      "run",
-      "install",
-      "install-skill",
-      "browsers",
-      "status",
-      "stop",
-    ]) {
+    for (const sub of ["run", "install", "browsers", "status", "stop"]) {
       expect(out.stdout).toContain(sub);
     }
     for (const flag of [
@@ -46,13 +39,6 @@ describe("--help content", () => {
     expect(out.code).toBe(0);
     expect(out.stdout).toContain("Run a script file against the browser");
     expect(out.stdout).toContain("FILE");
-  });
-
-  it("`install-skill --help` lists --claude and --agents", async () => {
-    const out = await runCli(["install-skill", "--help"]);
-    expect(out.code).toBe(0);
-    expect(out.stdout).toContain("--claude");
-    expect(out.stdout).toContain("--agents");
   });
 
   it.each([
