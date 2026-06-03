@@ -1,12 +1,39 @@
 {
-  "name": "@canary/ui",
+  "name": "@usecanary/ui",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
   "type": "module",
   "description": "Local web viewer for canary sessions — reads results.json, lists/organizes/searches recorded sessions, styled after the self-contained report.",
   "license": "MIT",
   "engines": {
     "node": ">=20"
+  },
+  "keywords": [
+    "canary",
+    "session-viewer",
+    "playwright",
+    "qa",
+    "report"
+  ],
+  "homepage": "https://github.com/usecanary/canary#readme",
+  "bugs": "https://github.com/usecanary/canary/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/usecanary/canary.git",
+    "directory": "apps/canary-ui"
+  },
+  "bin": {
+    "canary-viewer": "./bin/viewer.mjs"
+  },
+  "files": [
+    "bin/",
+    ".next/standalone/"
+  ],
+  "exports": {
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "build": "next build && node scripts/postbuild.mjs",

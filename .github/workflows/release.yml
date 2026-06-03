@@ -1,0 +1,52 @@
+name: Release
+
+# Publishes the public packages to npm when a v* tag is pushed. Run
+# `node scripts/sync-version.mjs <version>`, commit, then `git tag vX.Y.Z`
+# and push the tag — see RELEASING.md.
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+  id-token: write # npm provenance attestation
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          registry-url: "https://registry.npmjs.org"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Verify the tag matches the workspace version
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PKG=$(node -p "require('./package.json').version")
+          if [ "$TAG" != "$PKG" ]; then
+            echo "Tag v$TAG does not match package version $PKG (run scripts/sync-version.mjs)"
+            exit 1
+          fi
+
+      # turbo ^build orders the graph: source libs -> daemon bundle ->
+      # CLI bundles that embed it -> the @usecanary/ui Next standalone.
+      - run: pnpm build
+
+      # pnpm -r publish skips private packages and rewrites workspace:* to the
+      # concrete version. Publishes @usecanary/cli, @usecanary/browser, @usecanary/ui and
+      # create-canary; @usecanary/daemon + the source-distributed libs stay private.
+      - name: Publish to npm
+        run: pnpm -r publish --access public --no-git-checks --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -1,5 +1,5 @@
 {
-  "name": "@canary/protocol",
+  "name": "@usecanary/protocol",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -14,13 +14,13 @@
   },
   "scripts": {
     "compile": "tsc --noEmit",
-    "test": "echo \"(no tests for @canary/protocol)\""
+    "test": "echo \"(no tests for @usecanary/protocol)\""
   },
   "dependencies": {
     "zod": "3.25.76"
   },
   "devDependencies": {
-    "@canary/config": "workspace:*",
+    "@usecanary/config": "workspace:*",
     "typescript": "^5.7.2"
   }
 }
