@@ -1,0 +1,32 @@
+{
+  "name": "@canary/ui",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local web viewer for canary sessions — reads results.json, lists/organizes/searches recorded sessions, styled after the self-contained report.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "next build && node scripts/postbuild.mjs",
+    "dev": "next dev",
+    "start": "node .next/standalone/apps/canary-ui/server.js",
+    "compile": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "clean": "rm -rf .next coverage .turbo"
+  },
+  "dependencies": {
+    "next": "^15.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.10",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.8.0",
+    "vitest": "^4.1.0"
+  }
+}
