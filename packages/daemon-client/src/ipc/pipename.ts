@@ -1,9 +1,9 @@
 import { homedir } from "node:os";
 import { basename, sep } from "node:path";
 
-// Mirrors cli/src/connection.rs sanitize_pipe_segment byte-for-byte: keep
-// ASCII letters/digits and `. _ -`, replace anything else with `-`, trim
-// leading/trailing `-`, lowercase, fall back to "user" if empty.
+// Make a value safe for use in a socket/pipe name: keep ASCII letters/digits
+// and `. _ -`, replace anything else with `-`, trim leading/trailing `-`,
+// lowercase, and fall back to "user" if empty.
 export function sanitizePipeSegment(value: string): string {
   const out = value
     .replace(/[^A-Za-z0-9._-]/g, "-")
@@ -36,5 +36,5 @@ export function currentUserSegment(): string {
 }
 
 export function daemonPipeName(): string {
-  return `dev-browser-daemon-${sanitizePipeSegment(currentUserSegment())}`;
+  return `canary-daemon-${sanitizePipeSegment(currentUserSegment())}`;
 }
