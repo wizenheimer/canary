@@ -52,7 +52,7 @@
     {
       // commander is CJS; a namespace import (+ cast) is required for its
       // ESM/CJS interop under esbuild.
-      "includes": ["apps/canary-browser/src/cli.ts"],
+      "includes": ["apps/canary-browser/src/cli.ts", "apps/canary/src/cli.ts"],
       "linter": {
         "rules": {
           "performance": { "noNamespaceImport": "off" }
@@ -60,10 +60,28 @@
       }
     },
     {
+      // Package public-API barrel + thin re-export shims that re-source shared
+      // helpers from @canary/cli-kit so each CLI's existing import paths and
+      // snapshots stay stable. The rule targets app module graphs, not these.
+      "includes": [
+        "packages/daemon-client/src/index.ts",
+        "apps/canary/src/commands/render.ts",
+        "apps/canary/src/util/request-id.ts",
+        "apps/canary-browser/src/commands/render.ts",
+        "apps/canary-browser/src/util/request-id.ts",
+        "apps/canary-browser/src/util/format.ts"
+      ],
+      "linter": {
+        "rules": {
+          "performance": { "noBarrelFile": "off" }
+        }
+      }
+    },
+    {
       // POSIX open(2)/access(2) flags are combined with bitwise OR/AND.
       "includes": [
         "apps/canary-daemon/src/temp-files.ts",
-        "apps/canary-browser/src/daemon/npm.ts"
+        "packages/daemon-client/src/daemon/npm.ts"
       ],
       "linter": {
         "rules": {
@@ -87,6 +105,29 @@
           },
           "style": { "noNonNullAssertion": "off" },
           "complexity": { "noUselessStringRaw": "off" }
+        }
+      }
+    },
+    {
+      // Next.js viewer app. Its route handlers/server code may log diagnostics
+      // to the terminal that spawned `canary ui` (no shared CLI stdout/stderr
+      // contract like the other apps), and App-Router route handlers are
+      // conventionally `async` even when a given body doesn't await.
+      "includes": ["apps/canary-ui/**"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsole": "off",
+            "useAwait": "off",
+            // Read-only render of fetched data — console/network table rows are
+            // never reordered or inserted, the canonical safe use of index keys.
+            "noArrayIndexKey": "off"
+          },
+          // Session artifacts are local images of unknown dimensions served from
+          // /api/artifact; next/image (optimizer + required dims) is the wrong
+          // tool here, and the CSS already constrains layout. Plain <img> is right.
+          "performance": { "noImgElement": "off" },
+          "correctness": { "useImageSize": "off" }
         }
       }
     }

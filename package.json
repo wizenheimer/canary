@@ -16,6 +16,7 @@
     "lint:fix": "ultracite fix",
     "test": "turbo run test",
     "compile": "turbo run compile",
+    "typecheck": "turbo run compile",
     "format": "ultracite fix",
     "check": "ultracite check && turbo run compile test",
     "clean": "turbo run clean && rm -rf node_modules/.cache .turbo",

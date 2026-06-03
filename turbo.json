@@ -8,7 +8,9 @@
         "assets/viewer-bundle.js",
         "assets/viewer-bundle.css",
         "assets/recorder-adapter.bundle.js",
-        "src/assets/embedded.generated.ts"
+        "src/assets/embedded.generated.ts",
+        ".next/**",
+        "!.next/cache/**"
       ]
     },
     "dev": {
