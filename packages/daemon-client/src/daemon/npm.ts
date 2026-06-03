@@ -3,8 +3,7 @@ import { delimiter, join } from "node:path";
 
 // Resolve `npm` (or `npm.cmd` on Windows) from PATH. We resolve manually
 // rather than passing `shell: true` to spawn so we avoid argv quoting
-// bugs on Windows. Mirrors cli-go/internal/daemon/lifecycle.go:204 and
-// cli/src/daemon.rs:224-229.
+// bugs on Windows.
 export function npmCommand(): string {
   if (process.platform === "win32") {
     return findInPath("npm.cmd") ?? findInPath("npm") ?? "npm.cmd";

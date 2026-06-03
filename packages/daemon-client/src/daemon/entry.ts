@@ -1,13 +1,13 @@
 import { realpath, stat } from "node:fs/promises";
 import { dirname, extname, isAbsolute, join, resolve } from "node:path";
-import { devBrowserDir } from "../paths.js";
+import { canaryDir } from "../paths.js";
 import { ensureDaemonExtracted } from "./extract.js";
 import type { DaemonCommand } from "./spawn.js";
 
-// Resolve the daemon launch command. Honors DEV_BROWSER_DAEMON env var
-// for custom entrypoints (mirror cli/src/daemon.rs find_daemon_command).
+// Resolve the daemon launch command. Honors the CANARY_DAEMON env var for
+// custom entrypoints.
 export async function findDaemonCommand(): Promise<DaemonCommand> {
-  const override = process.env.DEV_BROWSER_DAEMON;
+  const override = process.env.CANARY_DAEMON;
   if (override && override.length > 0) {
     return commandFromEntry(override);
   }
@@ -15,7 +15,7 @@ export async function findDaemonCommand(): Promise<DaemonCommand> {
   return {
     program: "node",
     args: [bundle],
-    workdir: devBrowserDir(),
+    workdir: canaryDir(),
     requiresRuntimeInstall: true,
   };
 }
@@ -27,7 +27,7 @@ async function commandFromEntry(entry: string): Promise<DaemonCommand> {
     resolved = await realpath(abs);
   } catch (err) {
     throw new Error(
-      `Failed to resolve DEV_BROWSER_DAEMON entry ${abs}: ${(err as Error).message}`
+      `Failed to resolve CANARY_DAEMON entry ${abs}: ${(err as Error).message}`
     );
   }
   const parent = dirname(resolved);

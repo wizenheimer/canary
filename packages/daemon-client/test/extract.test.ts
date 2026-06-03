@@ -10,7 +10,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { ensureDaemonExtracted } from "../../src/daemon/extract.js";
+import { ensureDaemonExtracted } from "../src/daemon/extract.js";
 
 let tempHome: string;
 const originalHome = process.env.HOME;
@@ -37,18 +37,18 @@ afterEach(async () => {
 });
 
 describe("ensureDaemonExtracted", () => {
-  it("writes daemon.mjs, sandbox-client.js, and package.json under ~/.dev-browser", async () => {
+  it("writes daemon.mjs, sandbox-client.js, and package.json under ~/.canary", async () => {
     const daemonPath = await ensureDaemonExtracted();
-    expect(daemonPath).toBe(join(tempHome, ".dev-browser", "daemon.mjs"));
+    expect(daemonPath).toBe(join(tempHome, ".canary", "daemon.mjs"));
     for (const name of ["daemon.mjs", "sandbox-client.js", "package.json"]) {
-      const info = await stat(join(tempHome, ".dev-browser", name));
+      const info = await stat(join(tempHome, ".canary", name));
       expect(info.isFile()).toBe(true);
     }
   });
 
   it("skips rewrite when content matches", async () => {
     await ensureDaemonExtracted();
-    const bundlePath = join(tempHome, ".dev-browser", "daemon.mjs");
+    const bundlePath = join(tempHome, ".canary", "daemon.mjs");
 
     const past = new Date(Date.now() - 10_000);
     await utimes(bundlePath, past, past);
@@ -60,7 +60,7 @@ describe("ensureDaemonExtracted", () => {
   });
 
   it("rewrites when content is stale", async () => {
-    const dir = join(tempHome, ".dev-browser");
+    const dir = join(tempHome, ".canary");
     await mkdir(dir, { recursive: true });
     await writeFile(join(dir, "daemon.mjs"), "STALE");
     await ensureDaemonExtracted();

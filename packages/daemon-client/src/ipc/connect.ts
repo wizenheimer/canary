@@ -3,10 +3,9 @@ import { createInterface } from "node:readline";
 import type { Request, Response } from "@canary/protocol";
 import { daemonEndpoint } from "../paths.js";
 
-// 5s write timeout — parity with cli/src/connection.rs:70 set_write_timeout.
+// 5s write timeout on the socket.
 const WRITE_TIMEOUT_MS = 5000;
-// Match cli-go's generous frame ceiling so large screenshots / result
-// payloads don't truncate.
+// Generous frame ceiling so large screenshots / result payloads don't truncate.
 const MAX_LINE_BYTES = 64 * 1024 * 1024;
 
 export class DaemonConnectionClosed extends Error {
@@ -54,7 +53,7 @@ export async function isDaemonRunning(): Promise<boolean> {
   }
 }
 
-// Newline-delimited JSON. Mirrors cli/src/connection.rs send_message.
+// Newline-delimited JSON framing.
 export async function sendMessage(
   socket: net.Socket,
   message: Request
@@ -103,13 +102,18 @@ export type ResultRenderer = (
 ) => void;
 
 export interface StreamHandlers {
+  // Called with the daemon's terminal `error` message (if any), separately from
+  // the merged stderr stream. Lets callers reliably detect a daemon-level
+  // rejection without substring-matching teed stderr (which also carries the
+  // executed script's own stderr output).
+  onError?: (message: string) => void;
   renderResult?: ResultRenderer;
   stderr: NodeJS.WritableStream;
   stdout: NodeJS.WritableStream;
 }
 
 // Stream responses until `complete` or `error`. Returns the process exit
-// code (0 for complete, 1 for error). Mirrors cli/src/main.rs stream_responses.
+// code (0 for complete, 1 for error).
 export async function streamResponses(
   conn: DaemonConnection,
   handlers: StreamHandlers
@@ -139,9 +143,9 @@ export async function streamResponses(
           return 0;
         case "error": {
           sawTerminal = true;
-          handlers.stderr.write(
-            `${message.message ?? "Unknown daemon error"}\n`
-          );
+          const text = message.message ?? "Unknown daemon error";
+          handlers.onError?.(text);
+          handlers.stderr.write(`${text}\n`);
           return 1;
         }
         default:
@@ -164,7 +168,8 @@ export async function sendRequest(
   message: Request,
   renderResult: ResultRenderer | undefined,
   stdout: NodeJS.WritableStream = process.stdout,
-  stderr: NodeJS.WritableStream = process.stderr
+  stderr: NodeJS.WritableStream = process.stderr,
+  onError?: (message: string) => void
 ): Promise<number> {
   const conn = await connectToDaemon();
   try {
@@ -173,7 +178,7 @@ export async function sendRequest(
     conn.socket.destroy();
     throw err;
   }
-  return await streamResponses(conn, { stdout, stderr, renderResult });
+  return await streamResponses(conn, { stdout, stderr, renderResult, onError });
 }
 
 function describe(err: unknown): string {

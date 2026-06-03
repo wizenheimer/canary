@@ -1,9 +1,12 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { EMBEDDED_PACKAGE_JSON } from "../assets/daemon-package.js";
+import {
+  DAEMON_RUNTIME_DEPENDENCIES,
+  EMBEDDED_PACKAGE_JSON,
+} from "@canary/protocol";
 import { DAEMON_BUNDLE, SANDBOX_CLIENT } from "../assets/embedded.generated.js";
 import {
+  canaryDir,
   daemonBundlePath,
-  devBrowserDir,
   packageJsonPath,
   sandboxClientPath,
 } from "../paths.js";
@@ -13,10 +16,9 @@ const SANDBOX_CLIENT_TEXT: string = SANDBOX_CLIENT;
 const PACKAGE_JSON_TEXT: string = EMBEDDED_PACKAGE_JSON;
 
 // Write the embedded daemon bundle, sandbox client, and package.json
-// template into ~/.dev-browser/ if missing or stale. Returns the daemon
-// bundle path. Mirrors cli/src/daemon.rs:60-72 and cli-go EnsureExtracted.
+// template into ~/.canary/ if missing or stale. Returns the daemon bundle path.
 export async function ensureDaemonExtracted(): Promise<string> {
-  const dir = devBrowserDir();
+  const dir = canaryDir();
   await mkdir(dir, { recursive: true });
 
   const daemonPath = daemonBundlePath();
@@ -33,15 +35,17 @@ export async function ensureDaemonExtracted(): Promise<string> {
 }
 
 // Returns true if the npm-managed runtime has been installed (i.e.
-// `dev-browser install` has been run). Mirrors cli/src/daemon.rs:211-222.
+// `canary install` has been run). The set checked is derived from the single
+// source of truth (DAEMON_RUNTIME_DEPENDENCIES), so a new runtime dependency is
+// gated automatically without editing this allowlist.
 export async function embeddedRuntimeInstalled(
   baseDir: string
 ): Promise<boolean> {
-  return (
-    (await dependencyInstalled(baseDir, "pino")) &&
-    (await dependencyInstalled(baseDir, "playwright")) &&
-    (await dependencyInstalled(baseDir, "quickjs-emscripten"))
+  const deps = Object.keys(DAEMON_RUNTIME_DEPENDENCIES);
+  const installed = await Promise.all(
+    deps.map((pkg) => dependencyInstalled(baseDir, pkg))
   );
+  return installed.every(Boolean);
 }
 
 async function dependencyInstalled(

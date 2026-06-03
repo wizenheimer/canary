@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { daemonPipeName, sanitizePipeSegment } from "../../src/ipc/pipename.js";
+import { daemonPipeName, sanitizePipeSegment } from "../src/ipc/pipename.js";
 
 describe("sanitizePipeSegment", () => {
   it("keeps allowed characters", () => {
@@ -50,13 +50,13 @@ describe("daemonPipeName", () => {
 
   it("uses USERNAME if set", () => {
     process.env.USERNAME = "Alice";
-    expect(daemonPipeName()).toBe("dev-browser-daemon-alice");
+    expect(daemonPipeName()).toBe("canary-daemon-alice");
   });
 
   it("falls back to USER if USERNAME missing", () => {
     delete process.env.USERNAME;
     process.env.USER = "Bob";
-    expect(daemonPipeName()).toBe("dev-browser-daemon-bob");
+    expect(daemonPipeName()).toBe("canary-daemon-bob");
   });
 
   it("falls back to home dir basename if both env vars missing", () => {
@@ -64,6 +64,6 @@ describe("daemonPipeName", () => {
     delete process.env.USER;
     // pipe name should still be deterministic for the current HOME
     const name = daemonPipeName();
-    expect(name).toMatch(/^dev-browser-daemon-[a-z0-9._-]+$/);
+    expect(name).toMatch(/^canary-daemon-[a-z0-9._-]+$/);
   });
 });

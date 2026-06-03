@@ -12,8 +12,8 @@ const log = logger.child({ component: "daemon-supervisor" });
 const STARTUP_DEADLINE_MS = 5000;
 const POLL_INTERVAL_MS = 100;
 
-// Returns the daemon PID from ~/.dev-browser/daemon.pid, or null if the
-// file is missing/unreadable/unparseable. Matches cli/src/daemon.rs daemon_pid.
+// Returns the daemon PID from ~/.canary/daemon.pid, or null if the
+// file is missing/unreadable/unparseable.
 export async function currentDaemonPid(): Promise<number | null> {
   try {
     const raw = await readFile(daemonPidPath(), "utf8");
@@ -25,7 +25,6 @@ export async function currentDaemonPid(): Promise<number | null> {
 }
 
 // Throws if the daemon cannot be brought up within STARTUP_DEADLINE_MS.
-// Mirrors cli/src/daemon.rs ensure_daemon.
 export async function ensureDaemonRunning(): Promise<void> {
   if (await isDaemonRunning()) {
     log.debug("daemon already running");
@@ -38,7 +37,7 @@ export async function ensureDaemonRunning(): Promise<void> {
     !(await embeddedRuntimeInstalled(command.workdir))
   ) {
     throw new Error(
-      "Embedded daemon dependencies are missing. Run `dev-browser install` first."
+      "Embedded daemon dependencies are missing. Run `canary install` first."
     );
   }
 
@@ -60,7 +59,6 @@ export async function ensureDaemonRunning(): Promise<void> {
 }
 
 // Waits up to `timeoutMs` for the daemon to stop accepting connections.
-// Mirrors cli/src/daemon.rs wait_for_daemon_exit.
 export async function waitForDaemonExit(
   _pid: number | null,
   timeoutMs: number
