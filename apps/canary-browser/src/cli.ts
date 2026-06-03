@@ -1,3 +1,4 @@
+import { isMainModule } from "@usecanary/cli-kit";
 import type { Command as CommandType } from "commander";
 import * as commander from "commander";
 
@@ -252,16 +253,8 @@ export async function execute(argv: readonly string[]): Promise<number> {
   }
 }
 
-// Direct entry — invoked when run as `node dist/cli.js`.
-const isMain = (() => {
-  try {
-    const here = new URL(import.meta.url).pathname;
-    const argv1 = process.argv[1] ?? "";
-    return here === argv1 || here.endsWith(argv1) || argv1.endsWith("cli.js");
-  } catch {
-    return true;
-  }
-})();
+// True only when this module is the process entry point (see isMainModule).
+const isMain = isMainModule(import.meta.url);
 
 if (isMain) {
   execute(process.argv).then(
