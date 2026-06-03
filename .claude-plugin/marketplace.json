@@ -1,0 +1,17 @@
+{
+  "name": "canary-marketplace",
+  "owner": {
+    "name": "wizenheimer",
+    "url": "https://github.com/wizenheimer"
+  },
+  "plugins": [
+    {
+      "name": "canary",
+      "source": "./",
+      "description": "Browser automation + recorded QA sessions for Claude Code: skills, JTBD subagents, and /canary:run | session | review commands.",
+      "version": "0.1.0",
+      "category": "developer-tools",
+      "tags": ["canary", "browser-automation", "qa", "skills"]
+    }
+  ]
+}
