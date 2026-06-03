@@ -1,5 +1,4 @@
-import { ensureDaemonRunning } from "../daemon/lifecycle.js";
-import { sendRequest } from "../ipc/connect.js";
+import { ensureDaemonRunning, sendRequest } from "@canary/daemon-client";
 import { requestId } from "../util/request-id.js";
 import { renderStatusResult } from "./render.js";
 

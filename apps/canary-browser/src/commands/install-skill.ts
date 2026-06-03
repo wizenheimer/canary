@@ -1,8 +1,11 @@
-import { mkdir, readFile, stat } from "node:fs/promises";
+import { mkdir, readFile, rm, rmdir, stat } from "node:fs/promises";
+import { join } from "node:path";
+import { home } from "@canary/daemon-client";
 import checkbox from "@inquirer/checkbox";
 import { SKILL_MD } from "../assets/embedded.generated.js";
 import {
-  home,
+  legacySkillDirs,
+  SKILL_FILE,
   SKILL_TARGETS,
   type SkillTarget,
   skillDir,
@@ -19,7 +22,8 @@ export type Selection =
   | { kind: "prompt" }
   | { kind: "explicit"; indexes: number[] };
 
-// Replicates cli/src/skill.rs resolve_install_target_selection.
+// Resolve which skill directories to install into, given the CLI flags and
+// whether we have an interactive terminal.
 export function resolveSelection(
   installClaude: boolean,
   installAgents: boolean,
@@ -90,17 +94,15 @@ export async function installSkillCommand(
     switch (result) {
       case "installed":
         process.stdout.write(
-          `Installed dev-browser skill to ${target.fileDisplay}\n`
+          `Installed canary skill to ${target.fileDisplay}\n`
         );
         break;
       case "updated":
-        process.stdout.write(
-          `Updated dev-browser skill at ${target.fileDisplay}\n`
-        );
+        process.stdout.write(`Updated canary skill at ${target.fileDisplay}\n`);
         break;
       case "already":
         process.stdout.write(
-          `dev-browser skill is already installed at ${target.fileDisplay}\n`
+          `canary skill is already installed at ${target.fileDisplay}\n`
         );
         break;
       default:
@@ -114,7 +116,7 @@ export async function installSkillCommand(
 async function promptForTargets(): Promise<number[] | null> {
   try {
     const picked = await checkbox<number>({
-      message: "Select skill directories to install dev-browser into",
+      message: "Select skill directories to install canary into",
       choices: SKILL_TARGETS.map((t, i) => ({
         name: t.promptLabel,
         value: i,
@@ -146,7 +148,23 @@ async function installTarget(
   await ensureDirectory(dir, target.promptLabel.replace(/\/$/, ""), false);
 
   const file = skillFile(homeDir, target);
-  return syncSkillFile(file);
+  const result = await syncSkillFile(file);
+  await removeLegacySkillDirs(homeDir, target);
+  return result;
+}
+
+// Migrate away earlier releases' skill dirs (e.g. ~/.claude/skills/canary-browser)
+// so an agent doesn't load two copies of the same skill. Conservative: remove
+// only our own SKILL.md and then the dir if it's now empty — never recursively
+// delete a folder that may hold unrelated content.
+async function removeLegacySkillDirs(
+  homeDir: string,
+  target: SkillTarget
+): Promise<void> {
+  for (const dir of legacySkillDirs(homeDir, target)) {
+    await rm(join(dir, SKILL_FILE), { force: true }).catch(() => undefined);
+    await rmdir(dir).catch(() => undefined);
+  }
 }
 
 async function ensureDirectory(

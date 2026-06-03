@@ -1,8 +1,7 @@
 import { readFile } from "node:fs/promises";
+import { ensureDaemonRunning, sendRequest } from "@canary/daemon-client";
 import type { ExecuteRequest } from "@canary/protocol";
-import { ensureDaemonRunning } from "../daemon/lifecycle.js";
 import { readInjectScripts } from "../inject-scripts.js";
-import { sendRequest } from "../ipc/connect.js";
 import { requestId } from "../util/request-id.js";
 import type { GlobalFlags } from "./flags.js";
 import { renderJsonResult } from "./render.js";
@@ -57,8 +56,8 @@ export async function runScriptFromFile(
   try {
     script = await readFile(file, "utf8");
   } catch (err) {
-    // Rust formats io::Error as "No such file or directory (os error 2)";
-    // map ENOENT to match exactly (cli/src/main.rs:249).
+    // Normalize ENOENT to the canonical "No such file or directory (os error
+    // 2)" message the daemon/tests expect.
     if ((err as NodeJS.ErrnoException).code === "ENOENT") {
       throw new Error("No such file or directory (os error 2)");
     }

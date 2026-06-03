@@ -1,25 +1,10 @@
+import { pad } from "@canary/cli-kit";
 import type { BrowserSummary, StatusSummary } from "@canary/protocol";
 import { formatDurationMs } from "../util/format.js";
 
-// Pretty-prints a script's `result` payload: null is skipped, strings are
-// emitted unquoted, everything else is JSON.stringify with 2-space indent.
-// Mirrors cli/src/main.rs render_result JSON branch.
-export function renderJsonResult(
-  data: unknown,
-  stdout: NodeJS.WritableStream
-): void {
-  if (data === null || data === undefined) {
-    return;
-  }
-  if (typeof data === "string") {
-    stdout.write(`${data}\n`);
-    return;
-  }
-  stdout.write(`${JSON.stringify(data, null, 2)}\n`);
-}
+export { renderJsonResult } from "@canary/cli-kit";
 
-// Renders `browsers` result data to the given writer. Mirrors
-// cli/src/main.rs print_browsers byte-for-byte.
+// Renders `browsers` result data to the given writer.
 export function renderBrowsersResult(
   raw: unknown,
   stdout: NodeJS.WritableStream
@@ -65,7 +50,7 @@ export function renderBrowsersResult(
   }
 }
 
-// Renders `status` result data. Mirrors cli/src/main.rs print_status.
+// Renders `status` result data.
 export function renderStatusResult(
   raw: unknown,
   stdout: NodeJS.WritableStream
@@ -81,11 +66,4 @@ export function renderStatusResult(
       .join(", ");
     stdout.write(`Managed: ${managed}\n`);
   }
-}
-
-function pad(value: string, width: number): string {
-  if (value.length >= width) {
-    return value;
-  }
-  return value + " ".repeat(width - value.length);
 }

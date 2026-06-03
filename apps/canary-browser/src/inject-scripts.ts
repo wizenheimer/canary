@@ -1,7 +1,7 @@
 import { readFile as fsReadFile } from "node:fs/promises";
 import path from "node:path";
 
-export const INJECT_SCRIPT_ENV_VAR = "DEV_BROWSER_INJECT_SCRIPT";
+export const INJECT_SCRIPT_ENV_VAR = "CANARY_INJECT_SCRIPT";
 
 // Splits the env-var value on commas and newlines, trims, and drops empties.
 // Mirrors the agent-browser convention (comma OR newline separated).

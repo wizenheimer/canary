@@ -65,7 +65,7 @@ export interface CapturingFakeEnv extends FakeEnv {
   request(): Promise<Record<string, unknown> | null>;
 }
 
-// Start a fake daemon listening at <tempHome>/.dev-browser/daemon.sock and
+// Start a fake daemon listening at <tempHome>/.canary/daemon.sock and
 // return an env object pointing the CLI at it. On Windows we skip — CLI's
 // pipe name is process-scoped and can't be redirected this way.
 export async function startFakeDaemon(
@@ -75,7 +75,7 @@ export async function startFakeDaemon(
     return null;
   }
   const home = await mkdtemp(join(tmpdir(), "cli-ts-fakedaemon-"));
-  const dev = join(home, ".dev-browser");
+  const dev = join(home, ".canary");
   await mkdir(dev, { recursive: true });
   const socketPath = join(dev, "daemon.sock");
 
@@ -129,7 +129,7 @@ export async function startFakeDaemonCapturing(
     return null;
   }
   const home = await mkdtemp(join(tmpdir(), "cli-ts-fakedaemon-cap-"));
-  const dev = join(home, ".dev-browser");
+  const dev = join(home, ".canary");
   await mkdir(dev, { recursive: true });
   const socketPath = join(dev, "daemon.sock");
 

@@ -1,5 +1,4 @@
-// Resolved global flag set passed to every subcommand handler. Mirrors
-// cli-go's GlobalFlags struct.
+// Resolved global flag set passed to every subcommand handler.
 export interface GlobalFlags {
   browser: string;
   // Undefined means flag was absent. A string means the flag was supplied

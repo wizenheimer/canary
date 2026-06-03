@@ -1,21 +1,20 @@
 import { describe, expect, it } from "vitest";
 import { preprocessArgs } from "../../src/commands/preprocess.js";
 
-// Port of cli-go/cmd/preprocess_test.go.
-describe("preprocessArgs (--connect parity)", () => {
+describe("preprocessArgs (--connect optional value)", () => {
   it("passes through when no flags present", () => {
-    expect(preprocessArgs(["node", "dev-browser", "run", "x.js"])).toEqual([
+    expect(preprocessArgs(["node", "canary-browser", "run", "x.js"])).toEqual([
       "node",
-      "dev-browser",
+      "canary-browser",
       "run",
       "x.js",
     ]);
   });
 
   it("leaves bare --connect alone at end of argv", () => {
-    expect(preprocessArgs(["node", "dev-browser", "--connect"])).toEqual([
+    expect(preprocessArgs(["node", "canary-browser", "--connect"])).toEqual([
       "node",
-      "dev-browser",
+      "canary-browser",
       "--connect",
     ]);
   });
@@ -24,36 +23,41 @@ describe("preprocessArgs (--connect parity)", () => {
     expect(
       preprocessArgs([
         "node",
-        "dev-browser",
+        "canary-browser",
         "--connect",
         "http://localhost:9222",
       ])
-    ).toEqual(["node", "dev-browser", "--connect=http://localhost:9222"]);
+    ).toEqual(["node", "canary-browser", "--connect=http://localhost:9222"]);
   });
 
   it("leaves bare --connect alone when next arg starts with -", () => {
     expect(
-      preprocessArgs(["node", "dev-browser", "--connect", "--headless"])
-    ).toEqual(["node", "dev-browser", "--connect", "--headless"]);
+      preprocessArgs(["node", "canary-browser", "--connect", "--headless"])
+    ).toEqual(["node", "canary-browser", "--connect", "--headless"]);
   });
 
-  it("consumes subcommand name as value (lexical-only rule matches clap)", () => {
+  it("consumes a following subcommand name as the value (lexical-only rule)", () => {
     expect(
-      preprocessArgs(["node", "dev-browser", "--connect", "run", "x.js"])
-    ).toEqual(["node", "dev-browser", "--connect=run", "x.js"]);
+      preprocessArgs(["node", "canary-browser", "--connect", "run", "x.js"])
+    ).toEqual(["node", "canary-browser", "--connect=run", "x.js"]);
   });
 
   it("only splices the first --connect", () => {
     expect(
       preprocessArgs([
         "node",
-        "dev-browser",
+        "canary-browser",
         "--connect",
         "first",
         "--connect",
         "second",
       ])
-    ).toEqual(["node", "dev-browser", "--connect=first", "--connect=second"]);
+    ).toEqual([
+      "node",
+      "canary-browser",
+      "--connect=first",
+      "--connect=second",
+    ]);
   });
 
   it("returns shorter slices unchanged", () => {

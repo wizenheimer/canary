@@ -1,6 +1,4 @@
-// CLI_LONG_ABOUT prose copied verbatim from cli/src/main.rs:20-93.
-// Same-content parity with Rust: wrap/indent may differ in commander vs clap
-// but the textual content matches.
+// CLI_LONG_ABOUT prose shown in `--help`.
 export const CLI_LONG_ABOUT = `Dev Browser is a CLI for controlling local or external browsers with JavaScript scripts.
 Scripts run in a sandboxed QuickJS runtime (not Node.js). Top-level \`await\` is
 available, along with a preconnected \`browser\` global and standard \`console\` output.
@@ -27,19 +25,19 @@ SANDBOX ENVIRONMENT:
   Memory and CPU limits are enforced. Infinite loops will be interrupted.
 
 Primary invocation styles:
-  dev-browser <<'EOF'
+  canary-browser <<'EOF'
     const page = await browser.getPage("main");
     await page.goto("https://example.com");
     console.log(await page.title());
   EOF
 
-  dev-browser run script.js
-  dev-browser --browser my-project < script.js
-  dev-browser --connect http://localhost:9222 <<'EOF'
+  canary-browser run script.js
+  canary-browser --browser my-project < script.js
+  canary-browser --connect http://localhost:9222 <<'EOF'
     const page = await browser.getPage("main");
     await page.goto("https://example.com");
   EOF
-  dev-browser --connect <<'EOF'
+  canary-browser --connect <<'EOF'
     const page = await browser.getPage("main");
     console.log(await page.title());
   EOF
@@ -52,17 +50,17 @@ Script API available inside every script:
                             Returns [{id, url, title, name}].
   browser.closePage(name) Close and remove a named page.
   await saveScreenshot(buf: Buffer, name: string): Promise<string>
-                          Save a screenshot buffer to ~/.dev-browser/tmp/<name>.
+                          Save a screenshot buffer to ~/.canary/tmp/<name>.
                           Returns the full path to the saved file.
                           Example: const path = await saveScreenshot(await page.screenshot(), "home.png");
 
   await writeFile(name: string, data: string): Promise<string>
-                          Write data to ~/.dev-browser/tmp/<name>.
+                          Write data to ~/.canary/tmp/<name>.
                           Returns the full path to the written file.
                           Example: const path = await writeFile("results.json", JSON.stringify(data));
 
   await readFile(name: string): Promise<string>
-                          Read a file from ~/.dev-browser/tmp/<name>.
+                          Read a file from ~/.canary/tmp/<name>.
                           Returns the file content as a string.
                           Example: const data = JSON.parse(await readFile("results.json"));
 
@@ -70,7 +68,7 @@ Script API available inside every script:
   console.warn/error(...) Write output to stderr.
 
   All file I/O functions are async and must be awaited.
-  All paths are restricted to ~/.dev-browser/tmp/ — no filesystem escape.
+  All paths are restricted to ~/.canary/tmp/ — no filesystem escape.
 
 Pages returned by \`browser.getPage()\` and \`browser.newPage()\` are full Playwright
 Page objects — you get the same API (goto, click, fill, locator, evaluate, etc.):
@@ -86,14 +84,14 @@ export const CLI_AFTER_LONG_HELP: string = LLM_GUIDE;
 export const RUN_LONG_ABOUT =
   "Run a script file against the browser.\n\n" +
   "The file is executed the same way as stdin input: as top-level JavaScript with `await`, `browser`, and `console` available.\n\n" +
-  "Use top-level flags before `run`, for example `dev-browser --browser my-project run script.js`.";
+  "Use top-level flags before `run`, for example `canary-browser --browser my-project run script.js`.";
 
 export const INSTALL_LONG_ABOUT =
   "Install Playwright browsers (Chromium).\n\n" +
   "Downloads the Chromium build used for daemon-managed browser instances.";
 
 export const INSTALL_SKILL_LONG_ABOUT =
-  "Install the embedded dev-browser skill into agent skill directories.\n\n" +
+  "Install the embedded canary skill into agent skill directories.\n\n" +
   "By default, launches an interactive multi-select prompt for the supported install targets when a TTY is available.\n\n" +
   "In non-interactive environments, installs to both supported skill directories.\n\n" +
   "Use `--claude` and/or `--agents` to skip prompting and install to specific targets.";
@@ -110,11 +108,11 @@ export const STOP_LONG_ABOUT =
   "Stop the daemon and all browsers.\n\n" +
   "This stops the background daemon process and closes every browser instance it currently manages.";
 
-// Subcommand short descriptions (cobra's "Short" / clap's "about").
+// Subcommand short descriptions.
 export const RUN_SHORT = "Run a script file against the browser";
 export const INSTALL_SHORT = "Install Playwright browsers (Chromium)";
 export const INSTALL_SKILL_SHORT =
-  "Install the dev-browser skill into agent skill directories";
+  "Install the canary skill into agent skill directories";
 export const BROWSERS_SHORT = "List all managed browser instances";
 export const STATUS_SHORT = "Show daemon status";
 export const STOP_SHORT = "Stop the daemon and all browsers";

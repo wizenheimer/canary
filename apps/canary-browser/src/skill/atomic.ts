@@ -2,10 +2,8 @@ import { randomBytes } from "node:crypto";
 import { rename, unlink, writeFile } from "node:fs/promises";
 import { basename, dirname, join, sep } from "node:path";
 
-// Write `contents` to `path` via a sibling temp file plus rename.
-// Mirrors cli/src/skill.rs:192-216 and cli-go/internal/skill/atomic.go —
-// pattern is `.{name}.tmp-{pid}-{nonce}` so both binaries interoperate
-// during the parity window.
+// Write `contents` to `path` via a sibling temp file plus rename. The temp
+// file pattern is `.{name}.tmp-{pid}-{nonce}`.
 export async function atomicWrite(
   path: string,
   contents: string | Uint8Array
