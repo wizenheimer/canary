@@ -1,5 +1,4 @@
 ---
-name: canary-review
 description: Open the Canary session viewer and triage a recorded session.
 argument-hint: "[session id or description]"
 ---

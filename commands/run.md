@@ -1,5 +1,4 @@
 ---
-name: canary-run
 description: Automate a one-off browser task with Canary — navigate, click, scrape, screenshot — and return the result.
 argument-hint: "<what to automate>"
 ---

@@ -40,3 +40,5 @@ User says: "is the pricing page up and what's the headline?" or "screenshot the 
    `locator`/`evaluate`, `console.log` the result).
 3. Run it: `npx @usecanary/browser run ./script.js` (or pipe the script via stdin).
 4. Report the script's stdout. Degrade gracefully on a missing selector (log a `WARN`, don't crash).
+5. Cleanup (optional): the run leaves a shared background daemon up for reuse. To shut it (and any
+   browser) down, run `npx @usecanary/browser stop` (alias of `canary stop` / `canary daemon stop`).

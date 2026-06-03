@@ -11,6 +11,8 @@ You triage recorded Canary sessions (read-only) and open the viewer.
 
 1. **Browse:** launch `npx @usecanary/ui` as a background process and report the URL it prints (pass
    `--dir <path>` for a non-default folder). It's a local server — like `npx playwright show-trace`.
+   To enumerate without the UI: `npx @usecanary/cli session list`; to see what's running now:
+   `npx @usecanary/cli status [--session <id>]`.
 2. **Triage a run:** read the session's `results.json` under `~/.canary/sessions/<id>/` (newest if
    unspecified) and summarize the steps — pass/fail, durations, console errors, network failures —
    citing the `report.html` path.

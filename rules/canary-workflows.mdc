@@ -5,14 +5,19 @@ alwaysApply: false
 
 # Canary workflows
 
-Canary drives a real browser from the CLI and records verifiable QA sessions. Setup once with
-`npx @usecanary/cli install` (downloads Chromium); browse sessions with `npx @usecanary/ui`.
+Canary drives a real browser from the CLI and records verifiable QA sessions. Set up once with
+`npx @usecanary/cli init` (installs the runtime); browse sessions with `npx @usecanary/ui`; stop the
+shared daemon (and all browsers/sessions) with `npx @usecanary/cli stop`. For a session, run
+`session end <id>` **before** `stop` — `stop` aborts a live session and skips its report.
 
+- **Verify (change → QA plan)** — read a diff, infer the affected user-facing workflows, and suggest
+  the flows to test; optionally record them. Skill `canary-verify` / agent `verify-agent`. Command:
+  `/canary:verify`.
 - **Automate (one-off)** — drive a browser and return a result, nothing recorded. Skill
-  `canary-automate` / agent `automate-agent`. Command: `/canary-run`.
+  `canary-automate` / agent `automate-agent`. Command: `/canary:run`.
 - **Session (recorded QA)** — run scripts as steps that capture trace/video/HAR/console and render
-  `report.html`. Skill `canary-session` / agent `session-agent`. Command: `/canary-session`.
+  `report.html`. Skill `canary-session` / agent `session-agent`. Command: `/canary:session`.
 - **Review (triage)** — open the viewer and summarize a recorded session. Skill `canary-review` /
-  agent `review-agent`. Command: `/canary-review`.
+  agent `review-agent`. Command: `/canary:review`.
 - **Scripting API** — the sandbox API (`browser.getPage`, page methods, `saveScreenshot`) lives in
   the `canary-scripting` skill and its `references/REFERENCE.md`.

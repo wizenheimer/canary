@@ -36,7 +36,9 @@ Read the newest `~/.canary/sessions/*/results.json`, summarize steps (pass/fail,
 
 ## Workflow
 
-1. **Browse:** `npx @usecanary/ui` (`--dir <path>` for a non-default sessions folder).
+1. **Browse:** `npx @usecanary/ui` (`--dir <path>` for a non-default sessions folder). List sessions
+   without the UI via `npx @usecanary/cli session list`; check what's running with
+   `npx @usecanary/cli status [--session <id>]`.
 2. **Summarize:** read the session's `results.json` (steps, summary, artifacts) and report pass/fail
    with counts; cite the `report.html` path.
 3. Review is **read-only** — don't modify session files.
