@@ -1,7 +1,7 @@
 {
   "name": "canary",
   "description": "Canary browser automation + recorded QA sessions: a sandbox scripting reference, verify/automate/session/review skills, JTBD subagents, and /canary slash commands.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": {
     "name": "wizenheimer",
     "url": "https://github.com/wizenheimer"
