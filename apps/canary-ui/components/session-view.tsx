@@ -147,7 +147,7 @@ export default function SessionView({
   const [data, setData] = useState<DetailResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useQueryState("tab", TAB_PARSER);
-  const [leftPct, setLeftPct] = useState(52);
+  const [leftPct, setLeftPct] = useState(58);
   const splitRef = useRef<HTMLDivElement>(null);
   const draggingRef = useRef(false);
 
@@ -287,13 +287,12 @@ export default function SessionView({
               className="justify-center-safe h-auto w-full shrink-0 gap-x-6 overflow-x-auto rounded-none border-border border-b px-5 py-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
               variant="line"
             >
-              {TABS.map(([tid, label, Icon]) => (
+              {TABS.map(([tid, label]) => (
                 <TabsTrigger
                   className="flex-none rounded-none px-0.5 py-3 font-medium text-[13px] text-muted-foreground after:bottom-[-1px] after:h-0.5 after:bg-primary data-active:text-foreground"
                   key={tid}
                   value={tid}
                 >
-                  <Icon />
                   {label}
                 </TabsTrigger>
               ))}
