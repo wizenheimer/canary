@@ -174,7 +174,7 @@ function createManager(
     options.launchPersistentContext ?? (vi.fn() as ReturnType<typeof vi.fn>);
 
   const manager = new BrowserManager(
-    path.join("/tmp", "dev-browser-auto-connect-tests"),
+    path.join("/tmp", "canary-auto-connect-tests"),
     {
       connectOverCDP: connectOverCDP as never,
       fetch,
@@ -224,7 +224,7 @@ describe("BrowserManager auto-connect", () => {
     expect(launchPersistentContext).toHaveBeenNthCalledWith(
       1,
       path.join(
-        "/tmp/dev-browser-auto-connect-tests",
+        "/tmp/canary-auto-connect-tests",
         "launched",
         "chromium-profile"
       ),
@@ -244,7 +244,7 @@ describe("BrowserManager auto-connect", () => {
     expect(launchPersistentContext).toHaveBeenNthCalledWith(
       2,
       path.join(
-        "/tmp/dev-browser-auto-connect-tests",
+        "/tmp/canary-auto-connect-tests",
         "launched",
         "chromium-profile"
       ),
@@ -279,7 +279,7 @@ describe("BrowserManager auto-connect", () => {
     expect(launchPersistentContext).toHaveBeenNthCalledWith(
       2,
       path.join(
-        "/tmp/dev-browser-auto-connect-tests",
+        "/tmp/canary-auto-connect-tests",
         "launched",
         "chromium-profile"
       ),

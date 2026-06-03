@@ -2,7 +2,7 @@
 
 ## What this is
 
-This directory is a forked subset of Playwright's client-side code, adapted to run inside the QuickJS WASM sandbox used by dev-browser.
+This directory is a forked subset of Playwright's client-side code, adapted to run inside the QuickJS WASM sandbox used by canary.
 
 The goal is simple:
 
@@ -44,7 +44,7 @@ Upstream Playwright client code is not a drop-in fit for QuickJS:
 - it expects upstream transports like WebSocket or Playwright's local pipe helpers
 - it includes surfaces that do not make sense in the sandbox, such as Android, Electron, downloads/artifacts-to-disk, and local utility helpers
 
-The fork lets dev-browser keep the Playwright object model and protocol semantics while replacing the runtime assumptions around it.
+The fork lets canary keep the Playwright object model and protocol semantics while replacing the runtime assumptions around it.
 
 ## Source version and provenance
 
@@ -57,7 +57,7 @@ The provenance markers for this fork do not fully agree, so treat this directory
 "playwright-core": "^1.52.0"
 ```
 
-- The research notes at `/Users/sawyerhood/.middleman/notes/dev-browser/research/playwright-fork-sandbox.md` record upstream commit `3912da7`.
+- The recorded upstream baseline is Playwright commit `3912da7`.
 - In practice, the checked-in fork aligns most closely with that `3912da7` snapshot, with local edits layered on top.
 
 When updating, diff against the exact upstream tag or commit you choose. Do not trust the semver range in `../../../package.json` by itself.

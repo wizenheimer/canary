@@ -8,6 +8,17 @@ import {
   type RootDispatcherLike,
 } from "./playwright-internals.js";
 
+// A capture-enabled session context emits a `video` event (on BrowserContext /
+// Page) that the vendored sandbox client has no event validator for. We withhold
+// just that event. Everything else — including Artifact/Stream __create__ and the
+// `download` event — is forwarded verbatim so downloads keep working; the daemon
+// records video on its own real context regardless of what the sandbox sees.
+const WITHHELD_EVENTS = new Set(["video"]);
+
+interface BridgeMessage {
+  method?: string;
+}
+
 export interface HostBridgeOptions {
   denyLaunch?: boolean;
   preLaunchedBrowser?: unknown;
@@ -39,6 +50,9 @@ export class HostBridge {
     });
     this.dispatcherConnection = new DispatcherConnection(false);
     this.dispatcherConnection.onmessage = (message) => {
+      if (this.shouldWithhold(message as BridgeMessage)) {
+        return;
+      }
       this.sendToSandbox(JSON.stringify(message));
     };
     this.rootDispatcher = new RootDispatcher(
@@ -56,6 +70,13 @@ export class HostBridge {
         return this.playwrightDispatcher;
       }
     );
+  }
+
+  // True when a host→sandbox protocol message must be withheld because the
+  // vendored sandbox client has no validator for it. Only the `video` event
+  // qualifies; the daemon still records video on its own real context.
+  private shouldWithhold(message: BridgeMessage): boolean {
+    return message.method ? WITHHELD_EVENTS.has(message.method) : false;
   }
 
   async receiveFromSandbox(json: string): Promise<void> {

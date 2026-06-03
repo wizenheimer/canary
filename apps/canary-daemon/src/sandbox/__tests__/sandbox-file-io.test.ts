@@ -13,9 +13,9 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 
 import { BrowserManager } from "../../browser-manager.js";
 import {
-  DEV_BROWSER_TMP_DIR,
-  ensureDevBrowserTempDir,
-  resolveDevBrowserTempPath,
+  CANARY_TMP_DIR,
+  ensureCanaryTempDir,
+  resolveCanaryTempPath,
 } from "../../temp-files.js";
 import { removeDirectoryWithRetries } from "../../test-cleanup.js";
 import { runScript } from "../script-runner-quickjs.js";
@@ -73,10 +73,10 @@ describe.sequential("QuickJS sandbox file I/O", () => {
   beforeAll(async () => {
     await ensureSandboxClientBundle();
 
-    await ensureDevBrowserTempDir();
+    await ensureCanaryTempDir();
 
     browserRootDir = await mkdtemp(
-      path.join(os.tmpdir(), "dev-browser-quickjs-file-io-")
+      path.join(os.tmpdir(), "canary-quickjs-file-io-")
     );
     manager = new BrowserManager(path.join(browserRootDir, "browsers"));
     await manager.ensureBrowser(browserName, {
@@ -119,7 +119,7 @@ describe.sequential("QuickJS sandbox file I/O", () => {
 
   it("saves screenshot buffers into the controlled temp directory", async () => {
     const requestedName = "sandbox file io screenshot?.png";
-    const expectedPath = await resolveDevBrowserTempPath(requestedName);
+    const expectedPath = await resolveCanaryTempPath(requestedName);
     cleanupPaths.add(expectedPath);
 
     const output = await runSandboxScript(`
@@ -135,9 +135,7 @@ describe.sequential("QuickJS sandbox file I/O", () => {
     );
     expect(result.savedPath).toBe(expectedPath);
     expect(
-      result.savedPath.startsWith(
-        `${path.resolve(DEV_BROWSER_TMP_DIR)}${path.sep}`
-      )
+      result.savedPath.startsWith(`${path.resolve(CANARY_TMP_DIR)}${path.sep}`)
     ).toBe(true);
     expect(result.size).toBeGreaterThan(0);
     expect((await stat(result.savedPath)).size).toBeGreaterThan(0);
@@ -145,7 +143,7 @@ describe.sequential("QuickJS sandbox file I/O", () => {
 
   it("writes page.screenshot({ path }) into the controlled temp directory", async () => {
     const requestedName = "page screenshot path?.png";
-    const expectedPath = await resolveDevBrowserTempPath(requestedName);
+    const expectedPath = await resolveCanaryTempPath(requestedName);
     cleanupPaths.add(expectedPath);
 
     const output = await runSandboxScript(`
@@ -166,7 +164,7 @@ describe.sequential("QuickJS sandbox file I/O", () => {
 
   it("writes and reads back controlled temp files", async () => {
     const requestedName = "sandbox file io data?.json";
-    const expectedPath = await resolveDevBrowserTempPath(requestedName);
+    const expectedPath = await resolveCanaryTempPath(requestedName);
     cleanupPaths.add(expectedPath);
 
     const output = await runSandboxScript(`
@@ -188,7 +186,7 @@ describe.sequential("QuickJS sandbox file I/O", () => {
 
   it("sanitizes harmless filename characters before writing", async () => {
     const requestedName = "report 2026:03:18?.json";
-    const expectedPath = await resolveDevBrowserTempPath(requestedName);
+    const expectedPath = await resolveCanaryTempPath(requestedName);
     cleanupPaths.add(expectedPath);
 
     const output = await runSandboxScript(`
@@ -272,7 +270,7 @@ describe.sequential("QuickJS sandbox file I/O", () => {
 
   it("rejects symlinked temp-file targets", async () => {
     const symlinkName = "sandbox-file-io-symlink.txt";
-    const symlinkPath = path.join(DEV_BROWSER_TMP_DIR, symlinkName);
+    const symlinkPath = path.join(CANARY_TMP_DIR, symlinkName);
     const targetPath = path.join(
       os.tmpdir(),
       "sandbox-file-io-symlink-target.txt"

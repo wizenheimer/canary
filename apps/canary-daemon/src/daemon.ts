@@ -4,40 +4,33 @@ import net from "node:net";
 import path from "node:path";
 import { createLogger } from "@canary/logger";
 import {
+  EMBEDDED_PACKAGE_JSON,
   type ExecuteRequest,
   parseRequest,
   type Response,
   serialize,
+  sessionStepSlug,
 } from "@canary/protocol";
 import { BrowserManager } from "./browser-manager.js";
 import {
   getBrowsersDir,
+  getCanaryBaseDir,
   getDaemonEndpoint,
-  getDevBrowserBaseDir,
   getPidPath,
+  getSessionDir,
   requiresDaemonEndpointCleanup,
 } from "./local-endpoint.js";
 import { createKeyedLock, createMutex } from "./lock.js";
 import { runScript } from "./sandbox/script-runner-quickjs.js";
-import { ensureDevBrowserTempDir } from "./temp-files.js";
+import { SessionManager, sessionBrowserName } from "./session-manager.js";
+import { ensureCanaryTempDir } from "./temp-files.js";
 
-const BASE_DIR = getDevBrowserBaseDir();
+const BASE_DIR = getCanaryBaseDir();
 const SOCKET_PATH = getDaemonEndpoint();
 const PID_PATH = getPidPath();
 const BROWSERS_DIR = getBrowsersDir();
 const DEFAULT_SCRIPT_TIMEOUT_MS = 30_000;
 const SOCKET_CLOSE_TIMEOUT_MS = 500;
-const EMBEDDED_PACKAGE_JSON = JSON.stringify({
-  name: "dev-browser-runtime",
-  private: true,
-  type: "module",
-  dependencies: {
-    pino: "^9.5.0",
-    playwright: "1.58.2",
-    "playwright-core": "1.58.2",
-    "quickjs-emscripten": "^0.32.0",
-  },
-});
 
 const LOG_PATH = path.join(BASE_DIR, "daemon.log");
 const log = createLogger({
@@ -49,6 +42,7 @@ const log = createLogger({
 });
 
 const manager = new BrowserManager(BROWSERS_DIR);
+const sessions = new SessionManager(manager, log);
 const startedAt = Date.now();
 const withBrowserLock = createKeyedLock<string>();
 const withInstallLock = createMutex();
@@ -147,24 +141,103 @@ function createMessageQueue(socket: net.Socket) {
   };
 }
 
+async function captureStepScreenshot(
+  browser: string,
+  sessionId: string,
+  step: string
+): Promise<void> {
+  try {
+    const shotPath = path.join(
+      getSessionDir(sessionId),
+      "screenshots",
+      `${sessionStepSlug(step)}.png`
+    );
+    await manager.screenshotActivePage(browser, shotPath);
+  } catch (error) {
+    log.debug({ err: error, sessionId, step }, "step screenshot failed");
+  }
+}
+
+// Resolve (connect/launch) the browser for an execute, enforcing the
+// session-context guards. Returns false if it already wrote an `error` response
+// (the caller should stop). Must run inside withBrowserLock(request.browser).
+async function resolveExecuteBrowser(
+  socket: net.Socket,
+  request: ExecuteRequest,
+  targetSession: string | undefined
+): Promise<boolean> {
+  if (targetSession) {
+    // Re-check inside the lock: a concurrent session-end may have torn the
+    // session down between the pre-lock guard and acquiring the lock. Without
+    // this, ensureBrowser would fabricate a fake non-session browser under the
+    // reserved __session__ prefix.
+    if (!sessions.has(targetSession)) {
+      await writeMessage(socket, {
+        id: request.id,
+        type: "error",
+        message: `No active session "${targetSession}". Start one with \`canary session start\`.`,
+      });
+      return false;
+    }
+    // A session owns its capture context; honoring `connect` here would
+    // stop/replace it (dropping tracing/video/HAR). Reject instead of hijack.
+    if (request.connect) {
+      await writeMessage(socket, {
+        id: request.id,
+        type: "error",
+        message: `Session "${targetSession}" manages its own browser; \`connect\` is not allowed for a session run.`,
+      });
+      return false;
+    }
+    await manager.ensureBrowser(request.browser, {
+      headless: request.headless,
+      ignoreHTTPSErrors: request.ignoreHTTPSErrors,
+    });
+    return true;
+  }
+  if (request.connect === "auto") {
+    await manager.autoConnect(request.browser);
+  } else if (request.connect) {
+    await manager.connectBrowser(request.browser, request.connect);
+  } else {
+    await manager.ensureBrowser(request.browser, {
+      headless: request.headless,
+      ignoreHTTPSErrors: request.ignoreHTTPSErrors,
+    });
+  }
+  return true;
+}
+
 async function handleExecute(
   socket: net.Socket,
   request: ExecuteRequest
 ): Promise<void> {
+  // `__session__*` browsers are managed exclusively by session-start. Reject an
+  // execute that targets one with no active session (prevents both hijacking a
+  // session context and accidentally creating a fake one via ensureBrowser).
+  const targetSession = sessions.sessionIdForBrowser(request.browser);
+  if (targetSession && !sessions.has(targetSession)) {
+    await writeMessage(socket, {
+      id: request.id,
+      type: "error",
+      message: `No active session "${targetSession}". Start one with \`canary session start\`.`,
+    });
+    return;
+  }
+
   await withBrowserLock(request.browser, async () => {
-    if (request.connect === "auto") {
-      await manager.autoConnect(request.browser);
-    } else if (request.connect) {
-      await manager.connectBrowser(request.browser, request.connect);
-    } else {
-      await manager.ensureBrowser(request.browser, {
-        headless: request.headless,
-        ignoreHTTPSErrors: request.ignoreHTTPSErrors,
-      });
+    if (!(await resolveExecuteBrowser(socket, request, targetSession))) {
+      return;
     }
 
     const output = createMessageQueue(socket);
     const timeoutMs = request.timeoutMs ?? DEFAULT_SCRIPT_TIMEOUT_MS;
+
+    // A session run is bracketed by a trace group named after the step so the
+    // trace timeline is segmented; on success the active page is screenshotted.
+    if (targetSession && request.step) {
+      await sessions.beginStep(targetSession, request.step);
+    }
 
     try {
       // Inside the try so a failure here is reported as an `error` message
@@ -212,6 +285,20 @@ async function handleExecute(
         type: "error",
         message: formatError(error),
       });
+    } finally {
+      if (targetSession && request.step) {
+        // Screenshot the end state for the report's step timeline — on failure
+        // too (the steps a reviewer most wants evidence for); best-effort.
+        await captureStepScreenshot(
+          request.browser,
+          targetSession,
+          request.step
+        );
+        await sessions.endStep(targetSession);
+      }
+      if (targetSession) {
+        sessions.noteRun(targetSession);
+      }
     }
   });
 }
@@ -360,6 +447,17 @@ async function handleRequest(socket: net.Socket, line: string): Promise<void> {
       return;
 
     case "browser-stop":
+      // A raw stopBrowser on a __session__ context would close it without
+      // finalizing trace/video/HAR or the manifest, leaving SessionManager
+      // pointing at a dead context. Sessions must be torn down via session-end.
+      if (sessions.isSessionBrowser(request.browser)) {
+        await writeMessage(socket, {
+          id: request.id,
+          type: "error",
+          message: `"${request.browser}" is a session browser; tear it down with \`canary session end\` or \`canary session abort\`.`,
+        });
+        return;
+      }
       await manager.stopBrowser(request.browser);
       log.info({ browser: request.browser }, "browser stopped");
       await writeMessage(socket, {
@@ -411,6 +509,92 @@ async function handleRequest(socket: net.Socket, line: string): Promise<void> {
       void shutdown(0);
       return;
 
+    case "session-start":
+      // Locked on the session's reserved browser name so start/end can't race
+      // a concurrent execute on the same context.
+      await withBrowserLock(sessionBrowserName(request.sessionId), async () => {
+        try {
+          const session = await sessions.start(request);
+          await writeMessage(socket, {
+            id: request.id,
+            type: "result",
+            data: { session },
+          });
+          await writeMessage(socket, {
+            id: request.id,
+            type: "complete",
+            success: true,
+          });
+        } catch (error) {
+          await writeMessage(socket, {
+            id: request.id,
+            type: "error",
+            message: formatError(error),
+          });
+        }
+      });
+      return;
+
+    case "session-end":
+      await withBrowserLock(sessionBrowserName(request.sessionId), async () => {
+        try {
+          const result = await sessions.end(request.sessionId, request.reason);
+          await writeMessage(socket, {
+            id: request.id,
+            type: "result",
+            data: result,
+          });
+          await writeMessage(socket, {
+            id: request.id,
+            type: "complete",
+            success: true,
+          });
+        } catch (error) {
+          await writeMessage(socket, {
+            id: request.id,
+            type: "error",
+            message: formatError(error),
+          });
+        }
+      });
+      return;
+
+    case "session-status": {
+      const session = sessions.status(request.sessionId);
+      if (session) {
+        await writeMessage(socket, {
+          id: request.id,
+          type: "result",
+          data: { session },
+        });
+        await writeMessage(socket, {
+          id: request.id,
+          type: "complete",
+          success: true,
+        });
+      } else {
+        await writeMessage(socket, {
+          id: request.id,
+          type: "error",
+          message: `Session "${request.sessionId}" not found`,
+        });
+      }
+      return;
+    }
+
+    case "session-list":
+      await writeMessage(socket, {
+        id: request.id,
+        type: "result",
+        data: { sessions: sessions.list() },
+      });
+      await writeMessage(socket, {
+        id: request.id,
+        type: "complete",
+        success: true,
+      });
+      return;
+
     default:
       return;
   }
@@ -429,6 +613,9 @@ function shutdown(exitCode = 0): Promise<void> {
       ? closeServerInstance(serverToClose)
       : Promise.resolve();
 
+    // Flush trace/video/HAR for any active sessions before tearing down their
+    // browsers (stopAll would close contexts without finalizing artifacts).
+    await sessions.endAll();
     await manager.stopAll();
     await Promise.allSettled(
       Array.from(clients, (socket) => closeClientSocket(socket))
@@ -450,7 +637,7 @@ function shutdown(exitCode = 0): Promise<void> {
 
 async function start(): Promise<void> {
   await mkdir(BASE_DIR, { recursive: true });
-  await ensureDevBrowserTempDir();
+  await ensureCanaryTempDir();
   if (requiresDaemonEndpointCleanup()) {
     await unlinkIfExists(SOCKET_PATH);
   }
