@@ -23,12 +23,12 @@ describe("QuickJSHost", () => {
   it("executes simple expressions", async () => {
     const host = await createHost({
       globals: {
-        appName: "dev-browser",
+        appName: "canary",
       },
     });
 
     expect(host.executeScriptSync("1 + 2 + 3")).toBe(6);
-    expect(host.executeScriptSync("appName")).toBe("dev-browser");
+    expect(host.executeScriptSync("appName")).toBe("canary");
   });
 
   it("exposes host functions and transport callbacks", async () => {

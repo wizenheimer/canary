@@ -44,9 +44,7 @@ describe.sequential("QuickJS sandbox integration", () => {
   beforeAll(async () => {
     await ensureSandboxClientBundle();
 
-    browserRootDir = await mkdtemp(
-      path.join(os.tmpdir(), "dev-browser-quickjs-")
-    );
+    browserRootDir = await mkdtemp(path.join(os.tmpdir(), "canary-quickjs-"));
     manager = new BrowserManager(path.join(browserRootDir, "browsers"));
     await manager.ensureBrowser("default", {
       headless: true,

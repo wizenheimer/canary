@@ -27,8 +27,8 @@ function getDefaultUsername(homedir: string): string {
   return path.basename(homedir) || "user";
 }
 
-export function getDevBrowserBaseDir(homedir = os.homedir()): string {
-  return path.join(homedir, ".dev-browser");
+export function getCanaryBaseDir(homedir = os.homedir()): string {
+  return path.join(homedir, ".canary");
 }
 
 export function getDaemonEndpoint(
@@ -45,18 +45,29 @@ export function getDaemonEndpoint(
     const username = sanitizePipeSegment(
       options.username ?? getDefaultUsername(homedir)
     );
-    return `\\\\.\\pipe\\dev-browser-daemon-${username}`;
+    return `\\\\.\\pipe\\canary-daemon-${username}`;
   }
 
-  return path.join(getDevBrowserBaseDir(homedir), "daemon.sock");
+  return path.join(getCanaryBaseDir(homedir), "daemon.sock");
 }
 
 export function getPidPath(homedir = os.homedir()): string {
-  return path.join(getDevBrowserBaseDir(homedir), "daemon.pid");
+  return path.join(getCanaryBaseDir(homedir), "daemon.pid");
 }
 
 export function getBrowsersDir(homedir = os.homedir()): string {
-  return path.join(getDevBrowserBaseDir(homedir), "browsers");
+  return path.join(getCanaryBaseDir(homedir), "browsers");
+}
+
+export function getSessionsDir(homedir = os.homedir()): string {
+  return path.join(getCanaryBaseDir(homedir), "sessions");
+}
+
+export function getSessionDir(
+  sessionId: string,
+  homedir = os.homedir()
+): string {
+  return path.join(getSessionsDir(homedir), sessionId);
 }
 
 export function requiresDaemonEndpointCleanup(

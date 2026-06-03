@@ -17,10 +17,34 @@ export interface BrowserEntry {
   endpoint?: string;
   headless: boolean;
   ignoreHTTPSErrors: boolean;
+  // Session contexts are launched with recordVideo/recordHar + tracing and must
+  // never be relaunched by a later execute (that would drop the recording).
+  isSession: boolean;
   name: string;
   pages: Map<string, Page>;
   profileDir?: string;
   type: "launched" | "connected";
+}
+
+interface LaunchBrowserOptions {
+  headless: boolean;
+  ignoreHTTPSErrors: boolean;
+  isSession?: boolean;
+  profileDirOverride?: string;
+  record?: {
+    har?: { content: "embed" | "attach" | "omit"; path: string };
+    videoDir?: string;
+  };
+}
+
+export interface SessionLaunchOptions {
+  headless: boolean;
+  ignoreHTTPSErrors: boolean;
+  profileDirOverride: string;
+  record: {
+    har?: { content: "embed" | "attach" | "omit"; path: string };
+    videoDir?: string;
+  };
 }
 
 interface BrowserPageSummary {
@@ -68,9 +92,10 @@ export class BrowserManager {
   private readonly browsers = new Map<string, BrowserEntry>();
   private readonly baseDir: string;
   private readonly dependencies: BrowserManagerDependencies;
+  private readonly disconnectHandlers = new Set<(name: string) => void>();
 
   constructor(
-    baseDir = path.join(os.homedir(), ".dev-browser", "browsers"),
+    baseDir = path.join(os.homedir(), ".canary", "browsers"),
     dependencies: Partial<BrowserManagerDependencies> = {}
   ) {
     this.baseDir = baseDir;
@@ -90,6 +115,13 @@ export class BrowserManager {
     };
   }
 
+  // Register a callback fired when a managed browser disconnects (crash or
+  // external close). SessionManager uses this to reconcile a session whose
+  // capture context died out from under it.
+  onBrowserDisconnect(handler: (name: string) => void): void {
+    this.disconnectHandlers.add(handler);
+  }
+
   async ensureBrowser(
     name: string,
     options: {
@@ -104,6 +136,12 @@ export class BrowserManager {
       options.ignoreHTTPSErrors ?? existing?.ignoreHTTPSErrors ?? false;
 
     if (existing) {
+      // Capture-bound: relaunching would tear down tracing/video/HAR. A session
+      // run reuses its context as-is regardless of requested launch options.
+      if (existing.isSession) {
+        return existing;
+      }
+
       const needsRelaunch =
         existing.type !== "launched" ||
         !existing.browser.isConnected() ||
@@ -119,11 +157,10 @@ export class BrowserManager {
       await this.stopBrowser(name);
     }
 
-    return this.launchBrowser(
-      name,
-      requestedHeadless,
-      requestedIgnoreHTTPSErrors
-    );
+    return this.launchBrowser(name, {
+      headless: requestedHeadless,
+      ignoreHTTPSErrors: requestedIgnoreHTTPSErrors,
+    });
   }
 
   async autoConnect(name: string): Promise<BrowserEntry> {
@@ -316,6 +353,7 @@ export class BrowserManager {
 
   listBrowsers(): BrowserSummary[] {
     return Array.from(this.browsers.values())
+      .filter((entry) => !entry.isSession)
       .map((entry) => {
         this.pruneClosedPages(entry);
 
@@ -363,7 +401,13 @@ export class BrowserManager {
   }
 
   browserCount(): number {
-    return this.browsers.size;
+    let count = 0;
+    for (const entry of this.browsers.values()) {
+      if (!entry.isSession) {
+        count += 1;
+      }
+    }
+    return count;
   }
 
   private async ensureBaseDir(): Promise<void> {
@@ -379,23 +423,73 @@ export class BrowserManager {
     return entry;
   }
 
+  // Launch a session-scoped capture context: a dedicated persistent context
+  // (isolated profile) configured at launch time with recordVideo / recordHar.
+  // The caller (SessionManager) then starts tracing and attaches listeners on
+  // the returned entry's context.
+  launchSessionBrowser(
+    name: string,
+    options: SessionLaunchOptions
+  ): Promise<BrowserEntry> {
+    return this.launchBrowser(name, { ...options, isSession: true });
+  }
+
+  // Best-effort screenshot of the most-recently-active page in a browser, used
+  // to populate the report's per-step timeline. Silent if no page is open; the
+  // caller must never let a screenshot failure fail the underlying step.
+  async screenshotActivePage(
+    browserName: string,
+    outPath: string
+  ): Promise<void> {
+    const entry = this.browsers.get(browserName);
+    if (!entry?.browser.isConnected()) {
+      return;
+    }
+
+    const pages = this.getContextPages(entry);
+    const last = pages.at(-1);
+    if (!last) {
+      return;
+    }
+
+    await this.dependencies.mkdir(path.dirname(outPath), { recursive: true });
+    await last.page.screenshot({ path: outPath });
+  }
+
   private async launchBrowser(
     name: string,
-    headless: boolean,
-    ignoreHTTPSErrors: boolean
+    options: LaunchBrowserOptions
   ): Promise<BrowserEntry> {
-    const profileDir = path.join(this.baseDir, name, "chromium-profile");
+    const profileDir =
+      options.profileDirOverride ??
+      path.join(this.baseDir, name, "chromium-profile");
     await this.dependencies.mkdir(profileDir, { recursive: true });
+    if (options.record?.videoDir) {
+      await this.dependencies.mkdir(options.record.videoDir, {
+        recursive: true,
+      });
+    }
 
     const context = await this.dependencies.launchPersistentContext(
       profileDir,
       {
-        headless,
-        viewport: headless ? undefined : null,
-        ignoreHTTPSErrors,
+        headless: options.headless,
+        viewport: options.headless ? undefined : null,
+        ignoreHTTPSErrors: options.ignoreHTTPSErrors,
         handleSIGINT: false,
         handleSIGTERM: false,
         handleSIGHUP: false,
+        ...(options.record?.videoDir
+          ? { recordVideo: { dir: options.record.videoDir } }
+          : {}),
+        ...(options.record?.har
+          ? {
+              recordHar: {
+                path: options.record.har.path,
+                content: options.record.har.content,
+              },
+            }
+          : {}),
       }
     );
     const browser = context.browser();
@@ -414,8 +508,9 @@ export class BrowserManager {
       context,
       pages: new Map(),
       profileDir,
-      headless,
-      ignoreHTTPSErrors,
+      headless: options.headless,
+      ignoreHTTPSErrors: options.ignoreHTTPSErrors,
+      isSession: options.isSession ?? false,
       appliedInitScripts: new Set(),
     };
 
@@ -448,6 +543,7 @@ export class BrowserManager {
       endpoint,
       headless: false,
       ignoreHTTPSErrors: false,
+      isSession: false,
       appliedInitScripts: new Set(),
     };
 
@@ -467,6 +563,17 @@ export class BrowserManager {
 
       if (entry.type === "launched") {
         this.browsers.delete(entry.name);
+      }
+
+      // Notify observers (SessionManager) so a session whose context just died
+      // is reconciled. Fired only for a still-current entry — a deliberate
+      // stopBrowser() removes the entry first, so its close won't re-enter here.
+      for (const handler of this.disconnectHandlers) {
+        try {
+          handler(entry.name);
+        } catch {
+          // a handler failure must not break browser teardown
+        }
       }
     });
   }
@@ -837,7 +944,7 @@ export class BrowserManager {
   private buildManualConnectError(endpoint: string): string {
     return [
       `Could not resolve a CDP WebSocket endpoint from ${endpoint}.`,
-      "If Chrome is using built-in remote debugging, run `dev-browser --connect` without a URL so DevToolsActivePort can be auto-discovered.",
+      "If Chrome is using built-in remote debugging, run `canary-browser --connect` without a URL so DevToolsActivePort can be auto-discovered.",
       "Or connect with the exact ws://127.0.0.1:<port>/devtools/browser/... URL from DevToolsActivePort, or launch Chrome with --remote-debugging-port=9222.",
     ].join("\n");
   }

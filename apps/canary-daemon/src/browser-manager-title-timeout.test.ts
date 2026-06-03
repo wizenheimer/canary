@@ -32,6 +32,7 @@ function createMockEntry(page: Page): BrowserEntry {
     endpoint: "ws://127.0.0.1:9222/devtools/browser/test",
     headless: false,
     ignoreHTTPSErrors: false,
+    isSession: false,
     appliedInitScripts: new Set(),
   };
 }
@@ -52,7 +53,7 @@ describe("BrowserManager listPages title handling", () => {
       url: () => "chrome://blank",
     } as unknown as Page;
 
-    const manager = new BrowserManager("/tmp/dev-browser-title-timeout");
+    const manager = new BrowserManager("/tmp/canary-title-timeout");
     const internals = manager as unknown as BrowserManagerInternals;
     internals.browsers.set(browserName, createMockEntry(page));
     vi.spyOn(internals, "getPageTargetId").mockResolvedValue("target-1");
@@ -78,7 +79,7 @@ describe("BrowserManager listPages title handling", () => {
       url: () => "chrome://broken",
     } as unknown as Page;
 
-    const manager = new BrowserManager("/tmp/dev-browser-title-errors");
+    const manager = new BrowserManager("/tmp/canary-title-errors");
     const internals = manager as unknown as BrowserManagerInternals;
     internals.browsers.set(browserName, createMockEntry(page));
     vi.spyOn(internals, "getPageTargetId").mockResolvedValue("target-2");

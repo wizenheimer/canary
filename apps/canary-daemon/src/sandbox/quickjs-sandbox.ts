@@ -5,9 +5,9 @@ import type { Page } from "playwright";
 
 import type { BrowserManager } from "../browser-manager.js";
 import {
-  ensureDevBrowserTempDir,
-  readDevBrowserTempFile,
-  writeDevBrowserTempFile,
+  ensureCanaryTempDir,
+  readCanaryTempFile,
+  writeCanaryTempFile,
 } from "../temp-files.js";
 import { HostBridge } from "./host-bridge.js";
 import { type QuickJSConsoleLevel, QuickJSHost } from "./quickjs-host.js";
@@ -221,7 +221,7 @@ export class QuickJSSandbox {
     }
 
     try {
-      await ensureDevBrowserTempDir();
+      await ensureCanaryTempDir();
 
       this.#host = await QuickJSHost.create({
         memoryLimitBytes:
@@ -721,14 +721,14 @@ export class QuickJSSandbox {
   }
 
   async #writeTempFile(name: unknown, payload: unknown): Promise<string> {
-    return await writeDevBrowserTempFile(
+    return await writeCanaryTempFile(
       requireString(name, "File name"),
       decodeSandboxFilePayload(payload, "File data")
     );
   }
 
   async #readTempFile(name: unknown): Promise<string> {
-    return await readDevBrowserTempFile(requireString(name, "File name"));
+    return await readCanaryTempFile(requireString(name, "File name"));
   }
 
   async #cleanupAnonymousPages(

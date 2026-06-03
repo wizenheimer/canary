@@ -1,13 +1,13 @@
 import { constants } from "node:fs";
 import { type FileHandle, lstat, mkdir, open } from "node:fs/promises";
 import path from "node:path";
-import { getDevBrowserBaseDir } from "./local-endpoint.js";
+import { getCanaryBaseDir } from "./local-endpoint.js";
 
 const SAFE_PATH_SEGMENT_PATTERN = /[^A-Za-z0-9._-]/g;
 const NOFOLLOW_FLAG = constants.O_NOFOLLOW ?? 0;
 
-export const DEV_BROWSER_BASE_DIR = getDevBrowserBaseDir();
-export const DEV_BROWSER_TMP_DIR = path.join(DEV_BROWSER_BASE_DIR, "tmp");
+export const CANARY_BASE_DIR = getCanaryBaseDir();
+export const CANARY_TMP_DIR = path.join(CANARY_BASE_DIR, "tmp");
 
 function requireNonEmptyString(value: unknown, label: string): string {
   if (typeof value !== "string" || value.length === 0) {
@@ -148,33 +148,30 @@ async function assertDestinationIsNotSymlink(
   }
 }
 
-export async function ensureDevBrowserTempDir(): Promise<string> {
-  await mkdir(DEV_BROWSER_BASE_DIR, {
+export async function ensureCanaryTempDir(): Promise<string> {
+  await mkdir(CANARY_BASE_DIR, {
     recursive: true,
   });
   await assertControlledDirectory(
-    DEV_BROWSER_BASE_DIR,
+    CANARY_BASE_DIR,
     "Dev Browser base directory"
   );
 
-  await mkdir(DEV_BROWSER_TMP_DIR, {
+  await mkdir(CANARY_TMP_DIR, {
     recursive: true,
   });
-  await assertControlledDirectory(
-    DEV_BROWSER_TMP_DIR,
-    "Dev Browser temp directory"
-  );
+  await assertControlledDirectory(CANARY_TMP_DIR, "Dev Browser temp directory");
 
-  return path.resolve(DEV_BROWSER_TMP_DIR);
+  return path.resolve(CANARY_TMP_DIR);
 }
 
-export async function resolveDevBrowserTempPath(
+export async function resolveCanaryTempPath(
   fileName: unknown,
   options: {
     createParents?: boolean;
   } = {}
 ): Promise<string> {
-  const rootDir = await ensureDevBrowserTempDir();
+  const rootDir = await ensureCanaryTempDir();
   const segments = sanitizeRelativePath(fileName);
   const destinationPath = path.resolve(rootDir, ...segments);
 
@@ -192,11 +189,11 @@ export async function resolveDevBrowserTempPath(
   return destinationPath;
 }
 
-export async function writeDevBrowserTempFile(
+export async function writeCanaryTempFile(
   fileName: unknown,
   data: string | Uint8Array
 ): Promise<string> {
-  const destinationPath = await resolveDevBrowserTempPath(fileName, {
+  const destinationPath = await resolveCanaryTempPath(fileName, {
     createParents: true,
   });
   await assertDestinationIsNotSymlink(destinationPath);
@@ -221,10 +218,8 @@ export async function writeDevBrowserTempFile(
   return destinationPath;
 }
 
-export async function readDevBrowserTempFile(
-  fileName: unknown
-): Promise<string> {
-  const destinationPath = await resolveDevBrowserTempPath(fileName);
+export async function readCanaryTempFile(fileName: unknown): Promise<string> {
+  const destinationPath = await resolveCanaryTempPath(fileName);
   await assertDestinationIsNotSymlink(destinationPath);
 
   let handle: FileHandle | undefined;

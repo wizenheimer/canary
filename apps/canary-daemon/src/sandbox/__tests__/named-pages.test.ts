@@ -57,7 +57,7 @@ describe.sequential("QuickJS named page management", () => {
 
   beforeAll(async () => {
     browserRootDir = await mkdtemp(
-      path.join(os.tmpdir(), "dev-browser-quickjs-named-pages-")
+      path.join(os.tmpdir(), "canary-quickjs-named-pages-")
     );
     manager = new BrowserManager(path.join(browserRootDir, "browsers"));
   }, 180_000);

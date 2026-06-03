@@ -337,7 +337,7 @@ describe.sequential("QuickJS Playwright Page API coverage", () => {
     await ensureSandboxClientBundle();
 
     browserRootDir = await mkdtemp(
-      path.join(os.tmpdir(), "dev-browser-playwright-api-")
+      path.join(os.tmpdir(), "canary-playwright-api-")
     );
     manager = new BrowserManager(path.join(browserRootDir, "browsers"));
   }, 180_000);

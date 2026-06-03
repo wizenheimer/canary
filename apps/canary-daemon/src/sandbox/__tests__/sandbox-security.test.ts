@@ -44,7 +44,7 @@ describe.sequential("QuickJS sandbox security", () => {
 
   beforeAll(async () => {
     browserRootDir = await mkdtemp(
-      path.join(os.tmpdir(), "dev-browser-quickjs-security-")
+      path.join(os.tmpdir(), "canary-quickjs-security-")
     );
     manager = new BrowserManager(path.join(browserRootDir, "browsers"));
     await manager.ensureBrowser(browserName, {

@@ -19,7 +19,7 @@ describe("removeDirectoryWithRetries", () => {
       .mockResolvedValue(undefined);
     const sleep = vi.fn().mockResolvedValue(undefined);
 
-    await removeDirectoryWithRetries("/tmp/dev-browser-test", {
+    await removeDirectoryWithRetries("/tmp/canary-test", {
       rm: remove as unknown as typeof rm,
       sleep,
       retryDelayMs: (attempt) => [25, 50][attempt] ?? 100,
@@ -35,7 +35,7 @@ describe("removeDirectoryWithRetries", () => {
     const sleep = vi.fn().mockResolvedValue(undefined);
 
     await expect(
-      removeDirectoryWithRetries("/tmp/dev-browser-test", {
+      removeDirectoryWithRetries("/tmp/canary-test", {
         rm: remove as unknown as typeof rm,
         sleep,
       })
@@ -50,7 +50,7 @@ describe("removeDirectoryWithRetries", () => {
     const sleep = vi.fn().mockResolvedValue(undefined);
 
     await expect(
-      removeDirectoryWithRetries("/tmp/dev-browser-test", {
+      removeDirectoryWithRetries("/tmp/canary-test", {
         rm: remove as unknown as typeof rm,
         sleep,
         maxRetries: 2,

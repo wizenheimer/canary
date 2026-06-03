@@ -19,7 +19,7 @@ describe.sequential("BrowserManager page discovery", () => {
 
   beforeAll(async () => {
     browserRootDir = await mkdtemp(
-      path.join(os.tmpdir(), "dev-browser-manager-pages-")
+      path.join(os.tmpdir(), "canary-manager-pages-")
     );
     manager = new BrowserManager(path.join(browserRootDir, "browsers"));
   }, 180_000);
