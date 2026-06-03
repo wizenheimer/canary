@@ -111,16 +111,15 @@ async function readScriptFromStdin(): Promise<string> {
 export function buildProgram(): CommandType {
   const program = new Command();
   program
-    .name("dev-browser")
+    .name("canary-browser")
     .description(ROOT_SHORT)
     .addHelpText("before", `${CLI_LONG_ABOUT}\n`)
     .addHelpText("after", `\n${CLI_AFTER_LONG_HELP}`)
     .exitOverride()
     .showHelpAfterError(false)
-    // Reject `dev-browser bogus` instead of silently no-oping the default
+    // Reject `canary-browser bogus` instead of silently no-oping the default
     // action. Commander throws commander.excessArguments which execute()
-    // maps to exit 2 — parity with clap's "unrecognized subcommand" path
-    // (cli/src/main.rs's clap config rejects unknown args automatically).
+    // maps to exit 2.
     .allowExcessArguments(false);
 
   program
@@ -265,8 +264,7 @@ export async function execute(argv: readonly string[]): Promise<number> {
       if (code === "commander.version") {
         return 0;
       }
-      // Usage errors map to exit 2 to match clap's "bad usage" code.
-      // commander's own message is already on stderr.
+      // Usage errors map to exit 2; commander's own message is already on stderr.
       if (typeof code === "string" && code.startsWith("commander.")) {
         return 2;
       }

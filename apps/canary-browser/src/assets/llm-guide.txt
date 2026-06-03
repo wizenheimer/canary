@@ -8,15 +8,15 @@ LLM USAGE GUIDE:
     @"
     const page = await browser.getPage("main");
     console.log(await page.title());
-    "@ | dev-browser --connect
+    "@ | canary-browser --connect
 
   Quick inspection:
-    dev-browser --connect <<'EOF'
+    canary-browser --connect <<'EOF'
     const tabs = await browser.listPages();
     console.log(JSON.stringify(tabs, null, 2));
     EOF
 
-    dev-browser --connect <<'EOF'
+    canary-browser --connect <<'EOF'
     const page = await browser.getPage("TARGET_ID_HERE");
     console.log(JSON.stringify({
       url: page.url(),
@@ -25,7 +25,7 @@ LLM USAGE GUIDE:
     EOF
 
   AI snapshots for element discovery:
-    dev-browser <<'EOF'
+    canary-browser <<'EOF'
     const page = await browser.getPage("main");
     const result = await page.snapshotForAI();
     console.log(result.full);
@@ -42,7 +42,7 @@ LLM USAGE GUIDE:
     Known pages/selectors: skip the snapshot and use direct Playwright selectors like page.click(), page.fill(), or page.locator() for faster, more reliable automation.
 
   Screenshots for visual state:
-    dev-browser <<'EOF'
+    canary-browser <<'EOF'
     const page = await browser.getPage("main");
     const buf = await page.screenshot();
     const path = await saveScreenshot(buf, "debug.png");
@@ -50,7 +50,7 @@ LLM USAGE GUIDE:
     EOF
 
   Waiting patterns:
-    dev-browser <<'EOF'
+    canary-browser <<'EOF'
     const page = await browser.getPage("search-results");
     await page.waitForSelector(".results");
     await page.waitForURL("**/success");
@@ -69,7 +69,7 @@ LLM USAGE GUIDE:
   Error recovery:
     If a script fails, the page usually stays where it stopped.
     Reconnect to the same page name, take a screenshot, and log the URL/title:
-    dev-browser <<'EOF'
+    canary-browser <<'EOF'
     const page = await browser.getPage("checkout");
     const path = await saveScreenshot(await page.screenshot(), "debug.png");
     console.log(JSON.stringify({
@@ -103,13 +103,13 @@ LLM USAGE GUIDE:
 
   Connecting to a running Chrome instance:
     Auto-discover Chrome with debugging enabled:
-      dev-browser --connect <<'EOF'
+      canary-browser --connect <<'EOF'
         const page = await browser.getPage("main");
         console.log(await page.title());
       EOF
 
     Connect to a specific CDP endpoint:
-      dev-browser --connect http://localhost:9222 <<'EOF'
+      canary-browser --connect http://localhost:9222 <<'EOF'
         const page = await browser.getPage("main");
         console.log(await page.title());
       EOF

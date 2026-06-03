@@ -1,5 +1,9 @@
-import { currentDaemonPid, waitForDaemonExit } from "../daemon/lifecycle.js";
-import { isDaemonRunning, sendRequest } from "../ipc/connect.js";
+import {
+  currentDaemonPid,
+  isDaemonRunning,
+  sendRequest,
+  waitForDaemonExit,
+} from "@canary/daemon-client";
 import { requestId } from "../util/request-id.js";
 
 export async function stopCommand(): Promise<number> {

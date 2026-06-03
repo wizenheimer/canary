@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { resolveSelection } from "../../src/commands/install-skill.js";
 
-// Mirror of cli/src/skill.rs tests::* and cli-go skill_test.go.
 describe("resolveSelection", () => {
   it("--claude alone -> [0]", () => {
     expect(resolveSelection(true, false, true)).toEqual({

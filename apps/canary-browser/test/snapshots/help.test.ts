@@ -10,7 +10,7 @@ beforeAll(() => {
   }
 });
 
-describe("--help content parity", () => {
+describe("--help content", () => {
   it("root --help mentions the sandbox preamble and subcommands", async () => {
     const out = await runCli(["--help"]);
     expect(out.code).toBe(0);
@@ -66,7 +66,7 @@ describe("--help content parity", () => {
     expect(out.stdout).toContain(fragment);
   });
 
-  it("invalid --timeout yields a clap-style error", async () => {
+  it("invalid --timeout yields a usage error", async () => {
     const out = await runCli(["--timeout", "0", "run", "/dev/null"]);
     expect(out.code).toBe(2);
     expect(out.stderr).toContain(
@@ -74,11 +74,9 @@ describe("--help content parity", () => {
     );
   });
 
-  // Argv-parsing exit codes for unknown subcommands and unsupported options
-  // are covered cross-binary in test/parity/binary-diff.test.ts. The check
-  // below guards the run.ts -> Rust ENOENT wording path, which has no
-  // counterpart in the parity harness's fake-daemon flow.
-  it("missing run-file uses POSIX-style wording (Rust parity)", async () => {
+  // Guards the run.ts ENOENT wording path: a missing run-file reports the
+  // canonical POSIX-style "No such file or directory (os error 2)" message.
+  it("missing run-file uses POSIX-style wording", async () => {
     const missing = `/tmp/cli-ts-snap-missing-${Math.random().toString(36).slice(2)}`;
     const out = await runCli(["run", missing]);
     expect(out.code).toBe(1);

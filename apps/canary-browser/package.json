@@ -24,6 +24,8 @@
     "clean": "rm -rf dist coverage .turbo src/assets/embedded.generated.ts"
   },
   "dependencies": {
+    "@canary/cli-kit": "workspace:*",
+    "@canary/daemon-client": "workspace:*",
     "@canary/logger": "workspace:*",
     "@canary/protocol": "workspace:*",
     "@inquirer/checkbox": "^5.1.5",
@@ -33,7 +35,6 @@
     "pino-pretty": "^13.0.0"
   },
   "devDependencies": {
-    "@canary/daemon": "workspace:*",
     "@canary/config": "workspace:*",
     "@types/node": "^20.17.10",
     "esbuild": "^0.27.4",

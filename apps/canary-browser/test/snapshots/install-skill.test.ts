@@ -29,9 +29,9 @@ describe("install-skill", () => {
     const out = await run(["install-skill", "--claude"]);
     expect(out.code).toBe(0);
     expect(out.stdout).toContain(
-      "Installed dev-browser skill to ~/.claude/skills/dev-browser/SKILL.md"
+      "Installed canary skill to ~/.claude/skills/canary/SKILL.md"
     );
-    const file = join(home, ".claude/skills/dev-browser/SKILL.md");
+    const file = join(home, ".claude/skills/canary/SKILL.md");
     expect(statSync(file).isFile()).toBe(true);
     const content = readFileSync(file, "utf8");
     expect(content.length).toBeGreaterThan(10);
@@ -41,24 +41,24 @@ describe("install-skill", () => {
   it("--agents installs to ~/.agents/skills only", async () => {
     const out = await run(["install-skill", "--agents"]);
     expect(out.code).toBe(0);
-    expect(out.stdout).toContain("~/.agents/skills/dev-browser/SKILL.md");
+    expect(out.stdout).toContain("~/.agents/skills/canary/SKILL.md");
     expect(
-      statSync(join(home, ".agents/skills/dev-browser/SKILL.md")).isFile()
+      statSync(join(home, ".agents/skills/canary/SKILL.md")).isFile()
     ).toBe(true);
   });
 
   it("--claude --agents installs to both", async () => {
     const out = await run(["install-skill", "--claude", "--agents"]);
     expect(out.code).toBe(0);
-    expect(out.stdout).toContain("~/.claude/skills/dev-browser/SKILL.md");
-    expect(out.stdout).toContain("~/.agents/skills/dev-browser/SKILL.md");
+    expect(out.stdout).toContain("~/.claude/skills/canary/SKILL.md");
+    expect(out.stdout).toContain("~/.agents/skills/canary/SKILL.md");
   });
 
   it("no flags + non-TTY installs to both", async () => {
     const out = await run(["install-skill"]);
     expect(out.code).toBe(0);
-    expect(out.stdout).toContain("~/.claude/skills/dev-browser/SKILL.md");
-    expect(out.stdout).toContain("~/.agents/skills/dev-browser/SKILL.md");
+    expect(out.stdout).toContain("~/.claude/skills/canary/SKILL.md");
+    expect(out.stdout).toContain("~/.agents/skills/canary/SKILL.md");
   });
 
   it("idempotent: second install reports already-installed", async () => {
@@ -70,11 +70,11 @@ describe("install-skill", () => {
 
   it("updates when content changes", async () => {
     await run(["install-skill", "--claude"]);
-    const file = join(home, ".claude/skills/dev-browser/SKILL.md");
+    const file = join(home, ".claude/skills/canary/SKILL.md");
     writeFileSync(file, "STALE");
     const out = await run(["install-skill", "--claude"]);
     expect(out.code).toBe(0);
-    expect(out.stdout).toContain("Updated dev-browser skill");
+    expect(out.stdout).toContain("Updated canary skill");
     expect(readFileSync(file, "utf8")).not.toBe("STALE");
   });
 

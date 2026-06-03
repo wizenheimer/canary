@@ -1,19 +1,14 @@
-// Argv preprocessing mirroring cli-go/cmd/preprocess.go.
+// Argv preprocessing for optional-value flags.
 //
 // Commander supports `--option [value]` bracketed-optional syntax: bare
-// `--connect` yields `true`; `--connect URL` yields `URL`. But there is a
-// subtle parity gap with clap's `num_args = 0..=1`: clap will greedily
-// consume the next argv token as the flag's value as long as it doesn't
-// start with `-` — even if that token happens to be a subcommand name.
-// Commander, by contrast, will *not* consume the next token if the
-// program defines a positional or subcommand for it.
+// `--connect` yields `true`; `--connect URL` yields `URL`. But commander will
+// *not* consume the next token as the flag's value if the program defines a
+// positional or subcommand for it — so `--connect chrome` could be parsed
+// inconsistently depending on subcommand layout.
 //
-// To match clap byte-for-byte, we splice `--connect VALUE` into
-// `--connect=VALUE` here. After that splice, commander's optional-value
-// parsing yields the exact same result regardless of subcommand layout.
-//
-// This is what cli-go does in PreprocessArgs and it's documented as the
-// "lexical, not semantic" parity rule.
+// To make optional-value parsing deterministic regardless of subcommand
+// layout, we splice `--connect VALUE` into `--connect=VALUE` here. This is a
+// lexical (not semantic) rewrite.
 const OPTIONAL_VALUE_FLAGS = new Set(["--connect"]);
 
 export function preprocessArgs(argv: readonly string[]): string[] {
