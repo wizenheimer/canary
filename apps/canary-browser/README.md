@@ -8,7 +8,8 @@ with a report, use [`@usecanary/cli`](https://www.npmjs.com/package/@usecanary/c
 ## Install
 
 ```bash
-npx @usecanary/browser install
+npm i -g @usecanary/browser && canary-browser install
+# one-off, no install: npx @usecanary/browser install
 ```
 
 ## Use
@@ -16,9 +17,9 @@ npx @usecanary/browser install
 ```bash
 echo 'const p = await browser.getPage("main");
 await p.goto("https://example.com");
-console.log(await p.title());' | npx @usecanary/browser run
+console.log(await p.title());' | canary-browser run
 
-npx @usecanary/browser run ./script.js
+canary-browser run ./script.js
 ```
 
 Run `canary-browser --help` for the full API.

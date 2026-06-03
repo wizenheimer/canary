@@ -11,16 +11,17 @@ npm create canary
 # or: npm init canary  ·  pnpm create canary  ·  yarn create canary
 ```
 
-The wizard installs the canary runtime into `~/.canary`, sets up the orchestrator CLI
-([`@usecanary/cli`](https://www.npmjs.com/package/@usecanary/cli)), and optionally wires up the
-agent skill so a coding agent can record sessions for you.
+The wizard installs the canary runtime into `~/.canary` and offers to put the `canary` command
+([`@usecanary/cli`](https://www.npmjs.com/package/@usecanary/cli)) on your PATH — plus optional
+`canary-browser` and `canary-viewer` — so you can skip the `npx` prefix. It also wires up the agent
+skill so a coding agent can record sessions for you.
 
 ## After setup
 
 ```bash
 canary init                        # one-shot setup (runtime + agent skill)
 canary session start --name "checkout"
-npx @usecanary/ui                  # browse recorded sessions
+canary-viewer                      # browse recorded sessions
 ```
 
 MIT · [source](https://github.com/usecanary/canary)

@@ -18,7 +18,7 @@ export async function initCommand(): Promise<number> {
       "",
       "✓ canary is ready.",
       "",
-      "  Open the session viewer:        npx @usecanary/ui",
+      "  Browse recorded sessions:        canary-viewer   (after: npm i -g @usecanary/ui)",
       "  Add the agent skills (any tool): npx skills add usecanary/canary",
       "  Claude Code plugin:              /plugin marketplace add usecanary/canary",
       "                                   /plugin install canary@canary-marketplace",
