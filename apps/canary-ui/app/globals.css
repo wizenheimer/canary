@@ -172,3 +172,23 @@ a {
     @apply font-sans;
   }
 }
+
+/*
+ * Video.js brand overrides. The base skin is imported by <VideoPlayer>; these
+ * rules load from the layout stylesheet, so !important keeps the lime accent
+ * regardless of stylesheet order.
+ */
+.video-js {
+  width: 100%;
+  font-family: var(--font-sans);
+}
+.video-js .vjs-play-progress,
+.video-js .vjs-volume-level {
+  background-color: var(--primary) !important;
+}
+.video-js .vjs-play-progress::before {
+  color: var(--primary) !important;
+}
+.video-js .vjs-slider-bar {
+  border-radius: var(--r-full);
+}

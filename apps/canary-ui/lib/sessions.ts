@@ -7,6 +7,7 @@ import {
   type SessionManifest,
   type SessionStatus,
 } from "./manifest";
+import { type NetworkRequest, parseNetwork } from "./network";
 import { loadOverlay, type Overlay } from "./overlay";
 import { type ConsoleEntry, parseConsole } from "./parse-console";
 import { type HarSummary, parseHar } from "./parse-har";
@@ -132,6 +133,7 @@ export interface SessionDetail {
   console: ConsoleEntry[];
   har: HarSummary;
   manifest: SessionManifest;
+  network: NetworkRequest[];
 }
 
 async function readArtifactText(
@@ -178,5 +180,6 @@ export async function getSessionDetail(
     console: parseConsole(consoleText),
     har: parseHar(harText),
     manifest,
+    network: parseNetwork(harText),
   };
 }
