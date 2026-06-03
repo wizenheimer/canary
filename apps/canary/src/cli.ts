@@ -9,6 +9,17 @@ const { Command, InvalidArgumentError } = commander as unknown as {
 };
 
 import { daemonStop } from "./commands/daemon-stop.js";
+import {
+  CLI_LONG_ABOUT,
+  INIT_LONG_ABOUT,
+  INSTALL_LONG_ABOUT,
+  RUN_LONG_ABOUT,
+  SESSION_END_LONG_ABOUT,
+  SESSION_START_LONG_ABOUT,
+  UI_LONG_ABOUT,
+  USAGE_GUIDE,
+} from "./commands/help-text.js";
+import { initCommand } from "./commands/init.js";
 import { installCommand } from "./commands/install.js";
 import { runInSession } from "./commands/run.js";
 import { sessionAbort } from "./commands/session-abort.js";
@@ -104,13 +115,12 @@ export function buildProgram(): CommandType {
   const program = new Command();
   program
     .name("canary")
-    .description(
-      "Session orchestrator for the canary browser engine — run capture-enabled QA sessions and render verification reports."
-    )
+    .description(CLI_LONG_ABOUT)
     .version(VERSION, "-V, --version", "Output the version number")
     .exitOverride()
     .showHelpAfterError(false)
-    .allowExcessArguments(false);
+    .allowExcessArguments(false)
+    .addHelpText("after", `\n${USAGE_GUIDE}`);
 
   program
     .option("-v, --verbose", "Enable verbose diagnostic logging on stderr")
@@ -123,6 +133,7 @@ export function buildProgram(): CommandType {
   session
     .command("start")
     .description("Start a session and begin recording artifacts")
+    .addHelpText("before", `${SESSION_START_LONG_ABOUT}\n`)
     .option("--name <NAME>", "Human-readable session name")
     .option("--headless", "Launch the session browser without a visible window")
     .option("--no-trace", "Disable Playwright trace capture")
@@ -147,6 +158,7 @@ export function buildProgram(): CommandType {
   session
     .command("end")
     .description("Stop recording, collect artifacts, and render the report")
+    .addHelpText("before", `${SESSION_END_LONG_ABOUT}\n`)
     .argument("<id>", "Session id")
     .option(
       "--stop-daemon",
@@ -185,6 +197,7 @@ export function buildProgram(): CommandType {
   program
     .command("run")
     .description("Run a script as a step inside a session")
+    .addHelpText("before", `${RUN_LONG_ABOUT}\n`)
     .argument("[FILE]", "Path to a JavaScript file (reads stdin if omitted)")
     .requiredOption("--session <id>", "Target session id")
     .option("--step <name>", "Step label (defaults to step-N)")
@@ -230,6 +243,7 @@ export function buildProgram(): CommandType {
     .description(
       "Launch the local web UI to browse, organize, and search recorded sessions"
     )
+    .addHelpText("before", `${UI_LONG_ABOUT}\n`)
     .option(
       "--dir <PATH>",
       "Source folder to open (default: ~/.canary/sessions)"
@@ -255,8 +269,18 @@ export function buildProgram(): CommandType {
   program
     .command("install")
     .description("Install the embedded daemon runtime (Playwright + sandbox)")
+    .addHelpText("before", `${INSTALL_LONG_ABOUT}\n`)
     .action(async () => {
       const code = await installCommand();
+      throw new ExitCodeError(code);
+    });
+
+  program
+    .command("init")
+    .description("Set up canary: install the runtime, then print next steps")
+    .addHelpText("before", `${INIT_LONG_ABOUT}\n`)
+    .action(async () => {
+      const code = await initCommand();
       throw new ExitCodeError(code);
     });
 

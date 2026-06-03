@@ -1,0 +1,51 @@
+{
+  "name": "create-canary",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Set up canary — browser automation + recorded QA sessions. Run `npm create canary`.",
+  "license": "MIT",
+  "keywords": [
+    "canary",
+    "create",
+    "installer",
+    "browser-automation",
+    "qa"
+  ],
+  "homepage": "https://github.com/usecanary/canary#readme",
+  "bugs": "https://github.com/usecanary/canary/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/usecanary/canary.git",
+    "directory": "apps/create-canary"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "create-canary": "./dist/cli.js"
+  },
+  "files": [
+    "dist/"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "dev": "tsx src/cli.tsx",
+    "compile": "tsc --noEmit",
+    "clean": "rm -rf dist .turbo",
+    "prepack": "node scripts/build.mjs"
+  },
+  "devDependencies": {
+    "@usecanary/config": "workspace:*",
+    "@inkjs/ui": "^2.0.0",
+    "@types/node": "^20.17.10",
+    "@types/react": "^18.3.12",
+    "esbuild": "^0.27.4",
+    "ink": "^5.0.1",
+    "react": "^18.3.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.8.0"
+  }
+}
