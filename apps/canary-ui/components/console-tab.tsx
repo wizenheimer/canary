@@ -86,7 +86,14 @@ export function ConsoleTab({ entries }: { entries: ConsoleEntry[] }) {
 
   return (
     <div className="overflow-hidden rounded-lg border border-border bg-card">
-      <div className="flex flex-wrap items-center gap-2 border-border border-b px-4 py-2.5">
+      <div className="flex flex-col gap-2.5 border-border border-b px-4 py-3">
+        <Input
+          className="h-8 w-full"
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Filter messages"
+          type="search"
+          value={query}
+        />
         <div className="flex flex-wrap gap-1">
           {LEVELS.map((l) => {
             const n = l.id === "all" ? rows.length : counts[l.id];
@@ -106,13 +113,6 @@ export function ConsoleTab({ entries }: { entries: ConsoleEntry[] }) {
             );
           })}
         </div>
-        <Input
-          className="ml-auto h-8 w-48"
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Filter messages"
-          type="search"
-          value={query}
-        />
       </div>
 
       {entries.length === 0 && (

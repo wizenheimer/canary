@@ -130,6 +130,28 @@
           "correctness": { "useImageSize": "off" }
         }
       }
+    },
+    {
+      // shadcn/ui sidebar primitive + its mobile hook are generated components.
+      // Unlike the other ui/* wrappers (which are type-only and so use
+      // `import type * as React`), the sidebar uses React hooks at runtime and
+      // needs a value namespace import; it also ships shadcn's intentional
+      // context-memo dependency list. Keep them faithful to upstream rather than
+      // hand-editing generated code.
+      "includes": [
+        "apps/canary-ui/components/ui/sidebar.tsx",
+        "apps/canary-ui/hooks/use-mobile.ts"
+      ],
+      "linter": {
+        "rules": {
+          "performance": { "noNamespaceImport": "off" },
+          "correctness": { "useExhaustiveDependencies": "off" },
+          "style": { "useConsistentTypeDefinitions": "off" },
+          // shadcn persists the open/closed state via a document.cookie write;
+          // the Cookie Store API the rule suggests isn't a drop-in here.
+          "suspicious": { "noDocumentCookie": "off" }
+        }
+      }
     }
   ]
 }
