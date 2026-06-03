@@ -41,6 +41,21 @@ export function fmtClock(iso: string): string {
   return new Date(ms).toLocaleString();
 }
 
+// HH:MM:SS.mmm time-of-day from an epoch-ms timestamp, for DevTools-style console
+// rows. Total: "" for missing/non-finite. Rendered client-side only (the console
+// list is "use client"), so no SSR/hydration timezone mismatch.
+export function fmtTimeOfDay(ms: number | undefined): string {
+  if (typeof ms !== "number" || !Number.isFinite(ms)) {
+    return "";
+  }
+  const d = new Date(ms);
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  const ss = String(d.getSeconds()).padStart(2, "0");
+  const mmm = String(d.getMilliseconds()).padStart(3, "0");
+  return `${hh}:${mm}:${ss}.${mmm}`;
+}
+
 // Compact "time ago" for cards. Rendered client-side only (after fetch), so no
 // SSR/hydration timezone mismatch.
 export function fmtRelative(iso: string): string {
