@@ -49,6 +49,7 @@ export const USAGE_GUIDE = `SESSION WORKFLOW GUIDE:
     - \`--json\` (global) emits machine-readable JSON on stdout; \`-v\`/\`--verbose\` raises stderr logging.
     - \`canary run --timeout 30\` fails a step fast instead of hanging on a missing element.
     - \`canary session end --stop-daemon\` shuts the daemon down if nothing else is using it.
+    - \`canary stop\` shuts the whole background daemon down (and every browser it's running).
     - Need a quick one-off with NO recording? Use \`canary-browser run\` instead of a session.`;
 
 // Per-command long help (shown before that command's own --help body).
@@ -76,6 +77,14 @@ Writes ~/.canary/sessions/<id>/report.html (self-contained) plus results.json. P
 shut the daemon down afterward if no other sessions or browsers remain.
 
   canary session end "$id"`;
+
+export const STOP_LONG_ABOUT = `Stop the background daemon and everything it is running (all browsers and sessions).
+
+This is the same graceful shutdown as \`canary daemon stop\`. Any still-active session is
+aborted — its artifacts are flushed, but its report.html is NOT regenerated. For a clean
+report, run \`canary session end <id>\` first, then \`canary stop\`.
+
+  canary stop`;
 
 export const UI_LONG_ABOUT = `Launch the local web UI to browse, organize, and search recorded sessions.
 
