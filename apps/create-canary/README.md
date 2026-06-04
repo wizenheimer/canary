@@ -7,9 +7,10 @@
 [![npm](https://img.shields.io/npm/v/create-canary.svg)](https://www.npmjs.com/package/create-canary)
 [![license](https://img.shields.io/npm/l/create-canary.svg)](https://github.com/usecanary/canary)
 
-One command to get Canary, its browser runtime, and the agent integration set up — no flags to
-remember. Every step just shells out to the same published commands you could run by hand, so there's
-no magic and nothing bespoke to uninstall.
+One command to get Canary and its browser runtime set up — no flags to remember. Every step just
+shells out to the same published commands you could run by hand, so there's no magic and nothing
+bespoke to uninstall. Agent integration (skills, Claude Code plugin) is deliberately left to you:
+after setup the wizard prints the exact commands to run.
 
 ## Use
 
@@ -24,14 +25,13 @@ You'll get a checklist (space toggles, enter confirms). Recommended items are pr
 | --- | --- | --- |
 | Install the `canary` command globally | ✓ | `npm i -g @usecanary/cli` |
 | Install the browser runtime (Chromium) | ✓ | `canary install` |
-| Install the agent skills (any tool) | ✓ | `npx skills add usecanary/canary` |
-| Install the Claude Code plugin (slash commands) | ✓ | `claude plugin marketplace add …` + `plugin install …` |
 | Also install `canary-browser` globally | — | `npm i -g @usecanary/browser` |
 | Also install the `canary-viewer` viewer globally | — | `npm i -g @usecanary/ui` |
 
 Installing the CLIs globally puts `canary`, `canary-browser`, and `canary-viewer` on your `PATH` so
-day-to-day use drops the `npx` prefix. If the Claude Code CLI isn't found, the wizard prints the
-in-app `/plugin …` commands to run instead.
+day-to-day use drops the `npx` prefix. The wizard never installs agent skills or plugins itself —
+once setup completes it prints the commands (`npx skills add usecanary/canary`, Claude Code
+`/plugin …`) so each agent's own mechanism does the work.
 
 ### Non-interactive
 
@@ -39,6 +39,15 @@ In a pipe or CI (no TTY), the wizard prints the exact commands to run instead of
 inspect before executing.
 
 ## After setup
+
+Add the agent integration yourself (one-time):
+
+```bash
+npx skills add usecanary/canary           # agent skills (any Agent Skills tool)
+# Claude Code: /plugin marketplace add usecanary/canary  then  /plugin install canary@canary-marketplace
+```
+
+Then record a session:
 
 ```bash
 canary session start --name "checkout"   # start a recorded session (prints an id)
