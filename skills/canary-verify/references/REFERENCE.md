@@ -25,9 +25,10 @@ plan you hand back. Group findings by *workflow*, never by file.
 
 ## Choosing stable selectors
 
-When a page's structure is unknown, a probe step can call `await page.snapshotForAI()` — an
-LLM-friendly DOM snapshot (see **canary-scripting**) — to pick stable roles/text before writing the
-assert step. Prefer role/text selectors over brittle CSS.
+When a page's structure is unknown, run an observe step first: `(await page.snapshotForAI()).full` —
+an LLM-friendly aria outline (see **canary-scripting**) — and pick selectors from what it shows.
+Prefer role/text selectors (`getByRole`, `getByText`) over brittle CSS; `aria-ref=eN` markers are
+same-script only and go stale across steps.
 
 ## Prioritization rubric
 
@@ -53,10 +54,11 @@ Affected workflows (most → least likely to regress):
 
 ### [P0] <workflow> — <one-line intent>
 - Entry: <url or route>   (dev server: <command / base url>)
-- Steps:
-  1. open   — goto <url>, wait for <stable selector>
-  2. act    — <click / fill / navigate …>
-  3. assert — expect <visible text | state | no console error | network 2xx>
+- Must hold (checks):
+  - <visible text | element present>
+  - <correct URL or redirect>
+  - <state: logged in / item in cart / no console error / network 2xx>
+- Likely phases (a guide, not a script): open → <act> → assert
 - At risk because: <the changed file(s)>
 
 ### [P1] <workflow> — …

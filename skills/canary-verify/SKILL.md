@@ -1,6 +1,6 @@
 ---
 name: canary-verify
-description: Turn a code change into a prioritized browser-QA plan with Canary — read the git diff, infer which user-facing workflows it touches, suggest the concrete flows and steps to verify them, then optionally record those flows as a session with a report.html. Use when the user has changed code and asks what to test, wants to QA a diff, branch, or PR, or wants a focused regression plan before merging. Trigger phrases — "what should I test for this change", "QA my diff", "verify this PR", "I changed X, what flows might break", "regression plan for this branch", "what should I QA before merging".
+description: Turn a code change into a prioritized browser-QA plan with Canary — read the git diff, infer which user-facing workflows it touches, suggest the concrete flows and the checks that must hold, then optionally record those flows as a session with a report.html. Use when the user has changed code and asks what to test, wants to QA a diff, branch, or PR, or wants a focused regression plan before merging. Trigger phrases — "what should I test for this change", "QA my diff", "verify this PR", "I changed X, what flows might break", "regression plan for this branch", "what should I QA before merging".
 license: MIT
 metadata:
   author: usecanary
@@ -49,10 +49,12 @@ the approved flows to **canary-session** for a report.
    route/page/flow, and group by **workflow** (sign-up, checkout, …), not by file. File→workflow
    heuristics are in [`references/REFERENCE.md`](references/REFERENCE.md).
 3. **Suggest a prioritized plan.** For each workflow: a one-line intent, a **P0/P1/P2** priority, the
-   entry URL, the ordered steps (open → act → assert) a session would run, and which changed files put
-   it at risk. Use the plan template in [`references/REFERENCE.md`](references/REFERENCE.md).
+   entry URL, the **checks that must hold** (visible text / URL / state / no console error), the likely
+   phases as a guide — not a pre-written script — and which changed files put it at risk. Use the plan
+   template in [`references/REFERENCE.md`](references/REFERENCE.md).
 4. **Confirm, then hand off.** Present the plan and ask which flows to record. For approved flows,
-   follow **canary-session** (one session, one step per phase) → `report.html`; offer **canary-review**
+   follow **canary-session**'s explore-and-record loop (one session per flow: observe the live page,
+   small intent-named steps, assertion steps for the checks) → `report.html`; offer **canary-review**
    to open it. Don't record flows the user didn't approve.
 
 ## Hard rules

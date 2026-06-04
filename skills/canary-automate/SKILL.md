@@ -36,9 +36,15 @@ User says: "is the pricing page up and what's the headline?" or "screenshot the 
 ## Workflow
 
 1. If the runtime isn't installed: `npx @usecanary/cli install` (one-time; downloads Chromium).
-2. Write a short async script with the canary-scripting API (`browser.getPage`, `page.goto`,
-   `locator`/`evaluate`, `console.log` the result).
+2. Write a short, focused script with the canary-scripting API (`browser.getPage`, `page.goto`,
+   `locator`/`evaluate`, `console.log` the result). Unknown page? Don't guess selectors blind —
+   snapshot first (`(await page.snapshotForAI()).full`), then act on what you see.
 3. Run it: `npx @usecanary/browser run ./script.js` (or pipe the script via stdin).
-4. Report the script's stdout. Degrade gracefully on a missing selector (log a `WARN`, don't crash).
-5. Cleanup (optional): the run leaves a shared background daemon up for reuse. To shut it (and any
+4. If the result is empty or a selector missed, **observe and retry**: run a second short script that
+   logs `page.url()`, `page.title()`, and `(await page.snapshotForAI()).full` (or a targeted
+   `locator(...).count()`), pick a better selector, re-run. Named pages persist between runs, so
+   state carries over.
+5. Report the script's stdout. On optional extractions, degrade gracefully (log a `WARN`, don't
+   crash) — but don't paper over a miss you can fix by observing.
+6. Cleanup (optional): the run leaves a shared background daemon up for reuse. To shut it (and any
    browser) down, run `npx @usecanary/browser stop` (alias of `canary stop` / `canary daemon stop`).

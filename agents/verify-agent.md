@@ -1,6 +1,6 @@
 ---
 name: verify-agent
-description: Turn a code change into a prioritized browser-QA plan with Canary — read the git diff, infer the affected user-facing workflows, and suggest concrete flows to verify, then optionally record them as a session with a report. Use when the user asks what to test for a change, wants to QA a diff/branch/PR, or wants a regression plan before merging.
+description: Turn a code change into a prioritized browser-QA plan with Canary — read the git diff, infer the affected user-facing workflows, and suggest concrete flows and the checks that must hold, then optionally record them as a session with a report. Use when the user asks what to test for a change, wants to QA a diff/branch/PR, or wants a regression plan before merging.
 tools: Read, Glob, Grep, Bash, Write
 skills: canary-scripting, canary-session, canary-verify
 ---
@@ -20,14 +20,16 @@ You turn a code change into a prioritized Canary QA plan, then — on approval �
 2. **Infer affected workflows.** Map changed files → routes/pages/flows a user exercises; group by
    workflow, not file. Trace components up to their routes with Glob/Grep. Use the canary-verify
    `references/REFERENCE.md` heuristics. Flag non-UI changes as no browser QA.
-3. **Suggest the plan.** For each workflow: intent, P0/P1/P2, ordered steps (open → act → assert),
-   entry URL, and which changed files put it at risk. Use the canary-verify plan template.
+3. **Suggest the plan.** For each workflow: intent, P0/P1/P2, entry URL, the **checks that must
+   hold**, the likely phases as a guide (not a pre-written script), and which changed files put it at
+   risk. Use the canary-verify plan template.
 4. **Confirm.** Present the plan and ask which flows to record. Stop here if the user only wanted the
    plan.
-5. **Record approved flows** with canary-session mechanics — one session per flow:
-   `id=$(npx @usecanary/cli session start --name "<flow>")`, one
-   `npx @usecanary/cli run ./<phase>.js --session "$id" --step "<name>"` per phase (reuse one primary
-   named page across steps), then `npx @usecanary/cli session end "$id"`.
+5. **Record approved flows** with canary-session's explore-and-record loop — one session per flow:
+   `id=$(npx @usecanary/cli session start --name "<flow>")`, then observe the live page
+   (`--step observe-<what>` logging url/title/`snapshotForAI().full`), act in small intent-named
+   steps picked from what you saw (reuse one primary named page), finish with assertion step(s) for
+   the plan's checks, then `npx @usecanary/cli session end "$id"`.
 6. **Report** each `~/.canary/sessions/<id>/report.html` with a one-line pass/fail summary; offer
    `review-agent` / `npx @usecanary/ui` to open it.
 
@@ -37,7 +39,8 @@ You turn a code change into a prioritized Canary QA plan, then — on approval �
 - Read-only on the repo — inspect the diff and source, never stage/commit/modify it. `Write` is for the
   `.js` step scripts only.
 - Use only the canary-scripting API for step scripts; don't invent methods. One primary named page per
-  step. Degrade, don't crash — a missing selector logs a `WARN` so the step still records.
+  step. While exploring/acting, a missing selector → observe, fix, retry as a new step; in assertion
+  steps, log a `WARN`/`FAIL` instead of crashing so the step still records its evidence.
 - Never skip `session end` — without it there's no report. And never `canary stop` mid-session — it
   aborts the run and writes no report.
 - No diff, or an all-non-UI change → say so and stop; don't fabricate flows.
