@@ -7,6 +7,10 @@
 // when the engine CLI is not installed.
 import {
   buildScriptingGuide,
+  indent,
+  RULE_DATA_PASSING,
+  RULE_FAIL_FAST,
+  RULE_SCREENSHOT,
   sandboxReference,
   sessionExample,
 } from "@usecanary/cli-kit";
@@ -37,19 +41,18 @@ reference follows; the SCRIPTING GUIDE after the command list has worked example
 
 ${sandboxReference()}`;
 
-// Shown after the options in `canary --help`.
+// Shown after the options in `canary --help`. The screenshot rule, data
+// passing, and step discipline come from the shared doc snippets so this help
+// cannot drift from the skills/REFERENCE.md versions of the same rules.
 export const USAGE_GUIDE = `SESSION WORKFLOW GUIDE:
   Structure a session as a sequence of small steps — one script per step (open, act, assert).
   Each \`canary run --step <name>\` is one step in the report, with its own trace group and ONE
-  auto-captured screenshot (taken from the LAST page opened during that step). So:
-    - Use ONE primary named page per step.
-    - Reuse the same page name across steps to "click through" like a user — named pages persist
-      across steps within a session.
-    - If a step opens extra tabs, open the one you want featured in the report LAST.
+  auto-captured screenshot.
+
+${indent(RULE_SCREENSHOT, "  ")}
 
   Passing data between steps:
-    - Browser state (named pages, cookies) persists across steps automatically.
-    - For values: writeFile("state.json", JSON.stringify(x)) in one step, readFile it in the next.
+${indent(RULE_DATA_PASSING, "    ")}
 
   Reading results:
     canary session list                       List sessions (table; --json for machine output)
@@ -57,11 +60,12 @@ export const USAGE_GUIDE = `SESSION WORKFLOW GUIDE:
     open ~/.canary/sessions/<id>/report.html  The self-contained report
     canary ui                                 Browse, search, and organize all sessions
 
+  Step discipline:
+${indent(RULE_FAIL_FAST, "    ")}
+
   Tips:
     - \`--json\` (global) emits machine-readable JSON on stdout; \`-v\`/\`--verbose\` raises stderr logging.
-    - \`canary run --timeout 30\` fails a step fast instead of hanging on a missing element.
     - \`canary session end --stop-daemon\` shuts the daemon down if nothing else is using it.
-    - \`canary stop\` shuts the whole background daemon down (and every browser it's running).
     - Need a quick one-off with NO recording? Use \`canary-browser run\` instead of a session.
 
 ${buildScriptingGuide({

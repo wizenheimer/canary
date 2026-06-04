@@ -24,7 +24,7 @@ CLI     := @usecanary/cli
 .PHONY: help install hooks outdated clean reset \
         dev dev-browser dev-daemon dev-ui dev-cli \
         build build-browser build-daemon build-ui build-cli \
-        typecheck lint format doctor \
+        typecheck lint format doctor docs docs-check \
         test test-browser test-daemon test-ui test-cli \
         watch-browser watch-daemon watch-ui watch-cli \
         check ci ui release
@@ -98,6 +98,12 @@ format: ## Auto-fix lint + formatting with ultracite (biome)
 
 doctor: ## Verify the ultracite/biome setup is healthy
 	$(EXEC) ultracite doctor
+
+docs: ## Re-stitch docs/snippets/ into skills, README, and cli-kit
+	node scripts/stitch-docs.mjs --write
+
+docs-check: ## Verify stitched docs are in sync with docs/snippets/ (CI)
+	node scripts/stitch-docs.mjs --check
 
 ##@ Test
 

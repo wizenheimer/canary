@@ -36,13 +36,36 @@ into a few intent-named steps.
 
 ## Hard rules
 
-- Look before you act on an unknown UI — pick selectors from a snapshot, never guess blind.
-- Name steps by intent (`observe-cart`, `submit-login-form`); end every script by logging the state
-  you need for the next decision.
-- One primary named page per step (correct per-step screenshots).
+<!-- canary:snippet rule-observe-first -->
+- Unknown page? Snapshot first, then act: read `(await page.snapshotForAI()).full` to see what
+  is there, pick a semantic selector from it (`getByRole`, `getByText`), then interact. Never
+  guess selectors blind.
+- Known page or selectors? Skip the snapshot and use direct selectors — faster and more reliable.
+<!-- canary:end rule-observe-first -->
+
+<!-- canary:snippet rule-screenshot cli=npx-cli -->
+After each `npx @usecanary/cli run --step`, the daemon auto-captures ONE screenshot of the step's
+last-opened tab and binds it to that step in the report. So:
+
+- Keep one primary named page per step — the report screenshot is always the page you mean.
+- If a step opens several tabs, open the one you want featured last.
+- `saveScreenshot(...)` images land in `~/.canary/tmp/` and are NOT in the report — they're
+  extras for debugging.
+<!-- canary:end rule-screenshot -->
+
+<!-- canary:snippet rule-fail-fast cli=npx-cli -->
+- End each script by logging the state you need for the next decision — stdout is your
+  observation channel.
+- Use short timeouts (`npx @usecanary/cli run --timeout 10`) so a step fails fast instead of hanging on a
+  missing element.
+- In assertion / extraction steps, degrade gracefully — log a `WARN` / `FAIL` line instead of
+  crashing, so the step still records its evidence. While exploring, a missed selector means
+  look again (snapshot, fix, retry as a new step), not a silent fallback.
+- End before you stop: `npx @usecanary/cli stop` shuts the daemon down and aborts any live session,
+  skipping its report.html — always `npx @usecanary/cli session end <id>` first.
+<!-- canary:end rule-fail-fast -->
+
+- Name steps by intent (`observe-cart`, `submit-login-form`).
 - Use only the canary-scripting API; don't invent methods.
-- Failures: exploring/acting → observe, fix, retry as a new step; assertion steps → log a
-  `WARN`/`FAIL` line instead of crashing so the step still records its evidence.
-- Never skip `session end` — without it there is no report.
-- Never `canary stop` / `daemon stop` while a session is live — it aborts the run and writes no report.
-  End first; `session abort <id>` is the salvage path for a wedged run.
+- Never skip `session end` — without it there is no report; `session abort <id>` is the salvage
+  path for a wedged run.

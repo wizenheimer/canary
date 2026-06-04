@@ -70,16 +70,36 @@ One session, small steps that reproduce it, `session end` — the report bundles
 
 ## Hard rules
 
-- **Look before you act on an unknown UI** — snapshot first, pick selectors from what you saw,
-  never guess selectors blind.
+<!-- canary:snippet rule-observe-first -->
+- Unknown page? Snapshot first, then act: read `(await page.snapshotForAI()).full` to see what
+  is there, pick a semantic selector from it (`getByRole`, `getByText`), then interact. Never
+  guess selectors blind.
+- Known page or selectors? Skip the snapshot and use direct selectors — faster and more reliable.
+<!-- canary:end rule-observe-first -->
+
+<!-- canary:snippet rule-screenshot cli=npx-cli -->
+After each `npx @usecanary/cli run --step`, the daemon auto-captures ONE screenshot of the step's
+last-opened tab and binds it to that step in the report. So:
+
+- Keep one primary named page per step — the report screenshot is always the page you mean.
+- If a step opens several tabs, open the one you want featured last.
+- `saveScreenshot(...)` images land in `~/.canary/tmp/` and are NOT in the report — they're
+  extras for debugging.
+<!-- canary:end rule-screenshot -->
+
+<!-- canary:snippet rule-fail-fast cli=npx-cli -->
+- End each script by logging the state you need for the next decision — stdout is your
+  observation channel.
+- Use short timeouts (`npx @usecanary/cli run --timeout 10`) so a step fails fast instead of hanging on a
+  missing element.
+- In assertion / extraction steps, degrade gracefully — log a `WARN` / `FAIL` line instead of
+  crashing, so the step still records its evidence. While exploring, a missed selector means
+  look again (snapshot, fix, retry as a new step), not a silent fallback.
+- End before you stop: `npx @usecanary/cli stop` shuts the daemon down and aborts any live session,
+  skipping its report.html — always `npx @usecanary/cli session end <id>` first.
+<!-- canary:end rule-fail-fast -->
+
 - **Name every step by intent** (`observe-cart`, `submit-login-form`), not mechanics (`step-3`) —
   the report timeline should read as a QA narrative.
-- **One primary named page per step** — keeps each step's report screenshot correct (see canary-scripting).
-- End each script by logging the state you need for the next decision — stdout is your observation
-  channel.
 - Don't invent API shapes; use the canary-scripting reference.
-- Failures: while exploring/acting, a missing selector → observe, fix, retry as a new step (don't
-  paper over a real miss). In assertion steps, log a `WARN`/`FAIL` line instead of crashing so the
-  step still records its evidence.
-- **`end` before `stop`.** `canary stop` aborts any live session and skips its `report.html` — always
-  `session end <id>` first. Use `session abort <id>` only to salvage a broken run.
+- Use `session abort <id>` only to salvage a broken run.

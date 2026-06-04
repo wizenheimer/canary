@@ -198,38 +198,82 @@ it shuts down every browser and session it's running. You can also pass `--stop-
 
 ## Scripting
 
-Scripts are plain async JavaScript run in a **QuickJS WASM sandbox** — not Node. There's no `require`,
-`process`, `fs`, or `fetch`; just a pre-connected `browser`, `console`, and a few file helpers.
-Top-level `await` works.
+Scripts are plain async JavaScript with top-level `await`.
 
+<!-- canary:snippet api-sandbox-env -->
+Scripts execute inside a QuickJS WASM sandbox with no arbitrary access to the host system.
+This is NOT Node.js — there is no module system and no Node API:
+
+- `require()` / `import()` — no module loading; inline any helpers in the script
+- `process`, `fs` / `path` / `os` — no process or direct filesystem access (use the file helpers)
+- `fetch` / `WebSocket` — no direct network access (the page does the networking)
+- `__dirname` / `__filename` — no path globals
+
+Memory and CPU limits are enforced, and both CPU time and wall-clock time are bounded — infinite
+loops or never-settling promises abort the script. Values crossing `evaluate` / `$eval` must be
+JSON-serializable.
+<!-- canary:end api-sandbox-env -->
+
+<!-- canary:snippet ex-quickstart fenced=js -->
 ```js
-const page = await browser.getPage("home");          // named, persistent page
+const page = await browser.getPage("main");          // named, persistent page
 await page.goto("https://example.com", { waitUntil: "domcontentloaded" });
 console.log(await page.title());
 
-await saveScreenshot(await page.screenshot(), "home.png");   // saved under ~/.canary/tmp/
+const headings = await page.evaluate(() =>
+  [...document.querySelectorAll("h1, h2")].map((h) => h.textContent.trim())
+);
+console.log(JSON.stringify(headings));
+
+await page.locator("a.more").click();
+const buf = await page.screenshot({ fullPage: false });
+await saveScreenshot(buf, "page.png");               // saveScreenshot(buffer, name)
 ```
+<!-- canary:end ex-quickstart -->
 
 **Browser**
 
-- `browser.getPage(name)` — get a named page (creates it if new), or attach to an existing tab by id
-- `browser.newPage()` — an anonymous page, cleaned up when the script exits
-- `browser.listPages()` — list every tab: `[{ id, url, title, name }]`
-- `browser.closePage(name)` — close and forget a named page
+<!-- canary:snippet api-browser -->
+- `browser.getPage(nameOrId)` — get-or-create a named page, or attach to an existing tab by the
+  `id` from `listPages()`. Named pages persist across steps in a session — call with the same
+  name to reuse the tab.
+- `browser.newPage()` — an anonymous page, auto-closed when the script ends; does not persist.
+- `browser.listPages()` — list every open tab: `[{ id, url, title, name }]` (`name` is `null`
+  for tabs you never named).
+- `browser.closePage(name)` — close and forget a named page.
+<!-- canary:end api-browser -->
 
-**Files** — sandboxed to `~/.canary/tmp/`, all async:
+**Files**
 
-- `saveScreenshot(buffer, name)` — persist a screenshot buffer; returns the path
-- `writeFile(name, data)` / `readFile(name)` — pass values between steps
+<!-- canary:snippet api-file-helpers -->
+All file I/O is async (await it), sandboxed to `~/.canary/tmp/` (no filesystem escape), and
+returns the full path to the file:
+
+- `saveScreenshot(buffer, name)` — persist a screenshot buffer; buffer first:
+  `const path = await saveScreenshot(await page.screenshot(), "home.png");`
+- `writeFile(name, data)` — write a small file (e.g. JSON state):
+  `await writeFile("results.json", JSON.stringify(data));`
+- `readFile(name)` — read it back (returns the contents as a string):
+  `const data = JSON.parse(await readFile("results.json"));`
+<!-- canary:end api-file-helpers -->
 
 **Output**
 
-- `console.log` / `info` → stdout · `console.warn` / `error` → stderr
+<!-- canary:snippet api-console -->
+- `console.log` / `console.info` write to stdout; `console.warn` / `console.error` write to
+  stderr. Top-level `console.log` is your script's output channel.
+- `console.log` inside `page.evaluate(() => …)` runs in the page and is captured into the
+  session's console artifact instead.
+<!-- canary:end api-console -->
 
-Pages are full Playwright `Page` objects — `goto`, `click`, `fill`, `locator`, `evaluate`,
-`getByRole`, `waitForSelector`, and the rest. See the
-[Playwright Page API](https://playwright.dev/docs/api/class-page). For element discovery,
-`await page.snapshotForAI()` returns an LLM-friendly snapshot of the page.
+<!-- canary:snippet api-playwright-note -->
+Pages returned by `browser.getPage()` and `browser.newPage()` are full Playwright Page objects —
+the same API (`goto`, `click`, `fill`, `locator`, `evaluate`, `getByRole`, `waitForSelector`, …):
+https://playwright.dev/docs/api/class-page
+<!-- canary:end api-playwright-note -->
+
+For element discovery, `await page.snapshotForAI()` returns an LLM-friendly outline of the page —
+the `canary-scripting` skill and its `references/REFERENCE.md` carry the full API.
 
 ## Updating
 
@@ -242,8 +286,28 @@ canary install                                        # refresh the runtime (Chr
 
 `canary install` is safe to re-run — it pulls the browser/runtime versions the new CLI pins. Running
 via npx instead of a global install? `npx @usecanary/cli@latest …` always fetches the newest release.
-Update the agent integration through your agent's plugin manager, and re-run
-`npx skills add usecanary/canary` to refresh the skills.
+
+**Agent integrations** update through each agent's own mechanism:
+
+```bash
+# Claude Code — refresh the marketplace catalog, then update from /plugin:
+/plugin marketplace update canary-marketplace
+# or turn on auto-update: /plugin → Marketplaces → canary-marketplace → Enable auto-update
+# (third-party marketplaces ship with auto-update OFF)
+
+# Agent Skills CLI (skills.sh) — updates any skill whose upstream content changed:
+npx skills check      # what's stale?
+npx skills update     # pull the updates
+
+# Cursor / Codex — update "canary" from each marketplace UI.
+
+# Manual copies — re-copy: cp -r skills/* ~/.claude/skills/
+```
+
+Claude Code detects plugin updates by comparing manifest **versions** (bumped every release); the
+skills CLI detects them by **content hash** (a tree SHA per skill folder in its `skills-lock.json`
+— commit that file for project-scoped installs), so any merged change to `skills/` is immediately
+update-visible.
 
 ## Contributing & development
 

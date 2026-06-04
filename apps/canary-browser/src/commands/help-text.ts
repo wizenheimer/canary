@@ -46,8 +46,10 @@ ${SCRIPT_API}
 
 ${PLAYWRIGHT_PAGE_NOTE}`;
 
-// Trailing \n preserved from the retired llm-guide.txt so `--help` output is
-// byte-identical to the pre-refactor CLI.
+// Trailing \n preserved from the retired llm-guide.txt. The guide's content
+// now comes from docs/snippets/ (shared with the skills and README), so the
+// output is no longer byte-identical to the pre-refactor CLI — the documented
+// API facts are, deliberately, the stitched ones.
 export const CLI_AFTER_LONG_HELP = `${buildScriptingGuide({
   browserExtras: true,
   example: browserExample,

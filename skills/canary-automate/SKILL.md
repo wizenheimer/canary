@@ -37,8 +37,8 @@ User says: "is the pricing page up and what's the headline?" or "screenshot the 
 
 1. If the runtime isn't installed: `npx @usecanary/cli install` (one-time; downloads Chromium).
 2. Write a short, focused script with the canary-scripting API (`browser.getPage`, `page.goto`,
-   `locator`/`evaluate`, `console.log` the result). Unknown page? Don't guess selectors blind —
-   snapshot first (`(await page.snapshotForAI()).full`), then act on what you see.
+   `locator`/`evaluate`, `console.log` the result), observing first on unknown pages (see *Hard
+   rules*).
 3. Run it: `npx @usecanary/browser run ./script.js` (or pipe the script via stdin).
 4. If the result is empty or a selector missed, **observe and retry**: run a second short script that
    logs `page.url()`, `page.title()`, and `(await page.snapshotForAI()).full` (or a targeted
@@ -48,3 +48,12 @@ User says: "is the pricing page up and what's the headline?" or "screenshot the 
    crash) — but don't paper over a miss you can fix by observing.
 6. Cleanup (optional): the run leaves a shared background daemon up for reuse. To shut it (and any
    browser) down, run `npx @usecanary/browser stop` (alias of `canary stop` / `canary daemon stop`).
+
+## Hard rules
+
+<!-- canary:snippet rule-observe-first -->
+- Unknown page? Snapshot first, then act: read `(await page.snapshotForAI()).full` to see what
+  is there, pick a semantic selector from it (`getByRole`, `getByText`), then interact. Never
+  guess selectors blind.
+- Known page or selectors? Skip the snapshot and use direct selectors — faster and more reliable.
+<!-- canary:end rule-observe-first -->
