@@ -4,7 +4,7 @@ description: Open and triage recorded Canary sessions in the local viewer. Use w
 license: MIT
 metadata:
   author: usecanary
-  version: 0.4.0
+  version: 0.4.1
   category: workflow
   tags:
     - canary

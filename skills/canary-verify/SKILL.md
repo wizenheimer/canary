@@ -4,7 +4,7 @@ description: Turn a code change into a prioritized browser-QA plan with Canary â
 license: MIT
 metadata:
   author: usecanary
-  version: 0.4.0
+  version: 0.4.1
   category: workflow
   tags:
     - canary

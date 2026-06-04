@@ -9,10 +9,10 @@
       "name": "canary",
       "source": "./",
       "description": "Browser automation + recorded QA sessions for Claude Code: skills, JTBD subagents, and /canary:verify | run | session | review commands.",
-      "version": "0.4.0",
+      "version": "0.4.1",
       "category": "developer-tools",
       "tags": ["canary", "browser-automation", "qa", "skills"]
     }
   ],
-  "version": "0.4.0"
+  "version": "0.4.1"
 }
