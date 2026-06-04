@@ -40,6 +40,18 @@ canary run … --session …   /   canary-browser run …   →   daemon RPC   �
 2. `@usecanary/daemon` builds → emits `dist/daemon.bundle.mjs` + `dist/sandbox-client.js`
 3. `@usecanary/browser` + `@usecanary/cli` embed their assets (the daemon bundle via `@usecanary/daemon-client`), then bundle with esbuild; `@usecanary/ui` builds an Astro node standalone — a self-contained `dist/server/entry.mjs` + `dist/client/` (`vite.ssr.noExternal` bundles every server dep, so the published package ships no runtime `node_modules`)
 
+## Shared docs (skills + CLI help + README)
+
+LLM-facing doc content that appears on more than one surface — the sandbox/scripting API and the
+workflow rules — is single-sourced in `docs/snippets/` and stitched by `scripts/stitch-docs.mjs`:
+
+- Edit the snippet, then run `make docs` (`--write`). CI fails on drift via `pnpm check` (`--check`).
+- Never hand-edit `packages/cli-kit/src/snippets.generated.ts` or the content between
+  `<!-- canary:snippet … -->` markers in `skills/`, `agents/`, or `README.md`.
+- `skills/` is the skill pack consumed verbatim by Claude Code (`.claude-plugin/`), Cursor
+  (`.cursor-plugin/`), Codex (`plugins/canary/`, whose `skills` is a symlink here), and
+  `npx skills add` — keep SKILL.md frontmatter (`name`, `description`) intact and marker-free.
+
 ## Code style & logging
 
 - **Linting/formatting:** [Ultracite](https://docs.ultracite.ai/) over Biome — config in `biome.jsonc` (extends `ultracite/biome/core`). `pnpm lint` checks; `pnpm format` autofixes; the pre-commit hook runs `ultracite fix` on staged files. Don't reintroduce ESLint/Prettier.

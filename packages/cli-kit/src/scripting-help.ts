@@ -1,64 +1,50 @@
 // Shared scripting-help prose for the `canary` and `canary-browser` CLIs.
-// Single source of truth: both CLIs compose their `--help` output from these
-// blocks, so the sandbox rules, script API, and LLM usage guidance cannot
-// drift between them. The reference blocks are verbatim-identical in both
-// CLIs; the example-bearing guide is parameterized only by how each CLI is
-// invoked (a heredoc to `canary-browser` vs `canary run --session … --step …`).
+// The factual content (sandbox rules, script API, workflow rules, shared
+// example bodies) is single-sourced from docs/snippets/ via the generated
+// ./snippets.generated.ts module (`make docs` re-stitches it), so it cannot
+// drift between the CLIs' --help, the agent skills, and the README. This file
+// is the presentation layer: headings, indentation, and the example-bearing
+// guide parameterized only by how each CLI is invoked (a heredoc to
+// `canary-browser` vs `canary run --session … --step …`).
+import {
+  API_BROWSER,
+  API_CONSOLE,
+  API_FILE_HELPERS,
+  API_GLOBALS,
+  API_PLAYWRIGHT_METHODS,
+  API_PLAYWRIGHT_NOTE,
+  API_SANDBOX_ENV,
+  API_SNAPSHOT,
+  EX_INSPECT_TABS,
+  EX_SNAPSHOT,
+  RULE_DEV_SERVER,
+  RULE_OBSERVE_FIRST,
+} from "./snippets.generated.js";
+
+// Prefix every non-empty line — used to nest shared blocks under headings.
+export const indent = (text: string, prefix: string): string =>
+  text
+    .split("\n")
+    .map((line) => (line.length > 0 ? prefix + line : line))
+    .join("\n");
 
 // The QuickJS sandbox rules: what is NOT available (not Node.js) and which
 // globals every script gets.
 export const SANDBOX_ENVIRONMENT = `SANDBOX ENVIRONMENT:
-  Scripts execute inside a QuickJS WASM sandbox with no arbitrary access to the host system.
-  This is NOT Node.js — the following are NOT available:
-    - require() / import()     No module loading
-    - process                  No process access
-    - fs / path / os           No direct filesystem access
-    - fetch / WebSocket        No direct network access
-    - __dirname / __filename   No path globals
+${indent(API_SANDBOX_ENV, "  ")}
 
-  Available globals:
-    browser                    Pre-connected browser handle (see API below)
-    console                    log, warn, error, info (routed to CLI output)
-    setTimeout / clearTimeout  Basic timers
-    saveScreenshot(buf, name)  Save a screenshot buffer (async, must be awaited)
-    writeFile(name, data)      Write a file to temp dir (async, must be awaited)
-    readFile(name)             Read a file from temp dir (async, must be awaited)
+${indent(API_GLOBALS, "  ")}`;
 
-  Memory and CPU limits are enforced. Infinite loops will be interrupted.`;
-
-// The `browser.*` handle plus the file-IO helpers, with signatures and examples.
+// The `browser.*` handle plus the file-IO helpers and console semantics.
 export const SCRIPT_API = `Script API available inside every script:
-  browser.getPage(nameOrId) Get a page by name (creates if new) or connect to an existing
-                            tab by its targetId from listPages().
-  browser.newPage()       Create an anonymous page. Anonymous pages are cleaned up after the script exits.
-  browser.listPages()       List all tabs: named pages and existing browser tabs.
-                            Returns [{id, url, title, name}].
-  browser.closePage(name) Close and remove a named page.
-  await saveScreenshot(buf: Buffer, name: string): Promise<string>
-                          Save a screenshot buffer to ~/.canary/tmp/<name>.
-                          Returns the full path to the saved file.
-                          Example: const path = await saveScreenshot(await page.screenshot(), "home.png");
+${indent(API_BROWSER, "  ")}
 
-  await writeFile(name: string, data: string): Promise<string>
-                          Write data to ~/.canary/tmp/<name>.
-                          Returns the full path to the written file.
-                          Example: const path = await writeFile("results.json", JSON.stringify(data));
+${indent(API_FILE_HELPERS, "  ")}
 
-  await readFile(name: string): Promise<string>
-                          Read a file from ~/.canary/tmp/<name>.
-                          Returns the file content as a string.
-                          Example: const data = JSON.parse(await readFile("results.json"));
-
-  console.log/info(...)   Write output to stdout.
-  console.warn/error(...) Write output to stderr.
-
-  All file I/O functions are async and must be awaited.
-  All paths are restricted to ~/.canary/tmp/ — no filesystem escape.`;
+${indent(API_CONSOLE, "  ")}`;
 
 // Pages are full Playwright Page objects — pointer to the upstream API docs.
-export const PLAYWRIGHT_PAGE_NOTE = `Pages returned by \`browser.getPage()\` and \`browser.newPage()\` are full Playwright
-Page objects — you get the same API (goto, click, fill, locator, evaluate, etc.):
-  https://playwright.dev/docs/api/class-page`;
+export const PLAYWRIGHT_PAGE_NOTE = API_PLAYWRIGHT_NOTE;
 
 // The full hard reference: sandbox rules + script API + Playwright pointer.
 // Rendered identically wherever a CLI needs the complete scripting contract.
@@ -108,31 +94,13 @@ export interface ScriptingGuideOptions {
   heading: string;
 }
 
-const indent = (text: string, prefix: string): string =>
-  text
-    .split("\n")
-    .map((line) => (line.length > 0 ? prefix + line : line))
-    .join("\n");
-
-// Script bodies shared by every CLI's examples — pure sandbox JavaScript.
-const INSPECT_TABS_BODY = `const tabs = await browser.listPages();
-console.log(JSON.stringify(tabs, null, 2));`;
-
+// CLI-only example bodies — no markdown twin, so they live here rather than in
+// docs/snippets/examples/. Pure sandbox JavaScript.
 const INSPECT_PAGE_BODY = `const page = await browser.getPage("TARGET_ID_HERE");
 console.log(JSON.stringify({
   url: page.url(),
   title: await page.title(),
 }, null, 2));`;
-
-const SNAPSHOT_BODY = `const page = await browser.getPage("main");
-const result = await page.snapshotForAI();
-console.log(result.full);
-// Returns { full: string, incremental?: string }.
-// Optional args: { track?: string, depth?: number, timeout?: number }.
-// Read result.full to identify the right element.
-// Then interact with it using Playwright:
-// await page.getByRole("button", { name: "Continue" }).click();
-// Re-run page.snapshotForAI({ track: "main" }) after the page changes.`;
 
 const SCREENSHOT_BODY = `const page = await browser.getPage("main");
 const buf = await page.screenshot();
@@ -199,7 +167,7 @@ export function buildScriptingGuide(options: ScriptingGuideOptions): string {
   const quickInspection = [
     "  Quick inspection:",
     indent(
-      example(INSPECT_TABS_BODY, { step: "inspect", connect: true }),
+      example(EX_INSPECT_TABS, { step: "inspect", connect: true }),
       "    "
     ),
     "",
@@ -211,13 +179,14 @@ export function buildScriptingGuide(options: ScriptingGuideOptions): string {
 
   const aiSnapshots = [
     "  AI snapshots for element discovery:",
-    indent(example(SNAPSHOT_BODY, { step: "discover" }), "    "),
+    indent(example(EX_SNAPSHOT, { step: "discover" }), "    "),
+    "",
+    indent(API_SNAPSHOT, "    "),
   ].join("\n");
 
   const choosingApproach = [
     "  Choosing your approach:",
-    "    Unknown pages: use page.snapshotForAI() first to discover the page, then interact based on what you find.",
-    "    Known pages/selectors: skip the snapshot and use direct Playwright selectors like page.click(), page.fill(), or page.locator() for faster, more reliable automation.",
+    indent(RULE_OBSERVE_FIRST, "    "),
   ].join("\n");
 
   const screenshots = [
@@ -232,10 +201,7 @@ export function buildScriptingGuide(options: ScriptingGuideOptions): string {
 
   const devServer = [
     "  Dev server navigation:",
-    "    For local dev servers (Next.js, Vite, etc.), prefer:",
-    '      await page.goto(url, { waitUntil: "domcontentloaded" });',
-    '    The default "load" wait can hang on HMR, streaming, or other long-lived dev-server connections.',
-    '    Use "load" only when you specifically need every subresource to finish loading.',
+    indent(RULE_DEV_SERVER, "    "),
   ].join("\n");
 
   const errorRecovery = [
@@ -245,27 +211,10 @@ export function buildScriptingGuide(options: ScriptingGuideOptions): string {
     indent(example(ERROR_RECOVERY_BODY, { step: "recover" }), "    "),
   ].join("\n");
 
-  const playwrightMethods = `  Common Playwright Page methods:
-    page.goto(url, { waitUntil: "domcontentloaded" })
-                                           Navigate to a URL; prefer this on dev servers
-    page.title()                           Get the current page title
-    page.url()                             Get the current URL
-    page.snapshotForAI(options)            Get an AI-optimized snapshot; returns { full, incremental? }
-                                           Options: { track?: string, depth?: number, timeout?: number }
-    page.getByRole(role, { name })         Target elements discovered from the snapshot
-    page.textContent(selector)             Get the text content of an element
-    page.innerHTML(selector)               Get the inner HTML of an element
-    page.fill(selector, value)             Fill an input field
-    page.click(selector)                   Click an element
-    page.type(selector, text)              Type text character by character
-    page.press(selector, key)              Press a key such as Enter or Tab
-    page.waitForSelector(selector)         Wait for an element to appear
-    page.waitForURL(url)                   Wait for navigation to a URL
-    page.screenshot()                      Capture a screenshot buffer; save it with saveScreenshot(...)
-    page.$$eval(selector, fn)              Run a function on all matching elements
-    page.$eval(selector, fn)               Run a function on the first matching element
-    page.evaluate(fn)                      Run JavaScript in the page context (plain JS only)
-    page.locator(selector)                 Create a locator for chained actions`;
+  const playwrightMethods = [
+    "  Common Playwright Page methods:",
+    indent(API_PLAYWRIGHT_METHODS, "    "),
+  ].join("\n");
 
   const tips = [
     "  Tips:",

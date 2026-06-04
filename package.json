@@ -18,7 +18,9 @@
     "compile": "turbo run compile",
     "typecheck": "turbo run compile",
     "format": "ultracite fix",
-    "check": "ultracite check && turbo run compile test",
+    "docs": "node scripts/stitch-docs.mjs --write",
+    "docs:check": "node scripts/stitch-docs.mjs --check",
+    "check": "node scripts/stitch-docs.mjs --check && ultracite check && turbo run compile test",
     "clean": "turbo run clean && rm -rf node_modules/.cache .turbo",
     "prepare": "husky"
   },

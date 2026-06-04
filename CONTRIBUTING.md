@@ -31,3 +31,4 @@ pnpm --filter @usecanary/cli     dev   # canary in watch mode
 - All new code is TypeScript with `strict: true` and no `any`.
 - Tests are vitest; colocated for daemon, in `test/` for cli + canary.
 - Ultracite (Biome) formats and lints everything; the pre-commit hook runs `ultracite fix` on staged files (`pnpm lint` / `pnpm format` to run manually).
+- Shared doc content (scripting API, workflow rules) lives in `docs/snippets/` — edit there and run `make docs`; don't hand-edit the stitched regions in `skills/`/`README.md` or `packages/cli-kit/src/snippets.generated.ts` (`make check` fails on drift).

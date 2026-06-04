@@ -47,7 +47,7 @@ publishes to npm.
 The manual equivalent, if you'd rather run the steps yourself:
 
 ```bash
-node scripts/sync-version.mjs 0.2.0   # one version across every package.json + .claude-plugin/*
+node scripts/sync-version.mjs 0.2.0   # one version across every package.json + plugin manifests + skill frontmatter
 pnpm install                          # refresh the lockfile
 git commit -am "chore(release): v0.2.0"  # NB: "release:" alone fails commitlint — use a conventional type
 git tag v0.2.0
@@ -57,6 +57,27 @@ git push origin main --follow-tags
 Pushing the tag triggers `.github/workflows/release.yml`, which verifies the tag matches the
 workspace version, runs `pnpm build` (topo-ordered), and `pnpm -r publish --access public --provenance`.
 `pnpm -r publish` automatically skips private packages and rewrites `workspace:*` to the concrete version.
+
+## How updates reach agents
+
+npm publishes the CLIs, but the agent plugin packs are served straight from this repo — a release
+(or in one case, a plain merge) is what makes them update-visible. `scripts/sync-version.mjs`
+stamps the same version into every manifest that update detection reads:
+
+- **Claude Code** compares `.claude-plugin/marketplace.json` `plugins[].version` against the
+  installed plugin — **no version bump, no visible update**. Users pull it with
+  `/plugin marketplace update canary-marketplace` (or per-marketplace auto-update, which is OFF by
+  default for third-party marketplaces).
+- **Agent Skills (`npx skills …`)** is content-hash based: the lockfile stores a tree SHA per skill
+  folder, so any change merged to `skills/` on the default branch is immediately visible to
+  `npx skills check` / `npx skills update` — no release needed. (SKILL.md `metadata.version` is
+  informational only; it's synced for honesty, not detection.)
+- **Cursor / Codex** read `.cursor-plugin/plugin.json` and `plugins/canary/.codex-plugin/plugin.json`
+  versions — both synced by the release flow.
+
+Shared doc content (scripting API, workflow rules) lives in `docs/snippets/` and is stitched into
+the skills, README, and both CLIs' `--help` by `make docs` — edit snippets, restitch, commit;
+`make check` fails on drift. See `docs/snippets/README.md`.
 
 ## Verifying a build locally (no publish)
 

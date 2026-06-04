@@ -15,6 +15,7 @@ export {
   buildScriptingGuide,
   type ExampleOptions,
   type ExampleWrapper,
+  indent,
   PLAYWRIGHT_PAGE_NOTE,
   SANDBOX_ENVIRONMENT,
   SCRIPT_API,
@@ -22,6 +23,9 @@ export {
   sandboxReference,
   sessionExample,
 } from "./scripting-help.js";
+// Raw shared doc snippets (stitched from docs/snippets/ by `make docs`) for
+// help text that nests them under its own headings.
+export * from "./snippets.generated.js";
 
 // `${prefix}-${unix_millis}-${pid}` — correlates a daemon request/response pair.
 export function requestId(prefix: string): string {
