@@ -40,7 +40,7 @@ jobs:
           fi
 
       # turbo ^build orders the graph: source libs -> daemon bundle ->
-      # CLI bundles that embed it -> the @usecanary/ui Next standalone.
+      # CLI bundles that embed it -> the @usecanary/ui Astro node standalone.
       - run: pnpm build
 
       # pnpm -r publish skips private packages and rewrites workspace:* to the

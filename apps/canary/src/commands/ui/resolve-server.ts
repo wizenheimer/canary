@@ -4,11 +4,11 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 // How `canary ui` should launch the @usecanary/ui web app:
-//  - standalone: a built Next standalone `server.js` (fast path)
-//  - dev: fall back to `next dev` from the workspace when no build exists
+//  - standalone: the built Astro node server `dist/server/entry.mjs` (fast path)
+//  - dev: fall back to `astro dev` from the workspace when no build exists
 export type ResolvedUiServer =
-  | { kind: "standalone"; serverJs: string }
-  | { kind: "dev"; nextBin: string; workspaceDir: string };
+  | { kind: "standalone"; serverEntry: string }
+  | { kind: "dev"; astroBin: string; workspaceDir: string };
 
 async function isFile(p: string): Promise<boolean> {
   try {
@@ -39,7 +39,7 @@ export async function resolveUiServer(): Promise<ResolvedUiServer | null> {
   // Explicit override (e.g. a shipped standalone build).
   const override = process.env.CANARY_UI_SERVER;
   if (override && (await isFile(override))) {
-    return { kind: "standalone", serverJs: override };
+    return { kind: "standalone", serverEntry: override };
   }
 
   const workspaceDir = findWorkspaceUiDir();
@@ -47,21 +47,22 @@ export async function resolveUiServer(): Promise<ResolvedUiServer | null> {
     return null;
   }
 
-  const serverJs = path.join(
-    workspaceDir,
-    ".next",
-    "standalone",
-    "apps",
-    "canary-ui",
-    "server.js"
-  );
-  if (await isFile(serverJs)) {
-    return { kind: "standalone", serverJs };
+  const serverEntry = path.join(workspaceDir, "dist", "server", "entry.mjs");
+  if (await isFile(serverEntry)) {
+    return { kind: "standalone", serverEntry };
   }
 
-  const nextBin = path.join(workspaceDir, "node_modules", ".bin", "next");
-  if (await isFile(nextBin)) {
-    return { kind: "dev", nextBin, workspaceDir };
+  // astro's real JS entry (not the .bin shim, which is a shell script that
+  // `node <path>` can't execute).
+  const astroBin = path.join(
+    workspaceDir,
+    "node_modules",
+    "astro",
+    "bin",
+    "astro.mjs"
+  );
+  if (await isFile(astroBin)) {
+    return { kind: "dev", astroBin, workspaceDir };
   }
 
   return null;

@@ -9,7 +9,7 @@ the rest stay private (bundled or embedded into the public ones).
 | ---------------- | ------------------ | ---------------- | -------------------------------------------------- |
 | `@usecanary/cli`    | public             | `canary`         | Self-contained esbuild bundle (deps inlined)       |
 | `@usecanary/browser`| public             | `canary-browser` | Self-contained bundle; embeds the daemon           |
-| `@usecanary/ui`     | public             | —                | Next standalone; installed on demand into `~/.canary/ui` |
+| `@usecanary/ui`     | public             | —                | Astro node standalone — self-contained `dist/` (no runtime deps) |
 | `create-canary`  | public (unscoped)  | `create-canary`  | `npm create canary` setup wizard                   |
 | `@usecanary/daemon` | **private**        | —                | Embedded as a string into the CLI bundles          |
 | `@usecanary/protocol`, `@usecanary/logger`, `@usecanary/cli-kit`, `@usecanary/daemon-client`, `@usecanary/config` | **private** | — | Bundled into the CLIs by esbuild |

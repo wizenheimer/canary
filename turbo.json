@@ -9,8 +9,7 @@
         "assets/viewer-bundle.css",
         "assets/recorder-adapter.bundle.js",
         "src/assets/embedded.generated.ts",
-        ".next/**",
-        "!.next/cache/**"
+        ".astro/**"
       ]
     },
     "dev": {

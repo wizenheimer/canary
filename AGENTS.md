@@ -24,7 +24,7 @@ canary run … --session …   /   canary-browser run …   →   daemon RPC   �
 | `apps/canary`            | Session orchestrator CLI (`canary`) — records QA sessions, renders reports. The primary CLI.    |
 | `apps/canary-browser`    | Browser-automation engine CLI (`canary-browser`) — owns the daemon lifecycle, embeds the daemon |
 | `apps/canary-daemon`     | Internal Playwright host + QuickJS sandbox. Built standalone, embedded into the CLIs            |
-| `apps/canary-ui`         | Local web viewer (Next.js). Reads `results.json`; run via `canary ui` or `npx @usecanary/ui`       |
+| `apps/canary-ui`         | Local web viewer (Astro + React islands). Reads `results.json`; run via `canary ui` or `npx @usecanary/ui` |
 | `apps/create-canary`     | `npm create canary` setup wizard (Ink)                                                          |
 | `packages/protocol`      | Zod IPC schemas. Single source of truth — daemon validates, CLIs infer types                    |
 | `packages/config`        | Shared tsconfig bases (`base`, `node-app`)                                                       |
@@ -38,7 +38,7 @@ canary run … --session …   /   canary-browser run …   →   daemon RPC   �
 
 1. `@usecanary/protocol` + `@usecanary/config` + `@usecanary/logger` (no build, source-distributed)
 2. `@usecanary/daemon` builds → emits `dist/daemon.bundle.mjs` + `dist/sandbox-client.js`
-3. `@usecanary/browser` + `@usecanary/cli` embed their assets (the daemon bundle via `@usecanary/daemon-client`), then bundle with esbuild; `@usecanary/ui` builds a Next standalone
+3. `@usecanary/browser` + `@usecanary/cli` embed their assets (the daemon bundle via `@usecanary/daemon-client`), then bundle with esbuild; `@usecanary/ui` builds an Astro node standalone — a self-contained `dist/server/entry.mjs` + `dist/client/` (`vite.ssr.noExternal` bundles every server dep, so the published package ships no runtime `node_modules`)
 
 ## Code style & logging
 
@@ -64,7 +64,8 @@ pnpm --filter @usecanary/browser test
 
 ## Viewing sessions
 
-`canary ui` launches a local Next.js web app (`apps/canary-ui`, `@usecanary/ui`) that reads each
+`canary ui` launches a local Astro web app (`apps/canary-ui`, `@usecanary/ui` — the Library and
+SessionView screens are client-only React islands) that reads each
 session's `results.json`, lists every recorded session, and renders it in the same tabbed,
 "High-Contrast Precision" layout as the self-contained HTML report. You can organize sessions
 into **virtual folders**, tag/note/search them, and delete-to-trash. It reads `~/.canary/sessions`
@@ -72,10 +73,11 @@ by default; `canary ui --dir <path>` (or adding roots in the UI) points it elsew
 
 - Organization lives in a per-root `.canary-ui.json` sidecar — **sessions stay flat on disk**;
   deletes move the dir to `<root>/.trash/` (restorable).
-- The command resolves the built standalone server and spawns it in the foreground (Ctrl-C
-  stops it); with no build present it falls back to `next dev`. Build once for fast startup:
-  `pnpm --filter @usecanary/ui build`. (Next can't be folded into the esbuild/SEA bundle, so the
-  command always spawns a separate `node` server — `CANARY_UI_SERVER` overrides its location.)
+- The command resolves the built server (`dist/server/entry.mjs`) and spawns it in the foreground
+  (Ctrl-C stops it); with no build present it falls back to `astro dev`. Build once for fast
+  startup: `pnpm --filter @usecanary/ui build`. (The viewer stays a separate `node` server rather
+  than folding into the esbuild/SEA CLI bundle — `CANARY_UI_SERVER` overrides its location. The
+  server reads `HOST`/`PORT`/`CANARY_UI_ROOT` from the environment.)
 
 ## Provenance
 

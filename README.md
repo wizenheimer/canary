@@ -258,7 +258,7 @@ canary/
 │   ├── canary/             # @usecanary/cli      bin: canary          — session orchestrator (record QA sessions, render reports)
 │   ├── canary-browser/     # @usecanary/browser  bin: canary-browser  — browser-automation engine (one-off runs)
 │   ├── canary-daemon/      # @usecanary/daemon   no bin               — Playwright + QuickJS runtime (embedded into the CLIs)
-│   ├── canary-ui/          # @usecanary/ui       bin: canary-viewer   — local session viewer (Next.js); `canary-viewer`
+│   ├── canary-ui/          # @usecanary/ui       bin: canary-viewer   — local session viewer (Astro); `canary-viewer`
 │   └── create-canary/      # create-canary    bin: create-canary   — `npm create canary` setup wizard (Ink)
 ├── packages/
 │   ├── protocol/           # @usecanary/protocol         IPC schemas (Zod), single source of truth

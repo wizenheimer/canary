@@ -1,0 +1,21 @@
+---
+import SessionViewIsland from "../../../components/session-view-island";
+import Layout from "../../../layouts/layout.astro";
+
+const { root, id } = Astro.params;
+if (!(root && id)) {
+  return Astro.redirect("/");
+}
+
+// Mirror Next's generateMetadata: the segment may arrive percent-encoded.
+let title = id;
+try {
+  title = decodeURIComponent(id);
+} catch {
+  // keep the raw segment
+}
+---
+
+<Layout title={title}>
+  <SessionViewIsland client:only="react" id={id} rootId={root} />
+</Layout>

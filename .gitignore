@@ -1,7 +1,7 @@
 node_modules/
 .turbo/
 dist/
-.next/
+.astro/
 coverage/
 *.log
 *.tsbuildinfo

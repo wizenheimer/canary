@@ -9,7 +9,7 @@ import { resolveUiServer } from "./ui/resolve-server.js";
 
 const log = logger.child({ component: "ui" });
 
-// Next dev cold-start can exceed the daemon's 5s; give the server room.
+// Astro dev cold-start can exceed the daemon's 5s; give the server room.
 const READY_DEADLINE_MS = 20_000;
 const POLL_INTERVAL_MS = 150;
 
@@ -88,9 +88,10 @@ export async function uiCommand(args: UiArgs): Promise<number> {
 
   let child: ChildProcess;
   if (resolved.kind === "standalone") {
-    child = spawn(process.execPath, [resolved.serverJs], {
-      cwd: path.dirname(resolved.serverJs),
-      env: { ...baseEnv, HOSTNAME: host, PORT: String(port) },
+    child = spawn(process.execPath, [resolved.serverEntry], {
+      cwd: path.dirname(resolved.serverEntry),
+      // Astro's node adapter reads HOST (the old Next server read HOSTNAME).
+      env: { ...baseEnv, HOST: host, PORT: String(port) },
       stdio: ["ignore", "inherit", "inherit"],
     });
   } else {
@@ -99,7 +100,7 @@ export async function uiCommand(args: UiArgs): Promise<number> {
     );
     child = spawn(
       process.execPath,
-      [resolved.nextBin, "dev", "-p", String(port), "-H", host],
+      [resolved.astroBin, "dev", "--port", String(port), "--host", host],
       {
         cwd: resolved.workspaceDir,
         env: baseEnv,

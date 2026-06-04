@@ -14,7 +14,7 @@ import {
   setNote,
   setTags,
   withOverlay,
-} from "../lib/overlay";
+} from "../src/lib/overlay";
 
 const empty = (): Overlay => ({
   assignments: {},

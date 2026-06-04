@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseManifest } from "../lib/manifest";
+import { parseManifest } from "../src/lib/manifest";
 
 const good = JSON.stringify({
   artifacts: {},
