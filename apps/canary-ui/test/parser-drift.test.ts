@@ -15,8 +15,8 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const appsDir = path.resolve(here, "..", "..");
 
 const PAIRS: [string, string][] = [
-  ["canary-ui/lib/parse-har.ts", "canary/src/report/parse-har.ts"],
-  ["canary-ui/lib/parse-console.ts", "canary/src/report/parse-console.ts"],
+  ["canary-ui/src/lib/parse-har.ts", "canary/src/report/parse-har.ts"],
+  ["canary-ui/src/lib/parse-console.ts", "canary/src/report/parse-console.ts"],
 ];
 
 // Strip comments and collapse whitespace so only executable logic is compared.

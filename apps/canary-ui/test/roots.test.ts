@@ -8,7 +8,7 @@ import {
   loadRoots,
   removeRoot,
   rootIdFor,
-} from "../lib/roots";
+} from "../src/lib/roots";
 
 describe("rootIdFor", () => {
   it("is stable, path-normalized, and distinct per path", () => {

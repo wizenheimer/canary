@@ -1,0 +1,36 @@
+---
+// The app shell — replaces Next's app/layout.tsx (metadata + viewport + the
+// nuqs adapter, which now lives inside each React island instead).
+import "../styles/global.css";
+
+interface Props {
+  title?: string;
+}
+
+const { title } = Astro.props;
+const fullTitle = title ? `${title} · Canary` : "Canary";
+const description =
+  "Local web viewer for canary sessions — browse, organize, and search recorded sessions.";
+---
+
+<!doctype html>
+<html class="font-sans" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1" name="viewport" />
+    <title>{fullTitle}</title>
+    <meta content={description} name="description" />
+    <meta content="Canary" name="application-name" />
+    <meta content="yes" name="apple-mobile-web-app-capable" />
+    <meta content="default" name="apple-mobile-web-app-status-bar-style" />
+    <meta content="Canary" name="apple-mobile-web-app-title" />
+    <meta content="light" name="color-scheme" />
+    <meta content="#f9f9f9" name="theme-color" />
+    <link href="/icon.svg" rel="icon" type="image/svg+xml" />
+    <link href="/apple-icon.png" rel="apple-touch-icon" />
+    <link href="/manifest.webmanifest" rel="manifest" />
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

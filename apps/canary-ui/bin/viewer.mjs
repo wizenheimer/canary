@@ -6,8 +6,8 @@
 //   npx @usecanary/ui --dir ./artifacts  # browse a specific folder
 //   npx @usecanary/ui --no-open          # don't auto-open a browser
 //
-// It spawns the bundled Next standalone server, waits for it, and opens a
-// browser — like `npx playwright show-trace`. Self-contained: no daemon, no
+// It spawns the bundled Astro node-standalone server, waits for it, and opens
+// a browser — like `npx playwright show-trace`. Self-contained: no daemon, no
 // global install, no setup.
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
@@ -80,21 +80,14 @@ function openBrowser(url) {
 }
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-// The published package nests the standalone tree under the workspace path:
-//   <pkg>/.next/standalone/apps/canary-ui/server.js
-const serverJs = path.join(
-  here,
-  "..",
-  ".next",
-  "standalone",
-  "apps",
-  "canary-ui",
-  "server.js"
-);
+// The published package ships the Astro node-standalone server:
+//   <pkg>/dist/server/entry.mjs  (serves <pkg>/dist/client/ itself)
+const packageRoot = path.join(here, "..");
+const serverEntry = path.join(packageRoot, "dist", "server", "entry.mjs");
 
-if (!existsSync(serverJs)) {
+if (!existsSync(serverEntry)) {
   process.stderr.write(
-    "canary viewer: bundled server not found — this @usecanary/ui install looks incomplete.\n"
+    "canary viewer: bundled server (dist/server/entry.mjs) not found — this @usecanary/ui install looks incomplete.\n"
   );
   process.exit(1);
 }
@@ -107,11 +100,12 @@ const portArg = arg("--port");
 const port = portArg ? Number(portArg) : await findFreePort(host);
 const url = `http://${host}:${port}`;
 
-const child = spawn(process.execPath, [serverJs], {
-  cwd: path.dirname(serverJs),
+const child = spawn(process.execPath, [serverEntry], {
+  cwd: packageRoot,
   env: {
     ...process.env,
-    HOSTNAME: host,
+    // Astro's node adapter reads HOST (Next read HOSTNAME).
+    HOST: host,
     PORT: String(port),
     CANARY_UI_ROOT: root,
   },

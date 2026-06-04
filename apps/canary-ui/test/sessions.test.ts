@@ -7,7 +7,7 @@ import {
   listSessions,
   listTrash,
   sessionDirFor,
-} from "../lib/sessions";
+} from "../src/lib/sessions";
 
 function manifestJson(
   id: string,

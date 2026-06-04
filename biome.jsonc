@@ -112,10 +112,24 @@
       }
     },
     {
-      // Next.js viewer app. Its route handlers/server code may log diagnostics
-      // to the terminal that spawned `canary ui` (no shared CLI stdout/stderr
-      // contract like the other apps), and App-Router route handlers are
-      // conventionally `async` even when a given body doesn't await.
+      // Astro .astro components: Biome parses only the frontmatter script, so
+      // imports/consts used in the template read as unused — keep the rules
+      // from stripping them (the upstream-recommended Astro setup).
+      "includes": ["**/*.astro"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noUnusedImports": "off",
+            "noUnusedVariables": "off"
+          }
+        }
+      }
+    },
+    {
+      // Astro viewer app. Its endpoints/server code may log diagnostics to the
+      // terminal that spawned `canary ui` (no shared CLI stdout/stderr contract
+      // like the other apps), and endpoint handlers are conventionally `async`
+      // even when a given body doesn't await.
       "includes": ["apps/canary-ui/**"],
       "linter": {
         "rules": {
@@ -142,8 +156,8 @@
       // context-memo dependency list. Keep them faithful to upstream rather than
       // hand-editing generated code.
       "includes": [
-        "apps/canary-ui/components/ui/sidebar.tsx",
-        "apps/canary-ui/hooks/use-mobile.ts"
+        "apps/canary-ui/src/components/ui/sidebar.tsx",
+        "apps/canary-ui/src/hooks/use-mobile.ts"
       ],
       "linter": {
         "rules": {

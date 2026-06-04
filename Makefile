@@ -62,7 +62,7 @@ dev-browser: ## Run the canary-browser CLI from source (tsx)
 dev-daemon: ## Run the daemon from source (tsx)
 	$(TURBO) run dev --filter=$(DAEMON)
 
-dev-ui: ## Run the session viewer in dev mode (next dev)
+dev-ui: ## Run the session viewer in dev mode (astro dev)
 	$(TURBO) run dev --filter=$(UI)
 
 dev-cli: ## Run the canary session orchestrator from source (tsx)
@@ -79,7 +79,7 @@ build-browser: ## Build canary-browser (builds + embeds the daemon first)
 build-daemon: ## Build the daemon bundle + sandbox client
 	$(TURBO) run build --filter=$(DAEMON)
 
-build-ui: ## Build the session viewer (next build, standalone)
+build-ui: ## Build the session viewer (astro build, self-contained node standalone)
 	$(TURBO) run build --filter=$(UI)
 
 build-cli: ## Build the canary session orchestrator
