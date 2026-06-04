@@ -108,7 +108,8 @@ await saveScreenshot(await page.screenshot(), "signed-in.png");   // saveScreens
 - **Files** (sandboxed to `~/.canary/tmp/`) — `saveScreenshot(buffer, name)`, `writeFile(name, data)`,
   `readFile(name)` to pass values between steps.
 
-The engine documents the same API — run `canary-browser --help`, or read the
+The full reference is built into this CLI — run `canary --help` or `canary run --help`
+(the engine's `canary-browser --help` documents the same API), or read the
 [canary-scripting reference](https://github.com/usecanary/canary/blob/main/skills/canary-scripting/references/REFERENCE.md).
 
 ## Artifacts

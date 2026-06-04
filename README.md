@@ -151,8 +151,9 @@ it up. Install the plugin below.
 ## Use it with your coding agent
 
 Canary is built for agents — and it explains itself to them. Install it, then **tell your agent to run
-`canary --help` and `canary-browser --help`**: the output is a complete usage guide — sandbox API,
-worked examples, a Playwright cheat sheet — written for an LLM to read. No plugin required.
+`canary --help`** (or `canary-browser --help` for one-offs): each output is a complete, self-contained
+usage guide — sandbox API, worked examples, a Playwright cheat sheet — written for an LLM to read.
+No plugin required.
 
 For deeper integration (slash commands, subagents, and skills), install the plugin pack. Canary ships
 as a Claude Code plugin, a Cursor plugin, a Codex plugin, and a generic

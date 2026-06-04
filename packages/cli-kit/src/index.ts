@@ -8,6 +8,21 @@ import {
 } from "@usecanary/logger";
 import pretty from "pino-pretty";
 
+// Shared `--help` prose (sandbox rules, script API, LLM usage guide) composed
+// into both CLIs' help output — single source of truth, no drift.
+export {
+  browserExample,
+  buildScriptingGuide,
+  type ExampleOptions,
+  type ExampleWrapper,
+  PLAYWRIGHT_PAGE_NOTE,
+  SANDBOX_ENVIRONMENT,
+  SCRIPT_API,
+  type ScriptingGuideOptions,
+  sandboxReference,
+  sessionExample,
+} from "./scripting-help.js";
+
 // `${prefix}-${unix_millis}-${pid}` — correlates a daemon request/response pair.
 export function requestId(prefix: string): string {
   return `${prefix}-${Date.now()}-${process.pid}`;

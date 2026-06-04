@@ -32,13 +32,12 @@
     "access": "public"
   },
   "scripts": {
-    "prebuild": "node scripts/embed-assets.mjs",
-    "build": "pnpm prebuild && node scripts/build.mjs",
-    "dev": "pnpm prebuild && tsx src/cli.ts",
-    "compile": "pnpm prebuild && tsc --noEmit",
+    "build": "node scripts/build.mjs",
+    "dev": "tsx src/cli.ts",
+    "compile": "tsc --noEmit",
     "test": "pnpm build && vitest run",
     "test:watch": "pnpm build && vitest",
-    "clean": "rm -rf dist coverage .turbo src/assets/embedded.generated.ts",
+    "clean": "rm -rf dist coverage .turbo",
     "prepack": "pnpm build"
   },
   "devDependencies": {

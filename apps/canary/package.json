@@ -37,8 +37,8 @@
     "build": "node scripts/build.mjs",
     "dev": "tsx src/cli.ts",
     "compile": "tsc --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "test": "pnpm build && vitest run",
+    "test:watch": "pnpm build && vitest",
     "clean": "rm -rf dist coverage .turbo",
     "prepack": "node scripts/build.mjs"
   },

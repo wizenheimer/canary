@@ -68,6 +68,7 @@
       // snapshots stay stable. The rule targets app module graphs, not these.
       "includes": [
         "packages/daemon-client/src/index.ts",
+        "packages/cli-kit/src/index.ts",
         "apps/canary/src/commands/render.ts",
         "apps/canary/src/util/request-id.ts",
         "apps/canary-browser/src/commands/render.ts",
