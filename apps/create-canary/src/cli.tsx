@@ -1,4 +1,4 @@
-import { execSync, spawn } from "node:child_process";
+import { spawn } from "node:child_process";
 import { MultiSelect } from "@inkjs/ui";
 import { Box, render, Text } from "ink";
 
@@ -11,26 +11,15 @@ interface Step {
   defaultSelected?: boolean;
   id: string;
   label: string;
-  manualHint?: string;
-}
-
-function claudeAvailable(): boolean {
-  try {
-    execSync(
-      process.platform === "win32" ? "where claude" : "command -v claude",
-      { stdio: "ignore" }
-    );
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 // The setup steps, each just shelling out to the same published commands you can
 // run by hand. The global installs (`cli-global` etc.) put `canary`,
 // `canary-browser`, and `canary-viewer` on PATH so day-to-day use drops the npx.
+// Agent integration (skills / Claude Code plugin) is intentionally not a step:
+// the wizard prints those commands after setup so each agent's own mechanism
+// does the work.
 function buildSteps(): Step[] {
-  const hasClaude = claudeAvailable();
   return [
     {
       id: "cli-global",
@@ -55,35 +44,6 @@ function buildSteps(): Step[] {
       label: "Also install the session viewer `canary-viewer` globally",
       commands: [{ file: "npm", args: ["i", "-g", "@usecanary/ui"] }],
       defaultSelected: false,
-    },
-    {
-      id: "skills",
-      label: "Install the agent skills (any tool — ~/.claude/skills, etc.)",
-      commands: [
-        { file: "npx", args: ["-y", "skills", "add", "usecanary/canary"] },
-      ],
-      defaultSelected: true,
-    },
-    {
-      id: "plugin",
-      label: hasClaude
-        ? "Install the Claude Code plugin (slash commands)"
-        : "Claude Code plugin (manual — Claude CLI not found)",
-      commands: hasClaude
-        ? [
-            {
-              file: "claude",
-              args: ["plugin", "marketplace", "add", "usecanary/canary"],
-            },
-            {
-              file: "claude",
-              args: ["plugin", "install", "canary@canary-marketplace"],
-            },
-          ]
-        : [],
-      manualHint:
-        "/plugin marketplace add usecanary/canary   then   /plugin install canary@canary-marketplace",
-      defaultSelected: true,
     },
   ];
 }
@@ -162,12 +122,6 @@ async function runSelected(steps: Step[], selected: string[]): Promise<void> {
       step.id === "runtime" && cliGlobal
         ? [{ file: "canary", args: ["install"] }]
         : step.commands;
-    if (commands.length === 0) {
-      if (step.manualHint) {
-        process.stdout.write(`  ${step.manualHint}\n`);
-      }
-      continue;
-    }
     let ok = true;
     for (const cmd of commands) {
       const code = await runInherit(cmd);
@@ -191,6 +145,11 @@ async function runSelected(steps: Step[], selected: string[]): Promise<void> {
       "  Record a session:  canary session start --name checkout",
       `  Open the viewer:   ${viewer}`,
       "  Demos:             see examples/ in the repo",
+      "",
+      "Add the agent integration yourself (one-time):",
+      "  Agent skills (any tool):  npx skills add usecanary/canary",
+      "  Claude Code plugin:       /plugin marketplace add usecanary/canary",
+      "                            /plugin install canary@canary-marketplace",
       "",
       "",
     ].join("\n")
