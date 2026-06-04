@@ -6,7 +6,7 @@
   "description": "Local web viewer for canary sessions — reads results.json, lists/organizes/searches recorded sessions, styled after the self-contained report.",
   "license": "MIT",
   "engines": {
-    "node": ">=20"
+    "node": ">=22.12.0"
   },
   "keywords": [
     "canary",
