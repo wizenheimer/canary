@@ -4,6 +4,8 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+packageExtensionsChecksum: 304a9c5eba9830dde17e8442da671dc5
+
 importers:
 
   .:
@@ -237,7 +239,7 @@ importers:
     devDependencies:
       '@inkjs/ui':
         specifier: ^2.0.0
-        version: 2.0.0(ink@5.2.1(@types/react@18.3.30)(react@18.3.1))
+        version: 2.0.0(ink@5.2.1(@types/react@18.3.30)(react@18.3.1))(react@18.3.1)
       '@types/node':
         specifier: ^20.17.10
         version: 20.19.41
@@ -954,6 +956,7 @@ packages:
     engines: {node: '>=18'}
     peerDependencies:
       ink: '>=5'
+      react: '*'
 
   '@inquirer/ansi@1.0.2':
     resolution: {integrity: sha512-S8qNSZiYzFd0wAcyG5AXCvUHC5Sr7xpZ9wZ2py9XR88jUz8wooStVx5M6dRzczbBWjic9NP7+rY0Xi7qqK/aMQ==}
@@ -5066,13 +5069,14 @@ snapshots:
   '@img/sharp-win32-x64@0.34.5':
     optional: true
 
-  '@inkjs/ui@2.0.0(ink@5.2.1(@types/react@18.3.30)(react@18.3.1))':
+  '@inkjs/ui@2.0.0(ink@5.2.1(@types/react@18.3.30)(react@18.3.1))(react@18.3.1)':
     dependencies:
       chalk: 5.6.2
       cli-spinners: 3.4.0
       deepmerge: 4.3.1
       figures: 6.1.0
       ink: 5.2.1(@types/react@18.3.30)(react@18.3.1)
+      react: 18.3.1
 
   '@inquirer/ansi@1.0.2': {}
 

@@ -35,5 +35,14 @@
     "*.{js,jsx,ts,tsx,json,jsonc,css}": [
       "ultracite fix"
     ]
+  },
+  "pnpm": {
+    "packageExtensions": {
+      "@inkjs/ui": {
+        "peerDependencies": {
+          "react": "*"
+        }
+      }
+    }
   }
 }
