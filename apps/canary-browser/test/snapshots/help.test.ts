@@ -20,6 +20,13 @@ describe("--help content", () => {
     expect(out.stdout).toContain("SANDBOX ENVIRONMENT:");
     expect(out.stdout).toContain("Primary invocation styles:");
     expect(out.stdout).toContain("LLM USAGE GUIDE:");
+    // Lock in the content composed from @usecanary/cli-kit's shared
+    // scripting-help module: the script API, the browser-only connect section,
+    // and a Playwright-methods row. Guards against shared-module edits
+    // silently dropping engine help content.
+    expect(out.stdout).toContain("browser.getPage(nameOrId)");
+    expect(out.stdout).toContain("Connecting to a running Chrome instance:");
+    expect(out.stdout).toContain("page.snapshotForAI(options)");
     for (const sub of ["run", "install", "browsers", "status", "stop"]) {
       expect(out.stdout).toContain(sub);
     }

@@ -1,6 +1,15 @@
 // Help prose for the `canary` orchestrator, shown via commander's
 // `.addHelpText()` / `.description()`. Mirrors the canary-browser engine's
 // rich `--help` (a long-about + an after-help usage guide + per-command detail).
+// The sandbox rules, script API, and scripting guide come from
+// @usecanary/cli-kit — the single source of truth shared with canary-browser —
+// so `canary --help` is fully self-contained for writing step scripts even
+// when the engine CLI is not installed.
+import {
+  buildScriptingGuide,
+  sandboxReference,
+  sessionExample,
+} from "@usecanary/cli-kit";
 
 // Shown at the top of `canary --help`.
 export const CLI_LONG_ABOUT = `Canary records capture-enabled QA sessions. It drives a real browser with
@@ -23,7 +32,10 @@ WHAT IS CAPTURED (per session; toggle on \`session start\`):
   screenshots  one per step, auto-captured from the step's last-opened page
 
 Artifacts live under ~/.canary/sessions/<id>/ (session.json, results.json, report.html, trace.zip, …).
-Scripts use the same sandboxed API as the engine — see \`canary-browser --help\` for the full reference.`;
+Scripts run in a QuickJS sandbox (not Node.js) with a pre-connected \`browser\` global — the full
+reference follows; the SCRIPTING GUIDE after the command list has worked examples.
+
+${sandboxReference()}`;
 
 // Shown after the options in `canary --help`.
 export const USAGE_GUIDE = `SESSION WORKFLOW GUIDE:
@@ -50,7 +62,12 @@ export const USAGE_GUIDE = `SESSION WORKFLOW GUIDE:
     - \`canary run --timeout 30\` fails a step fast instead of hanging on a missing element.
     - \`canary session end --stop-daemon\` shuts the daemon down if nothing else is using it.
     - \`canary stop\` shuts the whole background daemon down (and every browser it's running).
-    - Need a quick one-off with NO recording? Use \`canary-browser run\` instead of a session.`;
+    - Need a quick one-off with NO recording? Use \`canary-browser run\` instead of a session.
+
+${buildScriptingGuide({
+  example: sessionExample,
+  heading: "SCRIPTING GUIDE:",
+})}`;
 
 // Per-command long help (shown before that command's own --help body).
 export const SESSION_START_LONG_ABOUT = `Start a capture-enabled session and print its id.
@@ -63,10 +80,15 @@ Use --headless for unattended runs; omit it to watch the browser window.
 
 export const RUN_LONG_ABOUT = `Run a script as one step inside a session.
 
-The script (a FILE, or stdin if omitted) executes in the sandbox the same way \`canary-browser run\`
-does — top-level await, with \`browser\` and \`console\`. The step's name labels it in the report and
-owns one auto-captured screenshot (from the last page opened during the step).
+The script (a FILE, or stdin if omitted) executes as top-level JavaScript with \`await\` in a
+sandboxed QuickJS runtime — full reference below. The step's name labels it in the report and
+owns ONE auto-captured screenshot (taken from the LAST page opened during the step). Named
+pages persist across steps within the session, so each step picks up where the last left off;
+pass values between steps with writeFile/readFile.
 
+${sandboxReference()}
+
+Examples:
   canary run open.js --session "$id" --step open
   echo 'const p = await browser.getPage("home"); await p.goto("https://example.com");' \\
     | canary run --session "$id" --step home --timeout 30`;
