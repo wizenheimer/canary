@@ -49,6 +49,38 @@ Actions: `.click()`, `.fill(value)`, `.check()`, `.uncheck()`, `.selectOption(va
 Reads: `.textContent()`, `.innerText()`, `.getAttribute(name)`, `.inputValue()`, `.count()`.
 State: `.isVisible()`, `.isEnabled()`, `.isChecked()`.
 Refine: `.first()`, `.last()`, `.nth(i)`, `.filter({ hasText })`, `.all()` (→ `Locator[]`).
+Semantic factories (also `Locator`): `page.getByRole(role, { name })`, `page.getByText(text)`.
+
+## Observing the page — `snapshotForAI`
+
+| Call | Returns | Notes |
+|---|---|---|
+| `page.snapshotForAI()` | `{ full, incremental? }` | `full` = aria outline of the page: roles, accessible names, `[ref=eN]` markers on actionable nodes. |
+| `page.snapshotForAI({ track: "main" })` | `{ full, incremental }` | Re-snapshot after a change; `incremental` is the diff since the last tracked snapshot. |
+| options | `{ track?, depth?, timeout? }` | `depth` caps tree depth on huge pages; `timeout` bounds the walk. |
+
+Acting on what you saw:
+
+- Prefer a **semantic selector** re-derived from the snapshot — `page.getByRole("link", { name: "Cart" })`,
+  `page.getByText("Sign in")` — it survives re-renders.
+- `page.locator("aria-ref=e12")` works for an immediate action **in the same script only**; refs go
+  stale across steps and after navigation.
+
+Keeping it small:
+
+- Snapshot once to orient; after the page changes, use `{ track }` incrementals instead of a full re-dump.
+- Pass `{ depth: N }` on huge pages, or skip the snapshot and read just the region you care about with
+  targeted `locator(sel).count()` / `.innerText()`.
+
+```js
+// Explore an unknown page (one observe step), then act on what you saw (next step)
+const page = await browser.getPage("main");
+await page.goto(url, { waitUntil: "domcontentloaded" });
+const snap = await page.snapshotForAI({ depth: 12 });
+console.log(page.url(), await page.title());
+console.log(snap.full); // read this to pick a role/text selector
+// …next step: await page.getByRole("button", { name: "Sign in" }).click();
+```
 
 ## The per-step screenshot rule (sessions)
 
@@ -67,7 +99,11 @@ After each `canary run --step`, the daemon **auto-captures one screenshot** of t
   the script (override the wall-clock budget per step with `canary run --timeout <seconds>`).
 - **Serialization.** Values crossing `evaluate`/`$eval` must be JSON-serializable.
 
-## Resilience pattern (recommended for demos / live sites)
+## Resilience pattern (recommended for assertion / extraction steps)
+
+Scope: WARN-don't-crash is for **assertion/extraction** steps, so a miss still records its evidence.
+While **exploring**, a selector that isn't there means look again — snapshot, fix the selector, retry
+as a new step — not a silent fallback.
 
 ```js
 const safe = async (fn, fallback) => { try { return await fn(); } catch { return fallback; } };
