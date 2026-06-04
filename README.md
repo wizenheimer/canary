@@ -1,11 +1,26 @@
-# Canary
+<div align="center">
+  <h1>Canary</h1>
+  <p><strong>QA harness built for Claude Code.</strong></p>
+</div>
 
-**Browser QA for AI agents.** Let your agent drive a real browser — and see exactly what it did.
+Canary is a QA harness purpose built for coding agents like Claude Code. It reads your code diffs, identifies the affected UI flows, and tests them in real browser instances using Claude Code.
 
-Canary runs sandboxed JavaScript against real Chromium and records the entire session: the Playwright
-trace, a video, every network request, the console, and a screenshot of each step. You get back a
-self-contained report you can replay and share — and the exact script the agent ran, ready to run
-again. No instrumentation, no guesswork.
+Under the hood, it ships with a QuickJS WASM sandbox exposing the full Playwright API, letting Claude automate any long-running UI task — from handling logins to navigating complicated UIs. 
+
+Instead of clicking through flows by hand to reproduce and verify issues, Canary provides full session recordings. You get screen recordings with console logs, network requests, HARs, and Playwright traces so you can inspect exactly what the agent did.
+
+Every Canary run captures a reusable Playwright script. Letting you re-run it in CI with zero inference cost on replay.
+
+Most testing tools force you to choose between two extremes:
+
+- An opaque agent run you can't reproduce.
+- Raw Playwright scripts you have to write and maintain by hand.
+
+Canary doesn't make you choose: the agent does the QA and hands you a reproducible script.
+
+## Features
+
+![The Canary session browser](docs/media/sessions-list.png)
 
 - **See exactly what happened.** Trace, video, network, console, and a screenshot of every step — captured automatically.
 - **Reproducible by default.** Canary turns each run into a real Playwright script. Let your agent discover a flow once; re-run it forever.
@@ -13,11 +28,6 @@ again. No instrumentation, no guesswork.
 - **Built for agents.** Drop-in plugins for Claude Code, Cursor, and Codex, or a generic [Agent Skills](https://agentskills.io) pack for everything else.
 - **Sandboxed.** Scripts run in a QuickJS WASM sandbox with the full Playwright `Page` API — no Node, no host access.
 
-## See it
-
-Every run lands in a local app — search it, tag it, organize it into folders, replay it:
-
-![The Canary session browser](docs/media/sessions-list.png)
 
 ## Who it's for
 
