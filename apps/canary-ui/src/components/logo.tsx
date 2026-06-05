@@ -1,9 +1,10 @@
 import { cn } from "@/lib/utils";
 
-// The Canary logomark — a black rounded tile holding the lime spark, the same
-// mark as app/icon.svg / the favicon. Used on its own (e.g. the collapsed
-// sidebar) and inside the full wordmark lockup below. The spark is sized
-// relative to the tile so it scales with any `size-*` override.
+// The Canary logomark — a black rounded tile holding the pastel spark, the same
+// mark as public/icon.svg / the favicon. The spark is a periwinkle→sky→mint
+// gradient (the brand pastel set). Used on its own (e.g. the collapsed sidebar)
+// and inside the full wordmark lockup below. The spark is sized relative to the
+// tile so it scales with any `size-*` override.
 export function LogoMark({ className }: { className?: string }) {
   return (
     <span
@@ -13,7 +14,7 @@ export function LogoMark({ className }: { className?: string }) {
         className
       )}
     >
-      <span className="size-1/2 rounded-full bg-primary" />
+      <span className="size-1/2 rounded-full bg-[linear-gradient(135deg,#9fa1ff,#aee2ff,#d9f9df)]" />
     </span>
   );
 }

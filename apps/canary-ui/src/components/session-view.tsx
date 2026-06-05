@@ -7,7 +7,6 @@ import {
   ChevronRight,
   Download,
   FileText,
-  Film,
   ListChecks,
   Network,
   Package,
@@ -472,7 +471,11 @@ function Steps({ m }: { m: SessionManifest }) {
       title="Steps"
     >
       {m.steps.length === 0 ? (
-        <Empty>No steps recorded.</Empty>
+        <EmptyState
+          illustration="steps"
+          size="panel"
+          title="No steps recorded"
+        />
       ) : (
         m.steps.map((step, i) => {
           const n = step.actions.length;
@@ -516,7 +519,11 @@ function Screenshots({ m, rootId }: { m: SessionManifest; rootId: string }) {
   if (items.length === 0) {
     return (
       <Panel>
-        <Empty>No screenshots captured.</Empty>
+        <EmptyState
+          illustration="screenshots"
+          size="panel"
+          title="No screenshots captured"
+        />
       </Panel>
     );
   }
@@ -601,7 +608,11 @@ function Timeline({ m }: { m: SessionManifest }) {
         </span>
       </div>
       {rows.length === 0 ? (
-        <Empty>No steps recorded.</Empty>
+        <EmptyState
+          illustration="steps"
+          size="panel"
+          title="No steps recorded"
+        />
       ) : (
         <div className="flex flex-col gap-0.5">
           {rows.map(({ off, step, w }, i) => (
@@ -681,10 +692,12 @@ function Commands({ m }: { m: SessionManifest }) {
   if (steps.length === 0) {
     return (
       <Panel>
-        <Empty>
-          No commands captured. Enable trace capture to record Playwright
-          actions.
-        </Empty>
+        <EmptyState
+          description="Trace capture wasn’t enabled for this run."
+          illustration="commands"
+          size="panel"
+          title="No commands captured"
+        />
       </Panel>
     );
   }
@@ -761,7 +774,11 @@ function Videos({ m, rootId }: { m: SessionManifest; rootId: string }) {
   if (vids.length === 0) {
     return (
       <Panel title="Videos">
-        <Empty>No video captured.</Empty>
+        <EmptyState
+          illustration="video"
+          size="panel"
+          title="No video captured"
+        />
       </Panel>
     );
   }
@@ -838,8 +855,8 @@ function MediaPanel({ m, rootId }: { m: SessionManifest; rootId: string }) {
   if (items.length === 0) {
     return (
       <EmptyState
-        description="This session didn’t capture a video or any screenshots."
-        icon={Film}
+        description="No video or screenshots captured."
+        illustration="media"
         title="No media"
       />
     );

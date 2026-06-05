@@ -10,12 +10,12 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * "High-Contrast Precision" — the brand palette ported from the self-contained
- * report (apps/canary/src/report/render-report.ts). Surfaces are white on
- * #f9f9f9, depth comes from 1px outlines + tonal wells (no shadows), and lime
- * (#e4f222) is reserved for status and active affordances. These tokens are the
- * source of truth; the @theme inline block below routes shadcn's color
- * utilities onto them so the components stay on-brand.
+ * "High-Contrast Precision" — surfaces are white on #f9f9f9, depth comes from
+ * 1px outlines + tonal wells (no shadows), and a soft periwinkle (#9FA1FF,
+ * drawn from a cool pastel set with #B5BAFF / #AEE2FF / #D9F9DF) is reserved for
+ * status and active affordances. These tokens are the source of truth; the
+ * @theme inline block below routes shadcn's color utilities onto them so the
+ * components stay on-brand.
  */
 :root {
   --font-sans:
@@ -28,10 +28,10 @@
   --ink: #1a1c1c;
   --ink-strong: #0a0a0a;
   --muted: #5f5e5e;
-  --faint: #84856f;
+  --faint: #848480;
   --line: #e5e5e5;
-  --line-2: #d3d3c2;
-  --primary: #e4f222;
+  --line-2: #d2d2d6;
+  --primary: #9fa1ff;
   --on-primary: #0a0a0a;
   --pass: #2f6f12;
   --fail: #ba1a1a;
@@ -39,7 +39,7 @@
   --on-fail: #93000a;
   --warn: #8a5d00;
   --warn-bg: #fbf3e0;
-  --lime-edge: #cdd900;
+  --primary-edge: #8587e6;
   --r-sm: 2px;
   --r: 4px;
   --r-md: 6px;
@@ -135,7 +135,7 @@ a {
   --color-line: var(--line);
   --color-line-2: var(--line-2);
   --color-on-primary: var(--on-primary);
-  --color-lime-edge: var(--lime-edge);
+  --color-primary-edge: var(--primary-edge);
   --color-pass: var(--pass);
   --color-fail: var(--fail);
   --color-fail-bg: var(--fail-bg);
@@ -225,7 +225,7 @@ a {
 
 /*
  * Video.js brand overrides. The base skin is imported by <VideoPlayer>; these
- * rules load from the layout stylesheet, so !important keeps the lime accent
+ * rules load from the layout stylesheet, so !important keeps the primary accent
  * regardless of stylesheet order.
  */
 .video-js {
