@@ -2,6 +2,7 @@
   <h1>Canary</h1>
   <p><strong>QA harness built for Claude Code.</strong></p>
 </div>
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/8ad76566-542e-43b0-a9f2-0220f819710b" />
 
 Canary is a QA harness purpose built for coding agents like Claude Code. It reads your code diffs, identifies the affected UI flows, and tests them in real browser instances using Claude Code.
 
@@ -20,7 +21,7 @@ Canary doesn't make you choose: the agent does the QA and hands you a reproducib
 
 ## Features
 
-![The Canary session browser](docs/media/sessions-list.png)
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/145916b9-80ed-4154-858f-256d84783d19" />
 
 - **See exactly what happened.** Trace, video, network, console, and a screenshot of every step — captured automatically.
 - **Reproducible by default.** Canary turns each run into a real Playwright script. Let your agent discover a flow once; re-run it forever.
@@ -101,13 +102,15 @@ console, the network, the full trace. Nothing summarized, nothing reconstructed:
 Status, a per-step timeline, the exact environment, and a full **video replay** of the run with a
 filmstrip of per-step screenshots — scrub straight to the moment something happened.
 
-![Session overview: video replay, timeline, and environment](docs/media/session-summary.png)
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/c538d7a3-5e03-4aa1-9412-3ae43cac4f34" />
+
 
 ### Step by step
 
 Each step, pass or fail, with its exit code, duration, and how many Playwright actions it ran.
 
-![Per-step breakdown with status, timing, and action counts](docs/media/session-steps.png)
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/ade23da1-451b-41b3-b8b8-720f27352734" />
+
 
 ### Reproducible Playwright scripts
 
@@ -116,23 +119,27 @@ behind every step **and** decodes the full Playwright trace into the exact calls
 `waitForSelector`, `evaluate`, `screenshot`), with params and timing. What you get back is a real,
 reusable script. Next time you don't pay an agent to rediscover the page — you just re-run it.
 
-![The step's script, syntax-highlighted](docs/media/session-script.png)
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/8ef300ef-ee0b-4382-8ff0-a78bce88d09f" />
 
-![The Playwright calls decoded from the trace, grouped per step](docs/media/session-commands.png)
+
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/249051ec-5543-4ab0-9f2f-48533817bbca" />
+
 
 ### Console and page errors
 
 Every console message and uncaught page error, filterable by level — errors, warnings, info, logs —
 with the source URL. Errors flagged in red.
 
-![Console output, filterable by level](docs/media/session-console.png)
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/ad25e190-4123-43ab-9b74-15644a6fd3c3" />
+
 
 ### Network, request by request
 
 Every request with status, type, size, and timing. Filter by kind, then click any row to inspect its
 headers, payload, and response — like a devtools network panel, frozen at the moment it ran.
 
-![Network requests with type filters, sizes, and timing](docs/media/session-network.png)
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/a9ea5f94-ba31-480b-abee-bf0350bb4735" />
+
 
 ### The full trace, and every artifact
 
@@ -140,7 +147,8 @@ The raw Playwright `trace.zip`, the network HAR, the console log, the machine-re
 and the self-contained `report.html` — all under `~/.canary/sessions/<id>/`, all one click away. Open
 the trace in Playwright's own viewer with `npx playwright show-trace`.
 
-![Downloadable artifacts: trace, HAR, console log, results, and report](docs/media/session-artifacts.png)
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/fdb5efbc-a92d-4eb6-b64c-0f7efb8977a7" />
+
 
 ## Claude Code, natively
 
