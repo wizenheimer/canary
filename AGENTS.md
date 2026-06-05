@@ -49,8 +49,8 @@ workflow rules — is single-sourced in `docs/snippets/` and stitched by `script
 - Never hand-edit `packages/cli-kit/src/snippets.generated.ts` or the content between
   `<!-- canary:snippet … -->` markers in `skills/`, `agents/`, or `README.md`.
 - `skills/` is the skill pack consumed verbatim by Claude Code (`.claude-plugin/`), Cursor
-  (`.cursor-plugin/`), Codex (`plugins/canary/`, whose `skills` is a symlink here), and
-  `npx skills add` — keep SKILL.md frontmatter (`name`, `description`) intact and marker-free.
+  (`.cursor-plugin/`), and Codex (`plugins/canary/`, whose `skills` is a symlink here) — keep
+  SKILL.md frontmatter (`name`, `description`) intact and marker-free.
 
 ## Code style & logging
 

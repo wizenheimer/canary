@@ -1,12 +1,12 @@
 # @usecanary/browser
 
 > `canary-browser` — the browser-automation engine for
-> [Canary](https://github.com/usecanary/canary). Run sandboxed JavaScript against a real Chromium with
+> [Canary](https://github.com/wizenheimer/canary). Run sandboxed JavaScript against a real Chromium with
 > persistent, named pages. This is **one-off** automation — nothing is recorded. For capture-enabled QA
 > sessions with a `report.html`, use [`@usecanary/cli`](https://www.npmjs.com/package/@usecanary/cli).
 
 [![npm](https://img.shields.io/npm/v/@usecanary/browser.svg)](https://www.npmjs.com/package/@usecanary/browser)
-[![license](https://img.shields.io/npm/l/@usecanary/browser.svg)](https://github.com/usecanary/canary)
+[![license](https://img.shields.io/npm/l/@usecanary/browser.svg)](https://github.com/wizenheimer/canary)
 
 Scripts are plain async JavaScript in a QuickJS sandbox with a Playwright-like API — no `require`,
 `process`, `fs`, or `fetch`; just a pre-connected `browser`, `console`, and a few file helpers. A
@@ -96,7 +96,7 @@ await saveScreenshot(await page.screenshot(), "hn.png");   // saved under ~/.can
   `--timeout`). Values crossing `evaluate` must be JSON-serializable.
 
 Full reference:
-[canary-scripting](https://github.com/usecanary/canary/blob/main/skills/canary-scripting/references/REFERENCE.md).
+[canary-scripting](https://github.com/wizenheimer/canary/blob/main/skills/canary-scripting/references/REFERENCE.md).
 
 ## Related packages
 
@@ -105,4 +105,4 @@ Full reference:
 - [`@usecanary/ui`](https://www.npmjs.com/package/@usecanary/ui) — browse recorded sessions.
 - [`create-canary`](https://www.npmjs.com/package/create-canary) — `npm create canary` guided setup.
 
-MIT · [source](https://github.com/usecanary/canary)
+MIT · [source](https://github.com/wizenheimer/canary)

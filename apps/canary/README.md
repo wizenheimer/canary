@@ -1,11 +1,11 @@
 # @usecanary/cli
 
-> `canary` — the session orchestrator for [Canary](https://github.com/usecanary/canary). Drive a real
+> `canary` — the session orchestrator for [Canary](https://github.com/wizenheimer/canary). Drive a real
 > browser, record capture-enabled QA sessions (Playwright trace, video, network HAR, console, per-step
 > screenshots), and render a self-contained `report.html` you can open, commit, or browse in a local UI.
 
 [![npm](https://img.shields.io/npm/v/@usecanary/cli.svg)](https://www.npmjs.com/package/@usecanary/cli)
-[![license](https://img.shields.io/npm/l/@usecanary/cli.svg)](https://github.com/usecanary/canary)
+[![license](https://img.shields.io/npm/l/@usecanary/cli.svg)](https://github.com/wizenheimer/canary)
 
 Canary is built for **AI agents and developers who need verifiable, reproducible browser QA**. Every
 run captures a trace, a video, a network log, console output, and per-step screenshots — and decodes
@@ -110,7 +110,7 @@ await saveScreenshot(await page.screenshot(), "signed-in.png");   // saveScreens
 
 The full reference is built into this CLI — run `canary --help` or `canary run --help`
 (the engine's `canary-browser --help` documents the same API), or read the
-[canary-scripting reference](https://github.com/usecanary/canary/blob/main/skills/canary-scripting/references/REFERENCE.md).
+[canary-scripting reference](https://github.com/wizenheimer/canary/blob/main/skills/canary-scripting/references/REFERENCE.md).
 
 ## Artifacts
 
@@ -131,8 +131,7 @@ Canary ships skills, subagents, and `/canary:*` slash commands for Claude Code, 
 an agent can plan and record QA for you:
 
 ```bash
-npx skills add usecanary/canary                 # any Agent Skills tool
-# Claude Code: /plugin marketplace add usecanary/canary  then  /plugin install canary@canary-marketplace
+# Claude Code: /plugin marketplace add wizenheimer/canary  then  /plugin install canary@canary-marketplace
 ```
 
 ## Related packages
@@ -142,4 +141,4 @@ npx skills add usecanary/canary                 # any Agent Skills tool
 - [`@usecanary/ui`](https://www.npmjs.com/package/@usecanary/ui) — the `canary-viewer` session browser.
 - [`create-canary`](https://www.npmjs.com/package/create-canary) — `npm create canary` guided setup.
 
-MIT · [source](https://github.com/usecanary/canary)
+MIT · [source](https://github.com/wizenheimer/canary)

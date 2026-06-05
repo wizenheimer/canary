@@ -1,11 +1,11 @@
 # @usecanary/ui
 
-> `canary-viewer` — the local **session viewer** for [Canary](https://github.com/usecanary/canary).
+> `canary-viewer` — the local **session viewer** for [Canary](https://github.com/wizenheimer/canary).
 > Browse, search, organize, and replay recorded QA sessions (trace, video, network HAR, console,
 > per-step screenshots) in your browser. Self-contained — no daemon, no setup.
 
 [![npm](https://img.shields.io/npm/v/@usecanary/ui.svg)](https://www.npmjs.com/package/@usecanary/ui)
-[![license](https://img.shields.io/npm/l/@usecanary/ui.svg)](https://github.com/usecanary/canary)
+[![license](https://img.shields.io/npm/l/@usecanary/ui.svg)](https://github.com/wizenheimer/canary)
 
 Like `npx playwright show-trace`, but for whole Canary sessions: it spins up a local server, opens
 your browser, and reads the artifacts that [`@usecanary/cli`](https://www.npmjs.com/package/@usecanary/cli)
@@ -53,4 +53,4 @@ Search and organize across every recorded session from the index.
 - [`@usecanary/browser`](https://www.npmjs.com/package/@usecanary/browser) — one-off automation engine.
 - [`create-canary`](https://www.npmjs.com/package/create-canary) — `npm create canary` guided setup.
 
-MIT · [source](https://github.com/usecanary/canary)
+MIT · [source](https://github.com/wizenheimer/canary)

@@ -61,19 +61,16 @@ workspace version, runs `pnpm build` (topo-ordered), and `pnpm -r publish --acce
 ## How updates reach agents
 
 npm publishes the CLIs, but the agent plugin packs are served straight from this repo — a release
-(or in one case, a plain merge) is what makes them update-visible. `scripts/sync-version.mjs`
+is what makes them update-visible. `scripts/sync-version.mjs`
 stamps the same version into every manifest that update detection reads:
 
 - **Claude Code** compares `.claude-plugin/marketplace.json` `plugins[].version` against the
   installed plugin — **no version bump, no visible update**. Users pull it with
   `/plugin marketplace update canary-marketplace` (or per-marketplace auto-update, which is OFF by
   default for third-party marketplaces).
-- **Agent Skills (`npx skills …`)** is content-hash based: the lockfile stores a tree SHA per skill
-  folder, so any change merged to `skills/` on the default branch is immediately visible to
-  `npx skills check` / `npx skills update` — no release needed. (SKILL.md `metadata.version` is
-  informational only; it's synced for honesty, not detection.)
 - **Cursor / Codex** read `.cursor-plugin/plugin.json` and `plugins/canary/.codex-plugin/plugin.json`
-  versions — both synced by the release flow.
+  versions — both synced by the release flow. (Each `skills/*/SKILL.md` `metadata.version` is also
+  synced for honesty, not detection.)
 
 Shared doc content (scripting API, workflow rules) lives in `docs/snippets/` and is stitched into
 the skills, README, and both CLIs' `--help` by `make docs` — edit snippets, restitch, commit;
