@@ -1,6 +1,6 @@
 {
   "name": "create-canary",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "type": "module",
   "description": "Set up canary — browser automation + recorded QA sessions. Run `npm create canary`.",
   "license": "MIT",
