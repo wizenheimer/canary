@@ -4,7 +4,7 @@ description: Drive a real browser for a one-off task with Canary — navigate, c
 license: MIT
 metadata:
   author: usecanary
-  version: 0.4.2
+  version: 0.4.3
   category: workflow
   tags:
     - canary

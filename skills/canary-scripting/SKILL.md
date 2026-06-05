@@ -4,7 +4,7 @@ description: The Canary sandbox scripting API for browser automation. Use when w
 license: MIT
 metadata:
   author: usecanary
-  version: 0.4.2
+  version: 0.4.3
   category: reference
   tags:
     - canary
