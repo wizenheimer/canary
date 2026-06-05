@@ -1,11 +1,11 @@
 # create-canary
 
-> The guided setup wizard for [Canary](https://github.com/usecanary/canary) — an AI-agent QA toolkit
+> The guided setup wizard for [Canary](https://github.com/wizenheimer/canary) — an AI-agent QA toolkit
 > that drives real browsers, records QA sessions (Playwright trace, video, network HAR, console), and
 > renders self-contained verification reports.
 
 [![npm](https://img.shields.io/npm/v/create-canary.svg)](https://www.npmjs.com/package/create-canary)
-[![license](https://img.shields.io/npm/l/create-canary.svg)](https://github.com/usecanary/canary)
+[![license](https://img.shields.io/npm/l/create-canary.svg)](https://github.com/wizenheimer/canary)
 
 One command to get Canary and its browser runtime set up — no flags to remember. Every step just
 shells out to the same published commands you could run by hand, so there's no magic and nothing
@@ -29,9 +29,9 @@ You'll get a checklist (space toggles, enter confirms). Recommended items are pr
 | Also install the `canary-viewer` viewer globally | — | `npm i -g @usecanary/ui` |
 
 Installing the CLIs globally puts `canary`, `canary-browser`, and `canary-viewer` on your `PATH` so
-day-to-day use drops the `npx` prefix. The wizard never installs agent skills or plugins itself —
-once setup completes it prints the commands (`npx skills add usecanary/canary`, Claude Code
-`/plugin …`) so each agent's own mechanism does the work.
+day-to-day use drops the `npx` prefix. The wizard never installs the plugins itself — once setup
+completes it prints the commands (Claude Code `/plugin …`, Cursor / Codex marketplace) so each
+agent's own mechanism does the work.
 
 ### Non-interactive
 
@@ -43,8 +43,7 @@ inspect before executing.
 Add the agent integration yourself (one-time):
 
 ```bash
-npx skills add usecanary/canary           # agent skills (any Agent Skills tool)
-# Claude Code: /plugin marketplace add usecanary/canary  then  /plugin install canary@canary-marketplace
+# Claude Code: /plugin marketplace add wizenheimer/canary  then  /plugin install canary@canary-marketplace
 ```
 
 Then record a session:
@@ -65,4 +64,4 @@ flow) in Claude Code / Cursor / Codex. See `examples/` in the repo for runnable 
 - [`@usecanary/browser`](https://www.npmjs.com/package/@usecanary/browser) — one-off automation engine.
 - [`@usecanary/ui`](https://www.npmjs.com/package/@usecanary/ui) — the `canary-viewer` session browser.
 
-MIT · [source](https://github.com/usecanary/canary)
+MIT · [source](https://github.com/wizenheimer/canary)

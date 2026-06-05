@@ -5,8 +5,8 @@
   "author": {
     "name": "wizenheimer"
   },
-  "homepage": "https://github.com/usecanary/canary",
-  "repository": "https://github.com/usecanary/canary",
+  "homepage": "https://github.com/wizenheimer/canary",
+  "repository": "https://github.com/wizenheimer/canary",
   "license": "MIT",
   "keywords": ["canary", "browser-automation", "qa", "cursor"],
   "skills": "skills",

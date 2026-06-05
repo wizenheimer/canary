@@ -25,7 +25,7 @@ Canary doesn't make you choose: the agent does the QA and hands you a reproducib
 - **See exactly what happened.** Trace, video, network, console, and a screenshot of every step — captured automatically.
 - **Reproducible by default.** Canary turns each run into a real Playwright script. Let your agent discover a flow once; re-run it forever.
 - **One file, zero setup.** Every session is a self-contained `report.html` — open it, commit it, send it. No server, no build.
-- **Built for agents.** Drop-in plugins for Claude Code, Cursor, and Codex, or a generic [Agent Skills](https://agentskills.io) pack for everything else.
+- **Built for agents.** Drop-in plugins for Claude Code, Cursor, and Codex.
 - **Sandboxed.** Scripts run in a QuickJS WASM sandbox with the full Playwright `Page` API — no Node, no host access.
 
 
@@ -166,26 +166,19 @@ usage guide — sandbox API, worked examples, a Playwright cheat sheet — writt
 No plugin required.
 
 For deeper integration (slash commands, subagents, and skills), install the plugin pack. Canary ships
-as a Claude Code plugin, a Cursor plugin, a Codex plugin, and a generic
-[Agent Skills](https://agentskills.io) pack — all pointing at the same `skills/` + `agents/` +
-`commands/`. There's no bespoke installer; each agent's own mechanism does the work.
+as a Claude Code plugin, a Cursor plugin, and a Codex plugin — all pointing at the same `skills/` +
+`agents/` + `commands/`. There's no bespoke installer; each agent's own mechanism does the work.
 
 ```bash
 # Claude Code
-/plugin marketplace add usecanary/canary
+/plugin marketplace add wizenheimer/canary
 /plugin install canary@canary-marketplace
 
 # Cursor — install "canary" from the Marketplace, or symlink for local dev:
 ln -sfn "$(pwd)" ~/.cursor/plugins/local/canary
 
 # Codex
-codex marketplace add usecanary/canary        # then /plugins → install "canary"
-
-# Any Agent Skills tool (Windsurf, Codex, …) — skills only:
-npx skills add usecanary/canary
-
-# Claude Code, manual (skills only, no plugin):
-cp -r skills/* ~/.claude/skills/
+codex marketplace add wizenheimer/canary        # then /plugins → install "canary"
 ```
 
 You get **`canary-scripting`** (the sandbox API, with `references/REFERENCE.md`) plus the workflow
@@ -305,18 +298,11 @@ via npx instead of a global install? `npx @usecanary/cli@latest …` always fetc
 # or turn on auto-update: /plugin → Marketplaces → canary-marketplace → Enable auto-update
 # (third-party marketplaces ship with auto-update OFF)
 
-# Agent Skills CLI (skills.sh) — updates any skill whose upstream content changed:
-npx skills check      # what's stale?
-npx skills update     # pull the updates
-
 # Cursor / Codex — update "canary" from each marketplace UI.
-
-# Manual copies — re-copy: cp -r skills/* ~/.claude/skills/
 ```
 
-Claude Code detects plugin updates by comparing manifest **versions** (bumped every release); the
-skills CLI detects them by **content hash** (a tree SHA per skill folder in its `skills-lock.json`
-— commit that file for project-scoped installs), so any merged change to `skills/` is immediately
+Claude Code detects plugin updates by comparing manifest **versions** (bumped every release); Cursor
+and Codex do the same against their plugin manifests, so every release makes the latest `skills/`
 update-visible.
 
 ## Contributing & development

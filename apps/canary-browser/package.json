@@ -12,11 +12,11 @@
     "cli",
     "headless"
   ],
-  "homepage": "https://github.com/usecanary/canary#readme",
-  "bugs": "https://github.com/usecanary/canary/issues",
+  "homepage": "https://github.com/wizenheimer/canary#readme",
+  "bugs": "https://github.com/wizenheimer/canary/issues",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/usecanary/canary.git",
+    "url": "git+https://github.com/wizenheimer/canary.git",
     "directory": "apps/canary-browser"
   },
   "engines": {

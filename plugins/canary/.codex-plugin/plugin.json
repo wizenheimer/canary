@@ -6,8 +6,8 @@
     "name": "wizenheimer",
     "url": "https://github.com/wizenheimer"
   },
-  "homepage": "https://github.com/usecanary/canary",
-  "repository": "https://github.com/usecanary/canary",
+  "homepage": "https://github.com/wizenheimer/canary",
+  "repository": "https://github.com/wizenheimer/canary",
   "license": "MIT",
   "keywords": ["canary", "browser-automation", "qa", "codex"],
   "skills": "./skills/",
@@ -18,7 +18,7 @@
     "developerName": "Canary",
     "category": "Developer Tools",
     "capabilities": ["Interactive", "Read", "Write"],
-    "websiteURL": "https://github.com/usecanary/canary",
+    "websiteURL": "https://github.com/wizenheimer/canary",
     "defaultPrompt": [
       "What should I QA for these changes?",
       "Automate this browser task.",
