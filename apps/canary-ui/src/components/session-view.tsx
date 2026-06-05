@@ -127,23 +127,32 @@ const SHELL = "mx-auto w-full max-w-[1200px] flex-1 px-6 pt-10 pb-20";
 function Panel({
   children,
   count,
+  fill,
   title,
 }: {
   children: ReactNode;
   count?: ReactNode;
+  fill?: boolean;
   title?: string;
 }) {
   return (
-    <section className="mb-8">
+    <section className={cn("mb-8", fill && "mb-0 flex min-h-0 flex-col")}>
       {title ? (
-        <div className="mb-3 flex items-baseline gap-3">
+        <div className="mb-3 flex shrink-0 items-baseline gap-3">
           <h2 className="font-semibold text-sm tracking-tight">{title}</h2>
           {count == null ? null : (
             <span className="text-[13px] text-faint tabular-nums">{count}</span>
           )}
         </div>
       ) : null}
-      <div className="overflow-hidden rounded-lg border border-border bg-card">
+      <div
+        className={cn(
+          "overflow-hidden rounded-lg border border-border bg-card",
+          // In fill mode the card shrinks to the tab height (instead of
+          // growing past it) and scrolls its rows internally.
+          fill && "scrollbar-none min-h-0 overflow-y-auto overscroll-none"
+        )}
+      >
         {children}
       </div>
     </section>
@@ -283,7 +292,7 @@ export default function SessionView({
         ref={splitRef}
         style={{ "--left-w": `${leftPct}%` } as CSSProperties}
       >
-        <div className="border-border max-lg:border-b lg:w-[var(--left-w)] lg:shrink-0 lg:overflow-y-auto">
+        <div className="scrollbar-none overscroll-none border-border max-lg:border-b lg:w-[var(--left-w)] lg:shrink-0 lg:overflow-y-auto">
           <MediaPanel m={m} rootId={rootId} />
         </div>
         <button
@@ -301,7 +310,7 @@ export default function SessionView({
             value={tab}
           >
             <TabsList
-              className="justify-center-safe h-auto w-full shrink-0 gap-x-6 overflow-x-auto rounded-none border-border border-b px-5 py-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              className="justify-center-safe scrollbar-none h-auto w-full shrink-0 gap-x-6 overflow-x-auto overscroll-none rounded-none border-border border-b px-5 py-0"
               variant="line"
             >
               {TABS.map(([tid, label]) => (
@@ -315,27 +324,40 @@ export default function SessionView({
               ))}
             </TabsList>
 
-            <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
-              <TabsContent value="summary">
+            {/* Each tab owns its scrolling: document tabs scroll as a whole,
+                list tabs pin their filters/headers and scroll only the rows.
+                The min-h-0/overflow classes are inert below lg, where the
+                page scrolls naturally. */}
+            <div className="flex min-h-0 flex-1 flex-col px-5 py-5">
+              <TabsContent
+                className="scrollbar-none min-h-0 overflow-y-auto overscroll-none"
+                value="summary"
+              >
                 <Summary m={m} note={data.note} tags={data.tags} />
               </TabsContent>
-              <TabsContent value="steps">
+              <TabsContent className="flex min-h-0 flex-col" value="steps">
                 <Steps m={m} />
               </TabsContent>
-              <TabsContent value="commands">
+              <TabsContent
+                className="scrollbar-none min-h-0 overflow-y-auto overscroll-none"
+                value="commands"
+              >
                 <Commands m={m} />
               </TabsContent>
-              <TabsContent value="console">
+              <TabsContent className="flex min-h-0 flex-col" value="console">
                 <ConsoleTab entries={data.console} />
               </TabsContent>
-              <TabsContent value="network">
+              <TabsContent className="flex min-h-0 flex-col" value="network">
                 <NetworkTab
                   failed={data.har.failed}
                   requests={data.network}
                   total={data.har.total}
                 />
               </TabsContent>
-              <TabsContent value="artifacts">
+              <TabsContent
+                className="scrollbar-none min-h-0 overflow-y-auto overscroll-none"
+                value="artifacts"
+              >
                 <Artifacts m={m} rootId={rootId} />
               </TabsContent>
             </div>
@@ -446,6 +468,7 @@ function Steps({ m }: { m: SessionManifest }) {
   return (
     <Panel
       count={`${m.summary.stepsPassed}/${m.summary.stepsTotal} passed`}
+      fill
       title="Steps"
     >
       {m.steps.length === 0 ? (
@@ -896,23 +919,23 @@ function ArtifactCard({
   size,
 }: ArtifactItem) {
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4">
-      <div className="flex items-center gap-2.5">
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-well text-muted-foreground">
-          <Icon className="size-4" />
-        </span>
-        <div className="min-w-0 flex-1">
-          <div className="font-semibold text-sm">{label}</div>
+    <div className="flex items-center gap-4 rounded-xl border border-border bg-card p-4 transition-colors hover:border-ink-strong">
+      <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-well text-muted-foreground">
+        <Icon className="size-5" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-baseline gap-x-2">
+          <span className="font-semibold text-sm">{label}</span>
           {size ? (
-            <div className="text-[12px] text-faint tabular-nums">{size}</div>
+            <span className="text-[12px] text-faint tabular-nums">{size}</span>
           ) : null}
         </div>
+        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12px]">
+          <span className="truncate font-mono text-faint">{path}</span>
+          {hint ? <span className="text-muted-foreground">{hint}</span> : null}
+        </div>
       </div>
-      <div className="truncate font-mono text-[12px] text-faint">{path}</div>
-      {hint ? (
-        <div className="text-[12px] text-muted-foreground">{hint}</div>
-      ) : null}
-      <Button asChild className="mt-auto" size="sm" variant="outline">
+      <Button asChild className="shrink-0" size="sm" variant="outline">
         <a download href={href}>
           <Download /> Download
         </a>
@@ -1008,7 +1031,7 @@ function Artifacts({ m, rootId }: { m: SessionManifest; rootId: string }) {
           <h2 className="mb-3 font-semibold text-sm tracking-tight">
             {g.title}
           </h2>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="flex flex-col gap-2.5">
             {g.items.map((it) => (
               <ArtifactCard key={it.label} {...it} />
             ))}

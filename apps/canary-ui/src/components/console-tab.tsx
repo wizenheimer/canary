@@ -206,8 +206,8 @@ function ConsoleDetail({
   const msg = textOf(entry);
   const time = fmtTimeOfDay(entry.ts);
   return (
-    <div className="flex w-full flex-col border-border border-t lg:w-[480px] lg:max-w-[50%] lg:border-t-0 lg:border-l">
-      <div className="flex items-center gap-2 border-border border-b px-4 py-2.5">
+    <div className="fade-in-0 max-lg:slide-in-from-bottom-2 lg:slide-in-from-right-4 flex w-full animate-in flex-col border-border border-t duration-200 lg:w-[480px] lg:max-w-[50%] lg:border-t-0 lg:border-l">
+      <div className="flex shrink-0 items-center gap-2 border-border border-b px-4 py-2.5">
         {Icon ? (
           <Icon className={cn("size-4 shrink-0", iconColor(level))} />
         ) : null}
@@ -225,7 +225,7 @@ function ConsoleDetail({
         </Button>
       </div>
 
-      <div className="max-h-[60vh] overflow-auto px-4 py-3 lg:max-h-[640px]">
+      <div className="scrollbar-none max-h-[60vh] overflow-auto overscroll-none px-4 py-3 lg:max-h-none lg:min-h-0 lg:flex-1">
         <Section title="Message">
           <pre className="overflow-auto whitespace-pre-wrap rounded border border-border bg-well-2 p-3 font-mono text-[12px]">
             {msg}
@@ -293,8 +293,8 @@ export function ConsoleTab({ entries }: { entries: ConsoleEntry[] }) {
   const compact = sel != null;
 
   return (
-    <div className="overflow-hidden rounded-lg border border-border bg-card">
-      <div className="flex flex-col gap-2.5 border-border border-b px-4 py-3">
+    <div className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-border bg-card">
+      <div className="flex shrink-0 flex-col gap-2.5 border-border border-b px-4 py-3">
         <Input
           className="h-8 w-full"
           onChange={(e) => setQuery(e.target.value)}
@@ -337,8 +337,8 @@ export function ConsoleTab({ entries }: { entries: ConsoleEntry[] }) {
       )}
       {entries.length > 0 && visible.length > 0 && (
         <>
-          <div className="flex flex-col lg:flex-row">
-            <div className="min-w-0 flex-1 divide-y divide-border/60 font-mono text-[12px]">
+          <div className="flex min-h-0 flex-col lg:flex-row">
+            <div className="scrollbar-none min-w-0 flex-1 divide-y divide-border/60 overflow-y-auto overscroll-none font-mono text-[12px]">
               {paged.slice.map((row) => (
                 <ConsoleRow
                   compact={compact}
@@ -360,7 +360,7 @@ export function ConsoleTab({ entries }: { entries: ConsoleEntry[] }) {
               />
             ) : null}
           </div>
-          <div className="border-border border-t px-4 py-2.5">
+          <div className="shrink-0 border-border border-t px-4 py-2.5">
             <Pager paged={paged} />
           </div>
         </>

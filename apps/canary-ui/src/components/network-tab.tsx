@@ -134,8 +134,8 @@ function Detail({
   ];
 
   return (
-    <div className="flex w-full flex-col border-border border-t lg:w-[480px] lg:max-w-[50%] lg:border-t-0 lg:border-l">
-      <div className="flex items-center gap-2 border-border border-b px-4 py-2.5">
+    <div className="fade-in-0 max-lg:slide-in-from-bottom-2 lg:slide-in-from-right-4 flex w-full animate-in flex-col border-border border-t duration-200 lg:w-[480px] lg:max-w-[50%] lg:border-t-0 lg:border-l">
+      <div className="flex shrink-0 items-center gap-2 border-border border-b px-4 py-2.5">
         <span className="min-w-0 flex-1 truncate font-semibold text-sm">
           {requestName(req.url)}
         </span>
@@ -151,7 +151,7 @@ function Detail({
         </Button>
       </div>
 
-      <div className="flex gap-4 border-border border-b px-4">
+      <div className="flex shrink-0 gap-4 border-border border-b px-4">
         {DETAIL_TABS.map(([id, label]) => (
           <button
             className={cn(
@@ -167,7 +167,7 @@ function Detail({
         ))}
       </div>
 
-      <div className="max-h-[60vh] overflow-auto px-4 py-3 lg:max-h-[640px]">
+      <div className="scrollbar-none max-h-[60vh] overflow-auto overscroll-none px-4 py-3 lg:max-h-none lg:min-h-0 lg:flex-1">
         {tab === "headers" && (
           <>
             <Section title="General">
@@ -255,8 +255,15 @@ function RequestTable({
   visible: NetworkRequest[];
 }) {
   return (
-    <div className="min-w-0 flex-1 overflow-x-auto">
-      <Table className="[&_td]:px-3 [&_td]:py-1.5 [&_th]:px-3 [&_th]:py-2 [&_th]:font-semibold [&_th]:text-[11px] [&_th]:text-faint [&_th]:uppercase [&_th]:tracking-wide">
+    <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+      {/* Vertical scrolling lives on the table-container itself so the
+          sticky thead sticks to it (an intermediate scroll container would
+          break position:sticky). border-collapse drops the stuck thead's
+          bottom border, hence the inset shadow. */}
+      <Table
+        className="[&_td]:px-3 [&_td]:py-1.5 [&_th]:px-3 [&_th]:py-2 [&_th]:font-semibold [&_th]:text-[11px] [&_th]:text-faint [&_th]:uppercase [&_th]:tracking-wide [&_thead]:sticky [&_thead]:top-0 [&_thead]:z-10 [&_thead]:bg-card [&_thead]:shadow-[inset_0_-1px_0_0_var(--color-border)]"
+        containerClassName="scrollbar-none min-h-0 overflow-auto overscroll-none"
+      >
         <TableHeader>
           <TableRow>
             <TableHead>Name</TableHead>
@@ -379,8 +386,8 @@ export function NetworkTab({
   const compact = sel != null;
 
   return (
-    <div className="overflow-hidden rounded-lg border border-border bg-card">
-      <div className="flex flex-col gap-2.5 border-border border-b px-4 py-3">
+    <div className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-border bg-card">
+      <div className="flex shrink-0 flex-col gap-2.5 border-border border-b px-4 py-3">
         <div className="flex items-center gap-3">
           <Input
             className="h-8 w-full"
@@ -416,7 +423,7 @@ export function NetworkTab({
         </div>
       ) : (
         <>
-          <div className="flex flex-col lg:flex-row">
+          <div className="flex min-h-0 flex-col lg:flex-row">
             <RequestTable
               compact={compact}
               maxDuration={maxDuration}
@@ -428,7 +435,7 @@ export function NetworkTab({
               <Detail onClose={() => setSelected(null)} req={sel} />
             ) : null}
           </div>
-          <div className="border-border border-t px-4 py-2.5">
+          <div className="shrink-0 border-border border-t px-4 py-2.5">
             <Pager paged={paged} />
           </div>
         </>
