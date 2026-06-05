@@ -7,6 +7,7 @@ import type { ConsoleEntry } from "@/lib/parse-console";
 import { cn } from "@/lib/utils";
 import { CopyButton } from "./copy-button";
 import { Pager, usePaged } from "./pager";
+import { EmptyState } from "./ui";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 
@@ -326,14 +327,18 @@ export function ConsoleTab({ entries }: { entries: ConsoleEntry[] }) {
       </div>
 
       {entries.length === 0 && (
-        <div className="p-10 text-center text-faint italic">
-          No console output captured.
-        </div>
+        <EmptyState
+          illustration="console"
+          size="panel"
+          title="No console output captured"
+        />
       )}
       {entries.length > 0 && visible.length === 0 && (
-        <div className="p-8 text-center text-[13px] text-faint italic">
-          No messages match the filter.
-        </div>
+        <EmptyState
+          illustration="filter"
+          size="panel"
+          title="No messages match the filter"
+        />
       )}
       {entries.length > 0 && visible.length > 0 && (
         <>

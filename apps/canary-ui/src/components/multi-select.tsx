@@ -38,7 +38,10 @@ export function SingleSelect({
       <PopoverTrigger asChild>
         <Button
           aria-label={ariaLabel}
-          className={cn("h-8 gap-1.5 font-medium", className)}
+          className={cn(
+            "h-8 gap-1.5 border-dashed font-medium data-[state=open]:border-solid",
+            className
+          )}
           size="sm"
           variant="outline"
         >

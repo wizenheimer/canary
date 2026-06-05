@@ -37,9 +37,9 @@ import {
   SidebarRail,
 } from "./ui/sidebar";
 
-// Keep the lime active accent from the old folder list. The button cva defaults
-// active items to `data-active:bg-sidebar-accent` (grey); reusing the same
-// `data-active:` variant lets tailwind-merge dedupe so lime wins.
+// Keep the primary active accent from the old folder list. The button cva
+// defaults active items to `data-active:bg-sidebar-accent` (grey); reusing the
+// same `data-active:` variant lets tailwind-merge dedupe so the accent wins.
 const ACTIVE_ACCENT = "data-active:bg-primary/15 data-active:text-foreground";
 
 interface AppSidebarProps {

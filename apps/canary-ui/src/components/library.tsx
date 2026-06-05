@@ -4,12 +4,9 @@ import {
   ArrowUpDown,
   Film,
   Folder,
-  Inbox,
   Monitor,
   MoreHorizontal,
   Search,
-  SearchX,
-  Trash2,
 } from "lucide-react";
 import {
   parseAsArrayOf,
@@ -393,14 +390,14 @@ export default function Library() {
           Clear filters
         </Button>
       }
-      description="No sessions match your current search and filters."
-      icon={SearchX}
+      description="Try a different search or filter."
+      illustration="search"
       title="No matching sessions"
     />
   ) : (
     <EmptyState
-      description="Sessions are recorded by the canary CLI. Run a capture and it’ll show up here."
-      icon={Inbox}
+      description="Recorded sessions show up here."
+      illustration="sessions"
       title="No sessions yet"
     />
   );
@@ -418,6 +415,19 @@ export default function Library() {
         return selection.path;
       default:
         return "Trash";
+    }
+  })();
+
+  const selectionSubtitle = (() => {
+    switch (selection.kind) {
+      case "all":
+        return "View and manage your testing sessions.";
+      case "unfiled":
+        return "Sessions not yet filed into a folder.";
+      case "folder":
+        return "Sessions filed in this folder.";
+      default:
+        return "Deleted sessions, kept until you empty the trash.";
     }
   })();
 
@@ -462,11 +472,16 @@ export default function Library() {
           grid; below md the page scrolls naturally (the min-h-0/overflow
           classes are inert without the viewport-height constraint). */}
       <SidebarInset className="md:h-svh md:overflow-hidden">
-        <header className="flex h-14 shrink-0 items-center gap-2 border-border border-b px-4">
+        <header className="flex h-16 shrink-0 items-center gap-2.5 border-border border-b px-4">
           <SidebarTrigger className="-ml-1" />
-          <h1 className="truncate font-bold text-lg tracking-tight">
-            {selectionTitle}
-          </h1>
+          <div className="min-w-0 py-1">
+            <h1 className="truncate font-bold text-lg leading-tight tracking-tight">
+              {selectionTitle}
+            </h1>
+            <p className="mt-0.5 truncate text-[13px] text-muted-foreground leading-snug">
+              {selectionSubtitle}
+            </p>
+          </div>
         </header>
 
         <div className="flex min-h-0 w-full flex-1 flex-col px-4 pt-4 pb-20 md:pb-4">
@@ -525,8 +540,8 @@ export default function Library() {
               <TrashGrid
                 emptyState={
                   <EmptyState
-                    description="Deleted sessions land here. Restore one, or empty the trash to remove it for good."
-                    icon={Trash2}
+                    description="Deleted sessions land here."
+                    illustration="trash"
                     title="Trash is empty"
                   />
                 }

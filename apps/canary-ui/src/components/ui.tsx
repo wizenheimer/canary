@@ -3,6 +3,10 @@
 import { CircleAlert, Loader2, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import {
+  EmptyStateIllustration,
+  type EmptyStateIllustrationVariant,
+} from "./empty-state-illustration";
 import { Alert, AlertDescription } from "./ui/alert";
 import { Badge } from "./ui/badge";
 
@@ -74,8 +78,8 @@ const STATUS_CLASS: Record<string, string> = {
   aborted: "border-[#ecdcae] bg-warn-bg text-warn",
   fail: "border-[#f3c4c0] bg-fail-bg text-on-fail",
   failed: "border-[#f3c4c0] bg-fail-bg text-on-fail",
-  pass: "border-lime-edge bg-primary text-on-primary",
-  passed: "border-lime-edge bg-primary text-on-primary",
+  pass: "border-primary-edge bg-primary text-on-primary",
+  passed: "border-primary-edge bg-primary text-on-primary",
 };
 
 export function StatusBadge({
@@ -131,28 +135,51 @@ export function Notice({
   return <div className="p-10 text-center text-faint italic">{children}</div>;
 }
 
-// A designed empty state: a tonal icon medallion over a title + description and
-// an optional call to action. Reused for empty lists, filtered-to-nothing, and
-// the empty trash.
+// A designed empty state: an on-brand illustration (or a tonal icon medallion)
+// over a title + a short one-line description, with an optional action. Reused
+// for empty lists, filtered-to-nothing, the empty trash, and the per-section
+// panels inside a session (size="panel").
 export function EmptyState({
   action,
   description,
   icon: Icon,
+  illustration,
+  size = "large",
   title,
 }: {
   action?: ReactNode;
   description?: string;
-  icon: LucideIcon;
+  icon?: LucideIcon;
+  illustration?: EmptyStateIllustrationVariant;
+  size?: "large" | "panel";
   title: string;
 }) {
-  return (
-    <div className="flex flex-col items-center justify-center px-6 py-20 text-center">
+  const panel = size === "panel";
+  let visual: ReactNode = null;
+  if (illustration) {
+    visual = (
+      <div className={panel ? "mb-4" : "mb-6"}>
+        <EmptyStateIllustration size={size} variant={illustration} />
+      </div>
+    );
+  } else if (Icon) {
+    visual = (
       <div className="relative mb-4 flex size-16 items-center justify-center">
         <span className="absolute inset-0 rounded-full bg-primary/10" />
         <span className="flex size-12 items-center justify-center rounded-full border border-line-2 bg-card text-faint">
           <Icon className="size-6" strokeWidth={1.5} />
         </span>
       </div>
+    );
+  }
+  return (
+    <div
+      className={cn(
+        "flex flex-col items-center justify-center text-center",
+        panel ? "px-4 py-10" : "px-6 py-20"
+      )}
+    >
+      {visual}
       <h3 className="font-semibold text-foreground text-sm tracking-tight">
         {title}
       </h3>
@@ -161,7 +188,7 @@ export function EmptyState({
           {description}
         </p>
       ) : null}
-      {action ? <div className="mt-5">{action}</div> : null}
+      {action ? <div className="mt-4">{action}</div> : null}
     </div>
   );
 }

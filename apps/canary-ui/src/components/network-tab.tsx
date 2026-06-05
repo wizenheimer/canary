@@ -12,6 +12,7 @@ import { toCurl } from "@/lib/network";
 import { cn } from "@/lib/utils";
 import { CopyButton } from "./copy-button";
 import { Pager, usePaged } from "./pager";
+import { EmptyState } from "./ui";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import {
@@ -340,9 +341,11 @@ function RequestTable({
         </TableBody>
       </Table>
       {visible.length === 0 ? (
-        <div className="p-8 text-center text-[13px] text-faint italic">
-          No requests match the filter.
-        </div>
+        <EmptyState
+          illustration="filter"
+          size="panel"
+          title="No requests match the filter"
+        />
       ) : null}
     </div>
   );
@@ -418,9 +421,11 @@ export function NetworkTab({
       </div>
 
       {requests.length === 0 ? (
-        <div className="p-10 text-center text-faint italic">
-          No network activity captured.
-        </div>
+        <EmptyState
+          illustration="network"
+          size="panel"
+          title="No network activity captured"
+        />
       ) : (
         <>
           <div className="flex min-h-0 flex-col lg:flex-row">
