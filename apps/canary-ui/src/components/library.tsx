@@ -34,7 +34,7 @@ import {
   SingleSelect,
 } from "./multi-select";
 import { Pager, usePaged } from "./pager";
-import { EmptyState, Notice, Spinner, StatusBadge } from "./ui";
+import { EmptyState, Notice, Spinner, StatusBadge, StatusIcon } from "./ui";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
@@ -55,6 +55,7 @@ import {
 import { Input } from "./ui/input";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "./ui/sidebar";
 import { Textarea } from "./ui/textarea";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
 export interface Root {
   id: string;
@@ -203,12 +204,30 @@ const SORT_OPTIONS: MultiSelectOption[] = [
   { label: "Name (A–Z)", value: "name" },
   { label: "Longest first", value: "duration" },
 ];
-// Compact status indicator for the mobile card (the full badge is hidden there).
-const STATUS_DOT: Record<string, string> = {
-  aborted: "bg-warn",
-  failed: "bg-fail",
-  passed: "bg-primary",
+// Quiet status indicator for the list cards — a small tinted StatusIcon on the
+// right edge whose label lives in a tooltip, instead of a loud inline badge.
+const STATUS_COLOR: Record<string, string> = {
+  aborted: "text-warn",
+  failed: "text-fail",
+  passed: "text-primary",
 };
+
+function StatusHint({ status }: { status: string }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span
+          aria-label={status}
+          className={cn("inline-flex", STATUS_COLOR[status] ?? "text-faint")}
+          role="img"
+        >
+          <StatusIcon status={status} />
+        </span>
+      </TooltipTrigger>
+      <TooltipContent className="capitalize">{status}</TooltipContent>
+    </Tooltip>
+  );
+}
 
 export default function Library() {
   const [roots, setRoots] = useState<Root[]>([]);
@@ -439,7 +458,10 @@ export default function Library() {
         trashCount={list?.trashCount ?? 0}
         unfiledCount={countFor({ kind: "unfiled" })}
       />
-      <SidebarInset>
+      {/* Pin the header + filter bar on desktop and scroll only the session
+          grid; below md the page scrolls naturally (the min-h-0/overflow
+          classes are inert without the viewport-height constraint). */}
+      <SidebarInset className="md:h-svh md:overflow-hidden">
         <header className="flex h-14 shrink-0 items-center gap-2 border-border border-b px-4">
           <SidebarTrigger className="-ml-1" />
           <h1 className="truncate font-bold text-lg tracking-tight">
@@ -447,8 +469,8 @@ export default function Library() {
           </h1>
         </header>
 
-        <div className="w-full flex-1 px-4 pt-4 pb-20">
-          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="flex min-h-0 w-full flex-1 flex-col px-4 pt-4 pb-20 md:pb-4">
+          <div className="mb-4 flex shrink-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
             <div className="relative w-full sm:w-64">
               <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -498,53 +520,55 @@ export default function Library() {
 
           {error ? <Notice error>{error}</Notice> : null}
 
-          {viewingTrash ? (
-            <TrashGrid
-              emptyState={
-                <EmptyState
-                  description="Deleted sessions land here. Restore one, or empty the trash to remove it for good."
-                  icon={Trash2}
-                  title="Trash is empty"
-                />
-              }
-              onDelete={(id) => trashOp({ action: "delete", id })}
-              onRestore={(id) => trashOp({ action: "restore", id })}
-              sessions={trash}
-            />
-          ) : (
-            <SessionGrid
-              emptyState={emptySessions}
-              onMove={(c) =>
-                setDialog({
-                  current: c.folder,
-                  id: c.id,
-                  name: c.name,
-                  type: "move",
-                })
-              }
-              onNote={(c) =>
-                setDialog({
-                  id: c.id,
-                  name: c.name,
-                  note: c.note ?? "",
-                  type: "note",
-                })
-              }
-              onTags={(c) =>
-                setDialog({
-                  id: c.id,
-                  name: c.name,
-                  tags: c.tags,
-                  type: "tags",
-                })
-              }
-              onTrash={(id) => trashOp({ action: "trash", id })}
-              rootId={currentRootId}
-              sessions={paged.slice}
-            />
-          )}
+          <div className="scrollbar-none min-h-0 flex-1 overflow-y-auto overscroll-none">
+            {viewingTrash ? (
+              <TrashGrid
+                emptyState={
+                  <EmptyState
+                    description="Deleted sessions land here. Restore one, or empty the trash to remove it for good."
+                    icon={Trash2}
+                    title="Trash is empty"
+                  />
+                }
+                onDelete={(id) => trashOp({ action: "delete", id })}
+                onRestore={(id) => trashOp({ action: "restore", id })}
+                sessions={trash}
+              />
+            ) : (
+              <SessionGrid
+                emptyState={emptySessions}
+                onMove={(c) =>
+                  setDialog({
+                    current: c.folder,
+                    id: c.id,
+                    name: c.name,
+                    type: "move",
+                  })
+                }
+                onNote={(c) =>
+                  setDialog({
+                    id: c.id,
+                    name: c.name,
+                    note: c.note ?? "",
+                    type: "note",
+                  })
+                }
+                onTags={(c) =>
+                  setDialog({
+                    id: c.id,
+                    name: c.name,
+                    tags: c.tags,
+                    type: "tags",
+                  })
+                }
+                onTrash={(id) => trashOp({ action: "trash", id })}
+                rootId={currentRootId}
+                sessions={paged.slice}
+              />
+            )}
+          </div>
           {viewingTrash || visible.length === 0 ? null : (
-            <div className="mt-4">
+            <div className="mt-4 shrink-0">
               <Pager paged={paged} />
             </div>
           )}
@@ -653,7 +677,7 @@ function SessionThumb({
 }) {
   const [failed, setFailed] = useState(false);
   return (
-    <div className="relative flex h-16 w-28 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-well text-faint">
+    <div className="relative flex h-20 w-36 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-well text-faint">
       {hasVideo ? <Film className="size-5" /> : <Monitor className="size-5" />}
       {src && !failed ? (
         // biome-ignore lint/a11y/noNoninteractiveElementInteractions: <img onError> is the standard broken-thumbnail fallback, not a user interaction
@@ -689,7 +713,7 @@ function SessionGrid({
           key={c.id}
         >
           <a
-            className="flex min-w-0 flex-1 items-center gap-4 rounded-l-xl py-3 pl-3 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="flex min-w-0 flex-1 items-center gap-4 rounded-l-xl py-4 pl-4 outline-none focus-visible:ring-2 focus-visible:ring-ring"
             href={`/s/${rootId}/${c.id}`}
           >
             <SessionThumb
@@ -699,20 +723,11 @@ function SessionGrid({
             />
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <span
-                  className={cn(
-                    "size-2 shrink-0 rounded-full sm:hidden",
-                    STATUS_DOT[c.status]
-                  )}
-                />
-                <span className="hidden sm:inline-flex">
-                  <StatusBadge small status={c.status} />
-                </span>
-                <span className="truncate font-semibold text-[15px] tracking-tight">
+                <span className="truncate font-semibold text-base tracking-tight">
                   {c.name}
                 </span>
               </div>
-              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-muted-foreground tabular-nums">
+              <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-muted-foreground tabular-nums">
                 <span>{fmtRelative(c.createdAt)}</span>
                 <span aria-hidden="true">·</span>
                 <span>{fmtMs(c.durationMs)}</span>
@@ -740,7 +755,7 @@ function SessionGrid({
               </div>
             </div>
           </a>
-          <div className="flex shrink-0 items-center gap-2 py-3 pr-3">
+          <div className="flex shrink-0 items-center gap-2.5 py-4 pr-4">
             <span className="hidden items-center gap-2 sm:flex">
               {c.tags.slice(0, 2).map((t) => (
                 <Badge key={t} variant="secondary">
@@ -751,6 +766,7 @@ function SessionGrid({
                 <Badge variant="secondary">+{c.tags.length - 2}</Badge>
               ) : null}
             </span>
+            <StatusHint status={c.status} />
             <SessionActionsMenu
               c={c}
               onMove={onMove}

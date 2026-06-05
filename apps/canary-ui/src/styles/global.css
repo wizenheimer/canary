@@ -200,6 +200,27 @@ a {
   html {
     @apply font-sans;
   }
+  /* No elastic rubber band on the page, and no scroll chaining bouncing the
+     shell when an inner panel hits its end. */
+  html,
+  body {
+    overscroll-behavior: none;
+  }
+}
+
+/* Cross-fade full-page navigations (library ↔ session view) in browsers that
+   support cross-document view transitions; a plain hard swap elsewhere. */
+@view-transition {
+  navigation: auto;
+}
+
+/* Scroll without a visible scrollbar — the panels scroll their own rows and
+   the track would add noise to the bordered-card look. */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /*

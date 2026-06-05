@@ -80,7 +80,12 @@ function TabsContent({
 }: React.ComponentProps<typeof TabsPrimitive.Content>) {
   return (
     <TabsPrimitive.Content
-      className={cn("flex-1 text-sm outline-none", className)}
+      // The enter animation re-runs whenever the panel toggles from
+      // display:none back to visible, i.e. on every tab switch.
+      className={cn(
+        "fade-in-0 slide-in-from-bottom-2 flex-1 animate-in text-sm outline-none duration-200",
+        className
+      )}
       data-slot="tabs-content"
       {...props}
     />
