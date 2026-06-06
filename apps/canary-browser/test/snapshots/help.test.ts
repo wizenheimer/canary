@@ -15,7 +15,7 @@ describe("--help content", () => {
     const out = await runCli(["--help"]);
     expect(out.code).toBe(0);
     expect(out.stdout).toContain(
-      "Dev Browser is a CLI for controlling local or external browsers"
+      "Canary Browser is a CLI for controlling local or external browsers"
     );
     expect(out.stdout).toContain("SANDBOX ENVIRONMENT:");
     expect(out.stdout).toContain("Primary invocation styles:");

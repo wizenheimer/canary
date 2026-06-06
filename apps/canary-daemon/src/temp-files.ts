@@ -154,13 +154,16 @@ export async function ensureCanaryTempDir(): Promise<string> {
   });
   await assertControlledDirectory(
     CANARY_BASE_DIR,
-    "Dev Browser base directory"
+    "Canary Browser base directory"
   );
 
   await mkdir(CANARY_TMP_DIR, {
     recursive: true,
   });
-  await assertControlledDirectory(CANARY_TMP_DIR, "Dev Browser temp directory");
+  await assertControlledDirectory(
+    CANARY_TMP_DIR,
+    "Canary Browser temp directory"
+  );
 
   return path.resolve(CANARY_TMP_DIR);
 }

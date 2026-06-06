@@ -32,7 +32,7 @@ const INVOCATION_STYLES = `Primary invocation styles:
   EOF`;
 
 // CLI_LONG_ABOUT prose shown in `--help`.
-export const CLI_LONG_ABOUT = `Dev Browser is a CLI for controlling local or external browsers with JavaScript scripts.
+export const CLI_LONG_ABOUT = `Canary Browser is a CLI for controlling local or external browsers with JavaScript scripts.
 Scripts run in a sandboxed QuickJS runtime (not Node.js). Top-level \`await\` is
 available, along with a preconnected \`browser\` global and standard \`console\` output.
 A background daemon starts automatically when needed and manages browser instances,
