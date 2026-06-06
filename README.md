@@ -32,7 +32,7 @@ Canary doesn't make you choose: the agent does the QA and hands you a reproducib
 
 ## Who it's for
 
-<video src="docs/media/preview.mp4" autoplay loop muted playsinline></video>
+https://github.com/user-attachments/assets/8459994a-b43c-4483-bb4a-00522d1d03fe
 
 You describe the flow in plain language; your agent drives a real browser and hands back **both** a
 report you can just read **and** the exact Playwright script — plus the full trace — behind it. Most
