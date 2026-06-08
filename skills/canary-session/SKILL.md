@@ -4,7 +4,7 @@ description: Record a verifiable QA session with Canary — explore a flow step 
 license: MIT
 metadata:
   author: usecanary
-  version: 0.4.3
+  version: 0.4.4
   category: workflow
   tags:
     - canary

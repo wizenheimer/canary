@@ -1,6 +1,6 @@
 {
   "name": "@usecanary/ui",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "private": false,
   "type": "module",
   "description": "Local web viewer for canary sessions — reads results.json, lists/organizes/searches recorded sessions, styled after the self-contained report.",

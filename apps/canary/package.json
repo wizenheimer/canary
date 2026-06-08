@@ -1,6 +1,6 @@
 {
   "name": "@usecanary/cli",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "type": "module",
   "description": "Canary session orchestrator CLI. Drives the daemon to run capture-enabled QA sessions (trace/video/HAR/console) and renders self-contained verification reports.",
   "license": "MIT",
