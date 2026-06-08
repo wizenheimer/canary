@@ -29,6 +29,7 @@ function runInstall(
       cwd,
       stdio: "inherit",
       windowsHide: true,
+      shell: process.platform === "win32",
     });
     child.on("error", (err) => {
       const nodeErr = err as NodeJS.ErrnoException;

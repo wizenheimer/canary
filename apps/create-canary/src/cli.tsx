@@ -1,11 +1,7 @@
-import { spawn } from "node:child_process";
 import { MultiSelect } from "@inkjs/ui";
 import { Box, render, Text } from "ink";
+import { type Cmd, runInherit } from "./run.js";
 
-interface Cmd {
-  args: string[];
-  file: string;
-}
 interface Step {
   commands: Cmd[];
   defaultSelected?: boolean;
@@ -46,17 +42,6 @@ function buildSteps(): Step[] {
       defaultSelected: false,
     },
   ];
-}
-
-function runInherit(cmd: Cmd): Promise<number> {
-  return new Promise((resolve) => {
-    const child = spawn(cmd.file, cmd.args, {
-      stdio: "inherit",
-      windowsHide: true,
-    });
-    child.on("error", () => resolve(1));
-    child.on("exit", (code) => resolve(code ?? 1));
-  });
 }
 
 function SelectStep(props: {

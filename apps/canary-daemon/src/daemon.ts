@@ -315,7 +315,7 @@ async function handleInstall(
         path.join(BASE_DIR, "package.json"),
         EMBEDDED_PACKAGE_JSON
       );
-      const npmProgram = process.platform === "win32" ? "npm.cmd" : "npm";
+      const npmProgram = "npm";
       await runInstallCommand(
         output,
         request.id,
@@ -360,6 +360,8 @@ async function runInstallCommand(
     cwd,
     env: process.env,
     stdio: ["ignore", "pipe", "pipe"],
+    windowsHide: true,
+    shell: process.platform === "win32",
   });
 
   child.stdout?.setEncoding("utf8");
