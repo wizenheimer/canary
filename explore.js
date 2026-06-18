@@ -64,8 +64,7 @@ for (const url of toVisit) {
   try {
     const response = await page.goto(url, { waitUntil: "domcontentloaded" });
     const status = response ? response.status() : "unknown";
-    await page.waitForLoadState("networkidle").catch(() => {});
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(800);
 
     if (status >= 400) {
       errors.push({ url, error: "HTTP " + status });
@@ -89,7 +88,18 @@ for (const url of toVisit) {
   }
 }
 
+const report = {
+  visitedUrls: [...visited],
+  errors: errors,
+  summary: { total: visited.size, errorCount: errors.length }
+};
+await writeFile("report.json", JSON.stringify(report, null, 2));
 await writeFile("errors.json", JSON.stringify(errors, null, 2));
 console.log("===========================");
 console.log("Done. Visited: " + visited.size + " pages. Errors: " + errors.length);
-if (errors.length > 0) for (const e of errors) console.log("  - [" + e.url + "] " + e.error);
+console.log("Visited URLs:");
+for (const u of visited) console.log("  " + u);
+if (errors.length > 0) {
+  console.log("Errors:");
+  for (const e of errors) console.log("  [" + e.url + "] " + e.error);
+}
