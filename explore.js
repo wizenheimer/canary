@@ -72,6 +72,17 @@ async function collectNavLinks() {
 
 // seed from nav first
 await waitForApp();
+
+// debug: show what links are actually on the page
+const allLinks = await page.evaluate(() =>
+  [...document.querySelectorAll("a[href]")].map(a => ({ text: a.innerText?.trim(), href: a.getAttribute("href") }))
+);
+console.log("All links found on page: " + JSON.stringify(allLinks, null, 2));
+
+// debug: show page title and URL after load
+console.log("Page title: " + await page.title());
+console.log("Current URL: " + page.url());
+
 await collectNavLinks();
 
 while (toVisit.length > 0) {
