@@ -1,43 +1,72 @@
-// find the existing logged-in tab
+const TARGET = "ci-portal.infobloxcloud.com";
 const pages = await browser.listPages();
-const appTab = pages.find(p => p.url && !p.url.startsWith("about:") && !p.url.startsWith("chrome:"));
-if (!appTab) throw new Error("No app tab found — navigate to your app in Chrome first.");
-
+const appTab = pages.find(p => p.url && p.url.includes(TARGET));
+if (!appTab) throw new Error("Tab not found: " + TARGET);
 const page = await browser.getPage(appTab.id);
 const origin = new URL(appTab.url).origin;
 console.log("Attached to: " + appTab.url);
-console.log("Origin: " + origin);
+
+await page.waitForLoadState("networkidle").catch(() => {});
+await page.waitForTimeout(2000);
 
 const visited = new Set();
 const errors = [];
-const toVisit = [appTab.url];
+const toVisit = new Set();
 
-// collect same-origin links from current page
-async function collectLinks() {
-  await page.waitForLoadState("networkidle").catch(() => {});
-  await page.waitForTimeout(1500);
-  return await page.evaluate((origin) => {
-    const links = new Set();
-    for (const a of document.querySelectorAll("a[href]")) {
-      const href = a.getAttribute("href");
-      if (!href || href.startsWith("#")) continue;
-      try {
-        const url = new URL(href, origin);
-        if (url.origin === origin) links.add(url.origin + url.pathname);
-      } catch {}
-    }
-    return [...links];
-  }, origin);
+// count nav menus
+const navCount = await page.locator("nav button[aria-haspopup='menu']").count();
+console.log("Found " + navCount + " nav menus");
+
+for (let menuIdx = 0; menuIdx < navCount; menuIdx++) {
+  await page.locator("nav button[aria-haspopup='menu']").nth(menuIdx).click();
+  await page.waitForTimeout(800);
+
+  const itemCount = await page.locator("[role='menuitem']").count();
+  const menuName = (await page.locator("nav button[aria-haspopup='menu']").nth(menuIdx).innerText()).trim();
+  console.log("Menu: " + menuName + " has " + itemCount + " items");
+
+  for (let itemIdx = 0; itemIdx < itemCount; itemIdx++) {
+    await page.goto(origin, { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(1500);
+    await page.locator("nav button[aria-haspopup='menu']").nth(menuIdx).click();
+    await page.waitForTimeout(800);
+
+    const item = page.locator("[role='menuitem']").nth(itemIdx);
+    const label = (await item.innerText().catch(() => "?")).trim();
+    await item.click();
+    await page.waitForTimeout(1500);
+
+    const url = page.url();
+    console.log("  " + label + " -> " + url);
+    if (url && url.startsWith(origin)) toVisit.add(url);
+  }
 }
 
-while (toVisit.length > 0) {
-  const url = toVisit.shift();
-  if (!url || visited.has(url)) continue;
-  visited.add(url);
+// add plain anchor links from home
+await page.goto(origin, { waitUntil: "domcontentloaded" });
+await page.waitForTimeout(1500);
+const anchorLinks = await page.evaluate((origin) => {
+  return [...document.querySelectorAll("a[href]")]
+    .map(a => {
+      try {
+        const u = new URL(a.getAttribute("href"), origin);
+        return u.origin === origin && !u.hash ? u.origin + u.pathname : null;
+      } catch { return null; }
+    })
+    .filter(Boolean);
+}, origin);
+for (const l of anchorLinks) toVisit.add(l);
 
+console.log("Total pages to visit: " + toVisit.size);
+console.log(JSON.stringify([...toVisit], null, 2));
+
+for (const url of toVisit) {
+  if (visited.has(url)) continue;
+  visited.add(url);
   try {
     const response = await page.goto(url, { waitUntil: "domcontentloaded" });
     const status = response ? response.status() : "unknown";
+    await page.waitForLoadState("networkidle").catch(() => {});
     await page.waitForTimeout(1500);
 
     if (status >= 400) {
@@ -45,10 +74,9 @@ while (toVisit.length > 0) {
       console.log("HTTP ERROR " + status + " on " + url);
     }
 
-    // check for visible UI errors on page
     const pageErrors = await page.evaluate(() => {
-      const els = document.querySelectorAll("[class*='error']:not(script), [role='alert']");
-      return [...els].map(el => el.innerText?.trim()).filter(t => t && t.length > 2);
+      return [...document.querySelectorAll("[class*='error']:not(script),[role='alert']")]
+        .map(el => el.innerText?.trim()).filter(t => t && t.length > 2);
     });
     if (pageErrors.length > 0) {
       errors.push({ url, error: "UI error: " + pageErrors.join(" | ") });
@@ -57,16 +85,6 @@ while (toVisit.length > 0) {
 
     await saveScreenshot(await page.screenshot({ fullPage: true }), "page-" + Date.now() + ".png");
     console.log("Visited: " + url + " [" + status + "]");
-
-    // collect links from this page and queue unvisited ones
-    const links = await collectLinks();
-    console.log("  Found " + links.length + " links on this page");
-    for (const link of links) {
-      if (!visited.has(link)) {
-        console.log("  Queuing: " + link);
-        toVisit.push(link);
-      }
-    }
   } catch (err) {
     errors.push({ url, error: String(err) });
     console.log("ERROR on " + url + ": " + String(err));
@@ -75,9 +93,5 @@ while (toVisit.length > 0) {
 
 await writeFile("errors.json", JSON.stringify(errors, null, 2));
 console.log("===========================");
-console.log("Done. Visited: " + visited.size + " pages.");
-console.log("Errors found: " + errors.length);
-if (errors.length > 0) {
-  console.log("Error summary:");
-  for (const e of errors) console.log("  - [" + e.url + "] " + e.error);
-}
+console.log("Done. Visited: " + visited.size + " pages. Errors: " + errors.length);
+if (errors.length > 0) for (const e of errors) console.log("  - [" + e.url + "] " + e.error);
