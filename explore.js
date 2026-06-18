@@ -3,7 +3,8 @@ const pages = await browser.listPages();
 const appTab = pages.find(p => p.url && p.url.includes(TARGET));
 if (!appTab) throw new Error("Tab not found: " + TARGET);
 const page = await browser.getPage(appTab.id);
-const origin = new URL(appTab.url).origin;
+const originUrl = new URL(appTab.url).origin;
+const homeUrl = originUrl + "/";
 console.log("Attached to: " + appTab.url);
 
 await page.waitForLoadState("networkidle").catch(() => {});
@@ -13,7 +14,6 @@ const visited = new Set();
 const errors = [];
 const toVisit = new Set();
 
-// count nav menus
 const navCount = await page.locator("nav button[aria-haspopup='menu']").count();
 console.log("Found " + navCount + " nav menus");
 
@@ -26,7 +26,7 @@ for (let menuIdx = 0; menuIdx < navCount; menuIdx++) {
   console.log("Menu: " + menuName + " has " + itemCount + " items");
 
   for (let itemIdx = 0; itemIdx < itemCount; itemIdx++) {
-    await page.goto(origin, { waitUntil: "domcontentloaded" });
+    await page.goto(homeUrl, { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(1500);
     await page.locator("nav button[aria-haspopup='menu']").nth(menuIdx).click();
     await page.waitForTimeout(800);
@@ -38,23 +38,23 @@ for (let menuIdx = 0; menuIdx < navCount; menuIdx++) {
 
     const url = page.url();
     console.log("  " + label + " -> " + url);
-    if (url && url.startsWith(origin)) toVisit.add(url);
+    if (url && url.startsWith(originUrl)) toVisit.add(url);
   }
 }
 
 // add plain anchor links from home
-await page.goto(origin, { waitUntil: "domcontentloaded" });
+await page.goto(homeUrl, { waitUntil: "domcontentloaded" });
 await page.waitForTimeout(1500);
-const anchorLinks = await page.evaluate((origin) => {
+const anchorLinks = await page.evaluate((originUrl) => {
   return [...document.querySelectorAll("a[href]")]
     .map(a => {
       try {
-        const u = new URL(a.getAttribute("href"), origin);
-        return u.origin === origin && !u.hash ? u.origin + u.pathname : null;
+        const u = new URL(a.getAttribute("href"), originUrl);
+        return u.origin === originUrl && !u.hash ? u.origin + u.pathname : null;
       } catch { return null; }
     })
     .filter(Boolean);
-}, origin);
+}, originUrl);
 for (const l of anchorLinks) toVisit.add(l);
 
 console.log("Total pages to visit: " + toVisit.size);
