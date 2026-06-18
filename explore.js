@@ -1,51 +1,26 @@
 // find the existing logged-in tab
 const pages = await browser.listPages();
-console.log("Open tabs: " + JSON.stringify(pages.map(p => ({ id: p.id, url: p.url, title: p.title }))));
-
 const appTab = pages.find(p => p.url && !p.url.startsWith("about:") && !p.url.startsWith("chrome:"));
-if (!appTab) throw new Error("No app tab found — make sure you are navigated to your app in Chrome first.");
+if (!appTab) throw new Error("No app tab found — navigate to your app in Chrome first.");
 
 const page = await browser.getPage(appTab.id);
-console.log("Attached to tab: " + appTab.url);
-const startUrl = page.url();
-const origin = new URL(startUrl).origin;
-console.log("Starting at: " + startUrl);
+const origin = new URL(appTab.url).origin;
+console.log("Attached to: " + appTab.url);
+console.log("Origin: " + origin);
 
 const visited = new Set();
 const errors = [];
-const toVisit = [startUrl];
+const toVisit = [appTab.url];
 
-// wait for JS-rendered content
-async function waitForApp() {
-  await page.waitForLoadState("networkidle");
-  await page.waitForTimeout(1500);
-}
-
-// normalize a href to a full URL, returns null if invalid or external
-function resolveUrl(href) {
-  if (!href) return null;
-  try {
-    const url = new URL(href, origin);
-    if (url.origin !== origin) return null;
-    return url.origin + url.pathname;
-  } catch {
-    return null;
-  }
-}
-
-// collect all links after JS renders
+// collect same-origin links from current page
 async function collectLinks() {
-  await waitForApp();
+  await page.waitForLoadState("networkidle").catch(() => {});
+  await page.waitForTimeout(1500);
   return await page.evaluate((origin) => {
     const links = new Set();
     for (const a of document.querySelectorAll("a[href]")) {
-      try {
-        const url = new URL(a.getAttribute("href"), origin);
-        if (url.origin === origin) links.add(url.origin + url.pathname);
-      } catch {}
-    }
-    for (const el of document.querySelectorAll("[data-href],[to],[routerlink]")) {
-      const href = el.getAttribute("data-href") || el.getAttribute("to") || el.getAttribute("routerlink");
+      const href = a.getAttribute("href");
+      if (!href || href.startsWith("#")) continue;
       try {
         const url = new URL(href, origin);
         if (url.origin === origin) links.add(url.origin + url.pathname);
@@ -55,43 +30,6 @@ async function collectLinks() {
   }, origin);
 }
 
-// click nav/sidebar items to seed routes
-async function collectNavLinks() {
-  const navSelectors = [
-    "nav a", "aside a", "[role='navigation'] a",
-    ".sidebar a", ".menu a", ".nav a",
-    "[class*='nav'] a", "[class*='sidebar'] a", "[class*='menu'] a"
-  ];
-  for (const sel of navSelectors) {
-    const items = await page.locator(sel).all();
-    for (const item of items) {
-      try {
-        const href = await item.getAttribute("href");
-        const resolved = resolveUrl(href);
-        if (!resolved) continue;
-        const text = (await item.innerText().catch(() => "")).trim();
-        console.log("Nav item: " + text + " -> " + resolved);
-        toVisit.push(resolved);
-      } catch {}
-    }
-  }
-}
-
-// seed from nav first
-await waitForApp();
-
-// debug: show what links are actually on the page
-const allLinks = await page.evaluate(() =>
-  [...document.querySelectorAll("a[href]")].map(a => ({ text: a.innerText?.trim(), href: a.getAttribute("href") }))
-);
-console.log("All links found on page: " + JSON.stringify(allLinks, null, 2));
-
-// debug: show page title and URL after load
-console.log("Page title: " + await page.title());
-console.log("Current URL: " + page.url());
-
-await collectNavLinks();
-
 while (toVisit.length > 0) {
   const url = toVisit.shift();
   if (!url || visited.has(url)) continue;
@@ -100,33 +38,34 @@ while (toVisit.length > 0) {
   try {
     const response = await page.goto(url, { waitUntil: "domcontentloaded" });
     const status = response ? response.status() : "unknown";
-
-    await waitForApp();
+    await page.waitForTimeout(1500);
 
     if (status >= 400) {
       errors.push({ url, error: "HTTP " + status });
       console.log("HTTP ERROR " + status + " on " + url);
     }
 
-    // check for visible error messages on the page
+    // check for visible UI errors on page
     const pageErrors = await page.evaluate(() => {
-      const errorEls = document.querySelectorAll(
-        "[class*='error']:not(script), [class*='alert']:not(script), [role='alert']"
-      );
-      return [...errorEls].map(el => el.innerText?.trim()).filter(t => t && t.length > 0);
+      const els = document.querySelectorAll("[class*='error']:not(script), [role='alert']");
+      return [...els].map(el => el.innerText?.trim()).filter(t => t && t.length > 2);
     });
     if (pageErrors.length > 0) {
-      errors.push({ url, error: "UI error on page: " + pageErrors.join(" | ") });
+      errors.push({ url, error: "UI error: " + pageErrors.join(" | ") });
       console.log("UI ERROR on " + url + ": " + pageErrors.join(" | "));
     }
 
     await saveScreenshot(await page.screenshot({ fullPage: true }), "page-" + Date.now() + ".png");
     console.log("Visited: " + url + " [" + status + "]");
 
-    // collect new links from this page
+    // collect links from this page and queue unvisited ones
     const links = await collectLinks();
+    console.log("  Found " + links.length + " links on this page");
     for (const link of links) {
-      if (!visited.has(link)) toVisit.push(link);
+      if (!visited.has(link)) {
+        console.log("  Queuing: " + link);
+        toVisit.push(link);
+      }
     }
   } catch (err) {
     errors.push({ url, error: String(err) });
