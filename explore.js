@@ -3,8 +3,6 @@ const pages = await browser.listPages();
 const appTab = pages.find(p => p.url && p.url.includes(TARGET));
 if (!appTab) throw new Error("Tab not found: " + TARGET);
 const page = await browser.getPage(appTab.id);
-var originUrl = "https://ci-portal.infobloxcloud.com";
-var homeUrl = "https://ci-portal.infobloxcloud.com/";
 console.log("Attached to: " + appTab.url);
 
 await page.waitForLoadState("networkidle").catch(() => {});
@@ -26,7 +24,7 @@ for (let menuIdx = 0; menuIdx < navCount; menuIdx++) {
   console.log("Menu: " + menuName + " has " + itemCount + " items");
 
   for (let itemIdx = 0; itemIdx < itemCount; itemIdx++) {
-    await page.goto(homeUrl, { waitUntil: "domcontentloaded" });
+    await page.goto("https://ci-portal.infobloxcloud.com/", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(1500);
     await page.locator("nav button[aria-haspopup='menu']").nth(menuIdx).click();
     await page.waitForTimeout(800);
@@ -38,23 +36,23 @@ for (let menuIdx = 0; menuIdx < navCount; menuIdx++) {
 
     const url = page.url();
     console.log("  " + label + " -> " + url);
-    if (url && url.startsWith(originUrl)) toVisit.add(url);
+    if (url && url.includes("ci-portal.infobloxcloud.com")) toVisit.add(url);
   }
 }
 
-// add plain anchor links from home
-await page.goto(homeUrl, { waitUntil: "domcontentloaded" });
+await page.goto("https://ci-portal.infobloxcloud.com/", { waitUntil: "domcontentloaded" });
 await page.waitForTimeout(1500);
-const anchorLinks = await page.evaluate((originUrl) => {
+const anchorLinks = await page.evaluate(() => {
+  const origin = "https://ci-portal.infobloxcloud.com";
   return [...document.querySelectorAll("a[href]")]
     .map(a => {
       try {
-        const u = new URL(a.getAttribute("href"), originUrl);
-        return u.origin === originUrl && !u.hash ? u.origin + u.pathname : null;
+        const u = new URL(a.getAttribute("href"), origin);
+        return u.origin === origin && !u.hash ? u.origin + u.pathname : null;
       } catch { return null; }
     })
     .filter(Boolean);
-}, originUrl);
+});
 for (const l of anchorLinks) toVisit.add(l);
 
 console.log("Total pages to visit: " + toVisit.size);
