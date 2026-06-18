@@ -21,21 +21,18 @@ async function checkPage(label, url) {
   // check for error states
   const state = await page.evaluate(() => {
     const body = document.body.innerText;
-    const hasError = !!(
-      document.querySelector("[class*='error']:not(script)") ||
-      document.querySelector("[role='alert']") ||
-      document.querySelector("[class*='empty-state']") ||
-      body.includes("Something went wrong") ||
-      body.includes("403") ||
-      body.includes("404") ||
-      body.includes("Forbidden") ||
-      body.includes("Unauthorized") ||
-      body.includes("Access denied")
-    );
-    const errorText = hasError
-      ? [...document.querySelectorAll("[class*='error']:not(script),[role='alert']")]
-          .map(el => el.innerText?.trim()).filter(t => t && t.length > 2).join(" | ")
-      : "";
+
+    // only flag visible text-based errors
+    const errorKeywords = ["Something went wrong", "403 Forbidden", "404 Not Found", "Access denied", "Unauthorized", "You don't have permission"];
+    const hasKeywordError = errorKeywords.some(k => body.includes(k));
+
+    // only flag role=alert elements that have visible non-empty text
+    const alertEls = [...document.querySelectorAll("[role='alert']")]
+      .map(el => el.innerText?.trim())
+      .filter(t => t && t.length > 5);
+
+    const hasError = hasKeywordError || alertEls.length > 0;
+    const errorText = alertEls.join(" | ") || (hasKeywordError ? errorKeywords.find(k => body.includes(k)) : "");
     const hasContent = document.querySelectorAll("main, [role='main'], .content, table, [class*='card']").length > 0;
     const title = document.title;
     return { hasError, errorText, hasContent, title, bodyPreview: body.slice(0, 200) };
