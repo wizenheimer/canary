@@ -8,20 +8,76 @@ console.log("Attached to: " + appTab.url);
 await page.waitForLoadState("networkidle").catch(() => {});
 await page.waitForTimeout(2000);
 
-const visited = new Set();
+const results = [];
 const errors = [];
-const toVisit = new Set();
 
+async function checkPage(label, url) {
+  await page.waitForTimeout(1500);
+  const currentUrl = page.url();
+
+  // take screenshot
+  await saveScreenshot(await page.screenshot({ fullPage: true }), "page-" + Date.now() + ".png");
+
+  // check for error states
+  const state = await page.evaluate(() => {
+    const body = document.body.innerText;
+    const hasError = !!(
+      document.querySelector("[class*='error']:not(script)") ||
+      document.querySelector("[role='alert']") ||
+      document.querySelector("[class*='empty-state']") ||
+      body.includes("Something went wrong") ||
+      body.includes("403") ||
+      body.includes("404") ||
+      body.includes("Forbidden") ||
+      body.includes("Unauthorized") ||
+      body.includes("Access denied")
+    );
+    const errorText = hasError
+      ? [...document.querySelectorAll("[class*='error']:not(script),[role='alert']")]
+          .map(el => el.innerText?.trim()).filter(t => t && t.length > 2).join(" | ")
+      : "";
+    const hasContent = document.querySelectorAll("main, [role='main'], .content, table, [class*='card']").length > 0;
+    const title = document.title;
+    return { hasError, errorText, hasContent, title, bodyPreview: body.slice(0, 200) };
+  });
+
+  const result = {
+    menu: label,
+    url: currentUrl,
+    hasError: state.hasError,
+    hasContent: state.hasContent,
+    title: state.title,
+    errorText: state.errorText,
+    bodyPreview: state.bodyPreview
+  };
+
+  results.push(result);
+
+  if (state.hasError) {
+    errors.push({ label, url: currentUrl, error: state.errorText || "Error state detected" });
+    console.log("ERROR on [" + label + "] " + currentUrl + ": " + (state.errorText || "error state detected"));
+  } else if (!state.hasContent) {
+    errors.push({ label, url: currentUrl, error: "Page appears empty — no main content found" });
+    console.log("EMPTY on [" + label + "] " + currentUrl);
+  } else {
+    console.log("OK    [" + label + "] " + currentUrl + " | " + state.title);
+  }
+}
+
+// navigate using menu clicks to preserve session
 const navCount = await page.locator("nav button[aria-haspopup='menu']").count();
-console.log("Found " + navCount + " nav menus");
+console.log("Found " + navCount + " nav menus\n");
 
 for (let menuIdx = 0; menuIdx < navCount; menuIdx++) {
+  const menuName = (await page.locator("nav button[aria-haspopup='menu']").nth(menuIdx).innerText()).trim();
+
+  await page.goto("https://ci-portal.infobloxcloud.com/", { waitUntil: "domcontentloaded" });
+  await page.waitForTimeout(1500);
   await page.locator("nav button[aria-haspopup='menu']").nth(menuIdx).click();
   await page.waitForTimeout(800);
 
   const itemCount = await page.locator("[role='menuitem']").count();
-  const menuName = (await page.locator("nav button[aria-haspopup='menu']").nth(menuIdx).innerText()).trim();
-  console.log("Menu: " + menuName + " has " + itemCount + " items");
+  console.log("--- " + menuName + " (" + itemCount + " items) ---");
 
   for (let itemIdx = 0; itemIdx < itemCount; itemIdx++) {
     await page.goto("https://ci-portal.infobloxcloud.com/", { waitUntil: "domcontentloaded" });
@@ -30,76 +86,40 @@ for (let menuIdx = 0; menuIdx < navCount; menuIdx++) {
     await page.waitForTimeout(800);
 
     const item = page.locator("[role='menuitem']").nth(itemIdx);
-    const label = (await item.innerText().catch(() => "?")).trim();
-    await item.click();
-    await page.waitForTimeout(1500);
+    const label = menuName + " > " + (await item.innerText().catch(() => "?")).trim();
 
-    const url = page.url();
-    console.log("  " + label + " -> " + url);
-    if (url && url.includes("ci-portal.infobloxcloud.com")) toVisit.add(url);
+    // click the menu item — let the app router navigate
+    await item.click();
+    await page.waitForTimeout(2000);
+
+    await checkPage(label, page.url());
   }
 }
 
+// also check home and anchor-linked pages
 await page.goto("https://ci-portal.infobloxcloud.com/", { waitUntil: "domcontentloaded" });
 await page.waitForTimeout(1500);
-const anchorLinks = await page.evaluate(() => {
-  const origin = "https://ci-portal.infobloxcloud.com";
+await checkPage("Home", page.url());
+
+const anchorPages = await page.evaluate(() => {
   return [...document.querySelectorAll("a[href]")]
-    .map(a => {
-      try {
-        const u = new URL(a.getAttribute("href"), origin);
-        return u.origin === origin && !u.hash ? u.origin + u.pathname : null;
-      } catch { return null; }
-    })
-    .filter(Boolean);
+    .map(a => ({ text: a.innerText?.trim(), href: a.getAttribute("href") }))
+    .filter(a => a.href && !a.href.startsWith("#") && !a.href.startsWith("http"));
 });
-for (const l of anchorLinks) toVisit.add(l);
-
-console.log("Total pages to visit: " + toVisit.size);
-console.log(JSON.stringify([...toVisit], null, 2));
-
-for (const url of toVisit) {
-  if (visited.has(url)) continue;
-  visited.add(url);
-  try {
-    const response = await page.goto(url, { waitUntil: "domcontentloaded" });
-    const status = response ? response.status() : "unknown";
-    await page.waitForTimeout(800);
-
-    if (status >= 400) {
-      errors.push({ url, error: "HTTP " + status });
-      console.log("HTTP ERROR " + status + " on " + url);
-    }
-
-    const pageErrors = await page.evaluate(() => {
-      return [...document.querySelectorAll("[class*='error']:not(script),[role='alert']")]
-        .map(el => el.innerText?.trim()).filter(t => t && t.length > 2);
-    });
-    if (pageErrors.length > 0) {
-      errors.push({ url, error: "UI error: " + pageErrors.join(" | ") });
-      console.log("UI ERROR on " + url + ": " + pageErrors.join(" | "));
-    }
-
-    await saveScreenshot(await page.screenshot({ fullPage: true }), "page-" + Date.now() + ".png");
-    console.log("Visited: " + url + " [" + status + "]");
-  } catch (err) {
-    errors.push({ url, error: String(err) });
-    console.log("ERROR on " + url + ": " + String(err));
-  }
+for (const a of anchorPages) {
+  await page.goto("https://ci-portal.infobloxcloud.com" + a.href, { waitUntil: "domcontentloaded" });
+  await page.waitForTimeout(1500);
+  await checkPage("Link: " + a.text, page.url());
 }
 
-const report = {
-  visitedUrls: [...visited],
-  errors: errors,
-  summary: { total: visited.size, errorCount: errors.length }
-};
-await writeFile("report.json", JSON.stringify(report, null, 2));
-await writeFile("errors.json", JSON.stringify(errors, null, 2));
-console.log("===========================");
-console.log("Done. Visited: " + visited.size + " pages. Errors: " + errors.length);
-console.log("Visited URLs:");
-for (const u of visited) console.log("  " + u);
+// save full report
+await writeFile("report.json", JSON.stringify({ results, errors }, null, 2));
+
+console.log("\n===========================");
+console.log("Done. Visited: " + results.length + " pages.");
+console.log("Issues found: " + errors.length);
 if (errors.length > 0) {
-  console.log("Errors:");
-  for (const e of errors) console.log("  [" + e.url + "] " + e.error);
+  console.log("\nIssues:");
+  for (const e of errors) console.log("  [" + e.label + "] " + e.url + "\n    -> " + e.error);
 }
+console.log("\nAll results saved to ~/.canary/tmp/report.json");
