@@ -13,27 +13,42 @@ async function waitForApp() {
   await page.waitForTimeout(1500);
 }
 
+// normalize a href to a full URL, returns null if invalid or external
+function resolveUrl(href) {
+  if (!href) return null;
+  try {
+    const url = new URL(href, origin);
+    if (url.origin !== origin) return null;
+    return url.origin + url.pathname;
+  } catch {
+    return null;
+  }
+}
+
 // collect all links after JS renders
 async function collectLinks() {
   await waitForApp();
   return await page.evaluate((origin) => {
     const links = new Set();
-    // standard anchor tags
     for (const a of document.querySelectorAll("a[href]")) {
-      const href = a.href;
-      if (href.startsWith(origin)) links.add(href.split("#")[0]);
+      try {
+        const url = new URL(a.getAttribute("href"), origin);
+        if (url.origin === origin) links.add(url.origin + url.pathname);
+      } catch {}
     }
-    // data-href and router-link patterns common in SPAs
     for (const el of document.querySelectorAll("[data-href],[to],[routerlink]")) {
       const href = el.getAttribute("data-href") || el.getAttribute("to") || el.getAttribute("routerlink");
-      if (href && href.startsWith("/")) links.add(origin + href.split("#")[0]);
+      try {
+        const url = new URL(href, origin);
+        if (url.origin === origin) links.add(url.origin + url.pathname);
+      } catch {}
     }
-    return [...links].filter(Boolean);
+    return [...links];
   }, origin);
 }
 
-// click nav/sidebar items to reveal more routes
-async function clickNavItems() {
+// click nav/sidebar items to seed routes
+async function collectNavLinks() {
   const navSelectors = [
     "nav a", "aside a", "[role='navigation'] a",
     ".sidebar a", ".menu a", ".nav a",
@@ -44,10 +59,11 @@ async function clickNavItems() {
     for (const item of items) {
       try {
         const href = await item.getAttribute("href");
-        if (href && !href.startsWith("http") === false && !href.startsWith(origin)) continue;
-        const text = await item.innerText().catch(() => "");
-        console.log("Nav item: " + text.trim() + " -> " + href);
-        if (href) toVisit.push(href.startsWith("/") ? origin + href : href);
+        const resolved = resolveUrl(href);
+        if (!resolved) continue;
+        const text = (await item.innerText().catch(() => "")).trim();
+        console.log("Nav item: " + text + " -> " + resolved);
+        toVisit.push(resolved);
       } catch {}
     }
   }
@@ -55,26 +71,25 @@ async function clickNavItems() {
 
 // seed from nav first
 await waitForApp();
-await clickNavItems();
+await collectNavLinks();
 
 while (toVisit.length > 0) {
   const url = toVisit.shift();
-  const cleanUrl = url.split("#")[0];
-  if (visited.has(cleanUrl)) continue;
-  visited.add(cleanUrl);
+  if (!url || visited.has(url)) continue;
+  visited.add(url);
 
   try {
-    const response = await page.goto(cleanUrl, { waitUntil: "domcontentloaded" });
+    const response = await page.goto(url, { waitUntil: "domcontentloaded" });
     const status = response ? response.status() : "unknown";
 
     await waitForApp();
 
     if (status >= 400) {
-      errors.push({ url: cleanUrl, error: "HTTP " + status });
-      console.log("HTTP ERROR " + status + " on " + cleanUrl);
+      errors.push({ url, error: "HTTP " + status });
+      console.log("HTTP ERROR " + status + " on " + url);
     }
 
-    // check for error messages visible on the page
+    // check for visible error messages on the page
     const pageErrors = await page.evaluate(() => {
       const errorEls = document.querySelectorAll(
         "[class*='error']:not(script), [class*='alert']:not(script), [role='alert']"
@@ -82,12 +97,12 @@ while (toVisit.length > 0) {
       return [...errorEls].map(el => el.innerText?.trim()).filter(t => t && t.length > 0);
     });
     if (pageErrors.length > 0) {
-      errors.push({ url: cleanUrl, error: "UI error on page: " + pageErrors.join(" | ") });
-      console.log("UI ERROR on " + cleanUrl + ": " + pageErrors.join(" | "));
+      errors.push({ url, error: "UI error on page: " + pageErrors.join(" | ") });
+      console.log("UI ERROR on " + url + ": " + pageErrors.join(" | "));
     }
 
     await saveScreenshot(await page.screenshot({ fullPage: true }), "page-" + Date.now() + ".png");
-    console.log("Visited: " + cleanUrl + " [" + status + "]");
+    console.log("Visited: " + url + " [" + status + "]");
 
     // collect new links from this page
     const links = await collectLinks();
@@ -95,8 +110,8 @@ while (toVisit.length > 0) {
       if (!visited.has(link)) toVisit.push(link);
     }
   } catch (err) {
-    errors.push({ url: cleanUrl, error: String(err) });
-    console.log("ERROR on " + cleanUrl + ": " + String(err));
+    errors.push({ url, error: String(err) });
+    console.log("ERROR on " + url + ": " + String(err));
   }
 }
 
