@@ -1,4 +1,5 @@
 const page = await browser.getPage("main");
+await page.goto("https://ci-portal.infobloxcloud.com/", { waitUntil: "domcontentloaded" });
 const startUrl = page.url();
 const origin = new URL(startUrl).origin;
 console.log("Starting at: " + startUrl);
