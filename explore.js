@@ -1,7 +1,12 @@
-const page = await browser.getPage("main");
-const targetUrl = typeof globalThis.TARGET_URL !== "undefined" ? globalThis.TARGET_URL : page.url();
-if (!targetUrl || targetUrl === "about:blank") throw new Error("No URL set. Use --inject-script to set globalThis.TARGET_URL or navigate to your app first.");
-if (targetUrl !== page.url()) await page.goto(targetUrl, { waitUntil: "domcontentloaded" });
+// find the existing logged-in tab
+const pages = await browser.listPages();
+console.log("Open tabs: " + JSON.stringify(pages.map(p => ({ id: p.id, url: p.url, title: p.title }))));
+
+const appTab = pages.find(p => p.url && !p.url.startsWith("about:") && !p.url.startsWith("chrome:"));
+if (!appTab) throw new Error("No app tab found — make sure you are navigated to your app in Chrome first.");
+
+const page = await browser.getPage(appTab.id);
+console.log("Attached to tab: " + appTab.url);
 const startUrl = page.url();
 const origin = new URL(startUrl).origin;
 console.log("Starting at: " + startUrl);
