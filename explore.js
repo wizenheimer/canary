@@ -1,6 +1,7 @@
 const page = await browser.getPage("main");
-const targetUrl = typeof globalThis.TARGET_URL !== "undefined" ? globalThis.TARGET_URL : "https://ci-portal.infobloxcloud.com/";
-await page.goto(targetUrl, { waitUntil: "domcontentloaded" });
+const targetUrl = typeof globalThis.TARGET_URL !== "undefined" ? globalThis.TARGET_URL : page.url();
+if (!targetUrl || targetUrl === "about:blank") throw new Error("No URL set. Use --inject-script to set globalThis.TARGET_URL or navigate to your app first.");
+if (targetUrl !== page.url()) await page.goto(targetUrl, { waitUntil: "domcontentloaded" });
 const startUrl = page.url();
 const origin = new URL(startUrl).origin;
 console.log("Starting at: " + startUrl);
