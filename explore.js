@@ -3,8 +3,8 @@ const pages = await browser.listPages();
 const appTab = pages.find(p => p.url && p.url.includes(TARGET));
 if (!appTab) throw new Error("Tab not found: " + TARGET);
 const page = await browser.getPage(appTab.id);
-var originUrl = new URL(appTab.url).origin;
-var homeUrl = originUrl + "/";
+var originUrl = "https://ci-portal.infobloxcloud.com";
+var homeUrl = "https://ci-portal.infobloxcloud.com/";
 console.log("Attached to: " + appTab.url);
 
 await page.waitForLoadState("networkidle").catch(() => {});
