@@ -1,8 +1,9 @@
 <div align="center">
   <h1>Canary</h1>
   <p><strong>QA harness built for Claude Code.</strong></p>
+
+  https://github.com/user-attachments/assets/53d10b52-35cf-496a-a342-e8719574a000
 </div>
-<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/8ad76566-542e-43b0-a9f2-0220f819710b" />
 
 Canary is a QA harness purpose built for coding agents like Claude Code. It reads your code diffs, identifies the affected UI flows, and tests them in real browser instances using Claude Code.
 
@@ -11,6 +12,10 @@ Under the hood, it ships with a QuickJS WASM sandbox exposing the full Playwrigh
 Instead of clicking through flows by hand to reproduce and verify issues, Canary provides full session recordings. You get screen recordings with console logs, network requests, HARs, and Playwright traces so you can inspect exactly what the agent did.
 
 Every Canary run captures a reusable Playwright script. Letting you re-run it in CI with zero inference cost on replay.
+
+
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/8ad76566-542e-43b0-a9f2-0220f819710b" />
+
 
 Most testing tools force you to choose between two extremes:
 
